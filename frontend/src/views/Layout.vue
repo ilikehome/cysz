@@ -5,7 +5,23 @@
       <el-aside width="250px" class="sidebar">
         <div class="logo">
           <h2>云联智管</h2>
-          <p class="slogan">云联万物 智管未来</p>
+        </div>
+        
+        <!-- 用户信息区域 -->
+        <div class="user-section">
+          <el-dropdown>
+            <div class="user-info">
+              <el-icon><User /></el-icon>
+              <span class="username">管理员</span>
+              <el-icon class="arrow-icon"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item>个人中心</el-dropdown-item>
+                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
         
         <el-menu
@@ -116,36 +132,9 @@
       </el-aside>
       
       <!-- 主内容区 -->
-      <el-container>
-        <!-- 顶部导航 -->
-        <el-header class="header">
-          <div class="header-left">
-            <el-breadcrumb separator="/">
-              <el-breadcrumb-item>{{ currentTitle }}</el-breadcrumb-item>
-            </el-breadcrumb>
-          </div>
-          <div class="header-right">
-            <el-dropdown>
-              <span class="user-info">
-                <el-icon><User /></el-icon>
-                管理员
-                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item>个人中心</el-dropdown-item>
-                  <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </el-header>
-        
-        <!-- 主内容 -->
-        <el-main class="main-content">
-          <router-view />
-        </el-main>
-      </el-container>
+      <el-main class="main-content">
+        <router-view />
+      </el-main>
     </el-container>
   </div>
 </template>
@@ -220,12 +209,39 @@ const logout = () => {
   background-clip: text;
 }
 
-.logo .slogan {
-  color: #9ca3af;
-  margin: 8px 0 0 0;
+.user-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.user-section .user-info {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.user-section .user-info:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+}
+
+.user-section .username {
+  flex: 1;
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.user-section .arrow-icon {
   font-size: 12px;
-  font-weight: 400;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .sidebar-menu {
@@ -263,59 +279,10 @@ const logout = () => {
   transform: translateX(4px);
 }
 
-.header {
-  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 24px;
-  height: 64px;
-  flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-.header-left {
-  flex: 1;
-}
-
-.header-left :deep(.el-breadcrumb__item) {
-  font-weight: 500;
-  color: #374151;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: #374151;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-.user-info:hover {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  transform: translateY(-1px);
-}
-
-.user-info .el-icon {
-  margin: 0 6px;
-  font-size: 16px;
-}
-
 .main-content {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   padding: 0;
-  height: calc(100vh - 64px);
+  height: 100vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;

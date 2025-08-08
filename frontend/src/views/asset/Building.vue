@@ -402,6 +402,43 @@ onMounted(() => {
 <style scoped>
 .building-management {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.building-management :deep(.el-card) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  transition: all 0.3s ease;
+}
+
+.building-management :deep(.el-card):hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.building-management :deep(.el-card__header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 24px;
+}
+
+.building-management :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 24px;
 }
 
 .card-header {
@@ -410,15 +447,163 @@ onMounted(() => {
   align-items: center;
 }
 
+.card-header span {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+}
+
+.card-header span::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 2px;
+  margin-right: 12px;
+}
+
+.card-header :deep(.el-button) {
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.card-header :deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
 .search-area {
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
+  margin-bottom: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.search-area :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #374151;
+}
+
+.search-area :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.search-area :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.search-area :deep(.el-select .el-input__wrapper) {
+  border-radius: 8px;
+}
+
+.search-area :deep(.el-button) {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.search-area :deep(.el-button--primary) {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.search-area :deep(.el-button--primary:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.el-table {
+  flex: 1;
+  overflow: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.el-table :deep(.el-table__header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.el-table :deep(.el-table__header th) {
+  background: transparent;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 16px 12px;
+}
+
+.el-table :deep(.el-table__body tr) {
+  transition: all 0.3s ease;
+}
+
+.el-table :deep(.el-table__body tr:hover) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transform: scale(1.01);
+}
+
+.el-table :deep(.el-table__body td) {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.el-table :deep(.el-button--text) {
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 12px;
+  transition: all 0.3s ease;
+}
+
+.el-table :deep(.el-button--text:hover) {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  transform: translateY(-1px);
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: 24px;
   text-align: right;
+  flex-shrink: 0;
+}
+
+.pagination :deep(.el-pagination) {
+  justify-content: flex-end;
+}
+
+.pagination :deep(.el-pager li) {
+  border-radius: 8px;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.pagination :deep(.el-pager li:hover) {
+  transform: translateY(-1px);
+}
+
+.pagination :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.pagination :deep(.btn-prev),
+.pagination :deep(.btn-next) {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.pagination :deep(.btn-prev:hover),
+.pagination :deep(.btn-next:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

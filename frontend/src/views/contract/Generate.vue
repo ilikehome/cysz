@@ -513,24 +513,74 @@ export default defineComponent({
 
 <style scoped>
 .contract-generate {
-  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow: hidden;
+  position: relative;
 }
 
 .generate-content {
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .steps {
   margin-bottom: 30px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.steps :deep(.el-steps) {
+  background: transparent;
 }
 
 .step-content {
   min-height: 500px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-content :deep(.el-card) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  transition: all 0.3s ease;
+}
+
+.step-content :deep(.el-card):hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.step-content :deep(.el-card__header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 24px;
+}
+
+.step-content :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 24px;
 }
 
 .card-header {
@@ -539,53 +589,94 @@ export default defineComponent({
   align-items: center;
 }
 
+.card-header span {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+}
+
+.card-header span::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 2px;
+  margin-right: 12px;
+}
+
+.card-header :deep(.el-button) {
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.card-header :deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
 /* 模板选择样式 */
 .template-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .template-card {
-  border: 2px solid #e4e7ed;
-  border-radius: 8px;
-  padding: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
   cursor: pointer;
-  transition: all 0.3s;
-  background: white;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 .template-card:hover {
-  border-color: #409eff;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+  transform: translateY(-4px);
 }
 
 .template-card.active {
-  border-color: #409eff;
-  background: #f0f9ff;
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
 }
 
 .template-icon {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .template-icon .el-icon {
   font-size: 48px;
-  color: #409eff;
+  color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .template-info h4 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
+  margin: 0 0 12px 0;
+  font-size: 18px;
   font-weight: 600;
+  color: #1f2937;
 }
 
 .template-info p {
-  margin: 0 0 15px 0;
-  color: #666;
+  margin: 0 0 16px 0;
+  color: #6b7280;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .template-meta {
@@ -594,83 +685,180 @@ export default defineComponent({
   align-items: center;
 }
 
+.template-meta :deep(.el-tag) {
+  border-radius: 6px;
+  font-weight: 500;
+  border: none;
+}
+
 .usage-count {
   font-size: 12px;
-  color: #999;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
 /* 表单样式 */
 .form-section {
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
 .form-section h3 {
-  margin: 0 0 20px 0;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #f0f0f0;
-  color: #333;
+  margin: 0 0 24px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
+  position: relative;
+}
+
+.form-section h3::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 1px;
 }
 
 .dynamic-field {
   margin-bottom: 20px;
 }
 
+.form-content :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-content :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.form-content :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* 预览样式 */
 .contract-preview {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   padding: 40px;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   min-height: 400px;
   line-height: 1.8;
   font-size: 14px;
   margin-bottom: 30px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* 生成结果样式 */
 .result-content {
   text-align: center;
   padding: 40px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .generating {
-  color: #409eff;
+  color: #3b82f6;
 }
 
 .generating .el-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.generating p {
+  font-size: 16px;
+  margin-bottom: 24px;
+  color: #6b7280;
 }
 
 .success .success-icon {
-  font-size: 64px;
-  color: #67c23a;
-  margin-bottom: 20px;
+  font-size: 80px;
+  color: #10b981;
+  margin-bottom: 24px;
+}
+
+.success h3 {
+  font-size: 24px;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.success p {
+  color: #6b7280;
+  margin-bottom: 8px;
 }
 
 .error .error-icon {
-  font-size: 64px;
-  color: #f56c6c;
-  margin-bottom: 20px;
+  font-size: 80px;
+  color: #ef4444;
+  margin-bottom: 24px;
+}
+
+.error h3 {
+  font-size: 24px;
+  color: #1f2937;
+  margin-bottom: 16px;
 }
 
 .download-actions {
-  margin: 30px 0;
+  margin: 32px 0;
 }
 
 .download-actions .el-button {
-  margin: 0 10px;
+  margin: 0 12px;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.download-actions .el-button--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+.download-actions .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
 }
 
 /* 步骤操作按钮 */
 .step-actions {
   text-align: center;
-  padding-top: 30px;
-  border-top: 1px solid #f0f0f0;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .step-actions .el-button {
-  margin: 0 10px;
-  min-width: 100px;
+  margin: 0 12px;
+  min-width: 120px;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.step-actions .el-button--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.step-actions .el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 </style>
