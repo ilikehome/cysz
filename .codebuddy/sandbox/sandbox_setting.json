@@ -1,0 +1,20 @@
+{
+  "path": "d:\\codebuddy\\cysz",
+  "desc": "这是云联智管地产资管系统的前端项目，基于Vue3 + TypeScript + Element Plus构建。系统提供资产管理、租户管理、合同管理、应收账款管理等功能，具有现代化的界面设计和完整的权限控制体系。",
+  "id": "09f7acf3774046379bd33e5af43802b7",
+  "data": {
+    "spaceKey": "09f7acf3774046379bd33e5af43802b7",
+    "connections": {
+      "webIDE": "https://09f7acf3774046379bd33e5af43802b7.ap-singapore.cloudstudio.club",
+      "preview": "https://09f7acf3774046379bd33e5af43802b7--{port}.ap-singapore.cloudstudio.club",
+      "api": "https://09f7acf3774046379bd33e5af43802b7--api.ap-singapore.cloudstudio.club",
+      "pty": "https://09f7acf3774046379bd33e5af43802b7--pty.ap-singapore.cloudstudio.club"
+    }
+  },
+  "config": {
+    "api": "https://09f7acf3774046379bd33e5af43802b7--api.ap-singapore.cloudstudio.club",
+    "pty": "https://09f7acf3774046379bd33e5af43802b7--pty.ap-singapore.cloudstudio.club",
+    "region": "ap-shanghai",
+    "spaceKey": "09f7acf3774046379bd33e5af43802b7"
+  }
+}
