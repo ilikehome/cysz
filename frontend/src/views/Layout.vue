@@ -4,7 +4,10 @@
       <!-- 侧边栏 -->
       <el-aside width="250px" class="sidebar">
         <div class="logo">
-          <h2>云联智管</h2>
+          <div class="logo-content">
+            <el-icon class="logo-icon"><OfficeBuilding /></el-icon>
+            <h2>云联智管</h2>
+          </div>
         </div>
         
         <!-- 用户信息区域 -->
@@ -197,16 +200,62 @@ const logout = () => {
   background: rgba(0, 0, 0, 0.1);
 }
 
+.logo-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.logo-content:hover {
+  transform: translateY(-2px);
+}
+
+.logo-icon {
+  font-size: 28px;
+  color: #60a5fa;
+  filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.3));
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .logo h2 {
   color: #fff;
   margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1e40af 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.logo h2::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  transition: width 0.3s ease;
+}
+
+.logo-content:hover .logo h2::after {
+  width: 100%;
 }
 
 .user-section {
