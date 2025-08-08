@@ -47,7 +47,6 @@
 
         <!-- MySQL Driver -->
         <dependency>
-<<<<<<< HEAD
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.33</version>
@@ -92,11 +91,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
-=======
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <version>${mysql.version}</version>
->>>>>>> 0c9228d89e51405a78b25c612c98df04622f684c
         </dependency>
     </dependencies>
 
