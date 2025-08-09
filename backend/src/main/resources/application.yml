@@ -1,0 +1,32 @@
+# 最小化后端服务配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: cysz-minimal
+  
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://rm-bp18m5mdhgk22t81lxo.mysql.rds.aliyuncs.com:3306/cysz?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+    username: shenhao1
+    password: shenhaO123#
+  
+  # 数据库初始化配置
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      encoding: utf-8
+      continue-on-error: false
+
+# 日志配置
+logging:
+  level:
+    com.cysz: debug
+    org.springframework.security: debug
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n'

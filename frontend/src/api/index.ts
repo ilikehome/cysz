@@ -1,0 +1,454 @@
+import request from '@/utils/request'
+
+// 通用接口类型定义
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  current: number
+  size: number
+}
+
+export interface PageQuery {
+  current: number
+  size: number
+  [key: string]: any
+}
+
+// 用户相关接口
+export interface User {
+  id?: number
+  username: string
+  password?: string
+  realName?: string
+  email?: string
+  phone?: string
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const userApi = {
+  // 用户登录
+  login: (data: { username: string; password: string }) => {
+    return request.post('/auth/login', data)
+  },
+  
+  // 获取用户信息
+  getUserInfo: () => {
+    return request.get('/auth/user/info')
+  },
+  
+  // 用户分页查询
+  getUserPage: (params: PageQuery) => {
+    return request.get<PageResult<User>>('/user/page', { params })
+  },
+  
+  // 创建用户
+  createUser: (data: User) => {
+    return request.post('/user', data)
+  },
+  
+  // 更新用户
+  updateUser: (id: number, data: User) => {
+    return request.put(`/user/${id}`, data)
+  },
+  
+  // 删除用户
+  deleteUser: (id: number) => {
+    return request.delete(`/user/${id}`)
+  }
+}
+
+// 项目相关接口
+export interface Project {
+  id?: number
+  projectName: string
+  projectType: 'COMPLEX' | 'APARTMENT' | 'OFFICE' | 'COMMERCIAL'
+  companyName?: string
+  rentBillCompany?: string
+  propertyBillCompany?: string
+  propertyRightCompany?: string
+  buildingArea?: number
+  rentArea?: number
+  propertyArea?: number
+  city?: string
+  address?: string
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const projectApi = {
+  // 项目分页查询
+  getProjectPage: (params: PageQuery) => {
+    return request.get<PageResult<Project>>('/project/page', { params })
+  },
+  
+  // 获取所有项目列表
+  getProjectList: () => {
+    return request.get<Project[]>('/project/list')
+  },
+  
+  // 创建项目
+  createProject: (data: Project) => {
+    return request.post('/project', data)
+  },
+  
+  // 更新项目
+  updateProject: (id: number, data: Project) => {
+    return request.put(`/project/${id}`, data)
+  },
+  
+  // 删除项目
+  deleteProject: (id: number) => {
+    return request.delete(`/project/${id}`)
+  }
+}
+
+// 楼栋相关接口
+export interface Building {
+  id?: number
+  buildingName: string
+  buildingCode: string
+  projectId: number
+  projectName?: string
+  buildingArea?: number
+  rentArea?: number
+  propertyArea?: number
+  usableArea?: number
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const buildingApi = {
+  // 楼栋分页查询
+  getBuildingPage: (params: PageQuery) => {
+    return request.get<PageResult<Building>>('/building/page', { params })
+  },
+  
+  // 根据项目ID获取楼栋列表
+  getBuildingsByProject: (projectId: number) => {
+    return request.get<Building[]>(`/building/project/${projectId}`)
+  },
+  
+  // 创建楼栋
+  createBuilding: (data: Building) => {
+    return request.post('/building', data)
+  },
+  
+  // 更新楼栋
+  updateBuilding: (id: number, data: Building) => {
+    return request.put(`/building/${id}`, data)
+  },
+  
+  // 删除楼栋
+  deleteBuilding: (id: number) => {
+    return request.delete(`/building/${id}`)
+  }
+}
+
+// 单元相关接口
+export interface Unit {
+  id?: number
+  unitCode: string
+  unitDescription?: string
+  projectId: number
+  projectName?: string
+  buildingId: number
+  buildingName?: string
+  unitStatus: 'VACANT' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED'
+  unitPurpose?: string
+  buildingArea?: number
+  rentArea?: number
+  propertyArea?: number
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const unitApi = {
+  // 单元分页查询
+  getUnitPage: (params: PageQuery) => {
+    return request.get<PageResult<Unit>>('/unit/page', { params })
+  },
+  
+  // 创建单元
+  createUnit: (data: Unit) => {
+    return request.post('/unit', data)
+  },
+  
+  // 更新单元
+  updateUnit: (id: number, data: Unit) => {
+    return request.put(`/unit/${id}`, data)
+  },
+  
+  // 删除单元
+  deleteUnit: (id: number) => {
+    return request.delete(`/unit/${id}`)
+  },
+  
+  // 单元合并
+  mergeUnits: (data: {
+    sourceUnitIds: number[]
+    targetUnitCode: string
+    targetUnitDescription: string
+    operationReason: string
+  }) => {
+    return request.post('/unit/merge', data)
+  },
+  
+  // 单元拆分
+  splitUnit: (data: {
+    sourceUnitId: number
+    targetUnits: Array<{ unitCode: string; unitDescription: string }>
+    operationReason: string
+  }) => {
+    return request.post('/unit/split', data)
+  }
+}
+
+// 租户相关接口
+export interface Tenant {
+  id?: number
+  tenantCode: string
+  tenantName: string
+  tenantCategory?: string
+  projectId?: number
+  socialCreditCode?: string
+  certificateType?: string
+  taxpayerId?: string
+  businessLicense?: string
+  legalPerson?: string
+  registeredAddress?: string
+  contactPhone?: string
+  contactEmail?: string
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const tenantApi = {
+  // 租户信息管理
+  getTenantPage: (params: PageQuery) => {
+    return request.get<PageResult<Tenant>>('/tenant/page', { params })
+  },
+  
+  createTenant: (data: Tenant) => {
+    return request.post('/tenant', data)
+  },
+  
+  updateTenant: (id: number, data: Tenant) => {
+    return request.put(`/tenant/${id}`, data)
+  },
+  
+  deleteTenant: (id: number) => {
+    return request.delete(`/tenant/${id}`)
+  },
+  
+  // 租户风险管控
+  getRiskStats: () => {
+    return request.get('/tenant/risk/stats')
+  },
+  
+  getTenantRiskList: (params: PageQuery) => {
+    return request.get('/tenant/risk/list', { params })
+  },
+  
+  assessTenantRisk: (data: {
+    tenantId: number
+    creditScore: number
+    businessStatus: string
+    financialStatus: string
+    complianceStatus: string
+    riskNote?: string
+  }) => {
+    return request.post('/tenant/risk/assess', data)
+  },
+  
+  // 租户画像
+  getTenantProfileList: (params: PageQuery) => {
+    return request.get('/tenant/profile/list', { params })
+  },
+  
+  getTenantProfileDetail: (id: number) => {
+    return request.get(`/tenant/profile/${id}`)
+  },
+  
+  generateTenantProfile: (data: { tenantId: number }) => {
+    return request.post('/tenant/profile/generate', data)
+  },
+  
+  // 业态分析相关接口
+  getBusinessOverview: () => {
+    return request.get('/tenant/business-analysis/overview')
+  },
+  
+  getBusinessDetails: (params?: { businessType?: string }) => {
+    return request.get('/tenant/business-analysis/details', { params })
+  },
+  
+  getBusinessTrends: () => {
+    return request.get('/tenant/business-analysis/trends')
+  },
+  
+  getBusinessSuggestions: () => {
+    return request.get('/tenant/business-analysis/suggestions')
+  },
+  
+  exportBusinessReport: () => {
+    return request.get('/tenant/business-analysis/export')
+  }
+}
+
+// 合同相关接口
+export interface Contract {
+  id?: number
+  contractNo: string
+  contractName: string
+  projectId: number
+  startDate: string
+  endDate: string
+  signatory?: string
+  contractType?: string
+  contractStatus: 'DRAFT' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED'
+  rentBillCompany?: string
+  propertyBillCompany?: string
+  leaseNo?: string
+  tenantId: number
+  tenantName?: string
+  unitId: number
+  unitDescription?: string
+  rentMode?: string
+  monthlyRent?: number
+  deposit?: number
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const contractApi = {
+  // 合同分页查询
+  getContractPage: (params: PageQuery) => {
+    return request.get<PageResult<Contract>>('/contract/page', { params })
+  },
+  
+  // 创建合同
+  createContract: (data: Contract) => {
+    return request.post('/contract', data)
+  },
+  
+  // 更新合同
+  updateContract: (id: number, data: Contract) => {
+    return request.put(`/contract/${id}`, data)
+  },
+  
+  // 删除合同
+  deleteContract: (id: number) => {
+    return request.delete(`/contract/${id}`)
+  }
+}
+
+// 应收账款相关接口
+export interface ReceivableAccount {
+  id?: number
+  batchNo: string
+  lineNo: string
+  processStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED'
+  company?: string
+  projectId?: number
+  paymentMethod?: string
+  payeeName?: string
+  payeeAccount?: string
+  payeeBank?: string
+  payee?: string
+  payerName?: string
+  tenantName?: string
+  contractNo?: string
+  payerAccount?: string
+  payer?: string
+  payerBankCode?: string
+  transactionTime?: string
+  amount?: number
+  pendingAmount?: number
+  inputDate?: string
+  claimer?: string
+  claimDate?: string
+  debitCreditFlag?: 'DEBIT' | 'CREDIT'
+  summary?: string
+  remark?: string
+  status?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export const receivableApi = {
+  // 应收账款分页查询
+  getReceivablePage: (params: PageQuery) => {
+    return request.get<PageResult<ReceivableAccount>>('/receivable/page', { params })
+  },
+  
+  // 创建应收账款
+  createReceivable: (data: ReceivableAccount) => {
+    return request.post('/receivable', data)
+  },
+  
+  // 更新应收账款
+  updateReceivable: (id: number, data: ReceivableAccount) => {
+    return request.put(`/receivable/${id}`, data)
+  },
+  
+  // 删除应收账款
+  deleteReceivable: (id: number) => {
+    return request.delete(`/receivable/${id}`)
+  },
+  
+  // 认领账款
+  claimReceivable: (id: number, data: { claimer: string; claimDate: string }) => {
+    return request.post(`/receivable/${id}/claim`, data)
+  }
+}
+
+// 统计分析相关接口
+export const statisticsApi = {
+  // 获取仪表盘数据
+  getDashboard: () => {
+    return request.get('/statistics/dashboard')
+  },
+  
+  // 获取项目统计数据
+  getProjectStats: () => {
+    return request.get('/statistics/project')
+  },
+  
+  // 获取租户统计数据
+  getTenantStats: () => {
+    return request.get('/statistics/tenant')
+  },
+  
+  // 获取单元统计数据
+  getUnitStats: () => {
+    return request.get('/statistics/unit')
+  },
+  
+  // 获取合同统计数据
+  getContractStats: () => {
+    return request.get('/statistics/contract')
+  },
+  
+  // 获取财务统计数据
+  getFinancialStats: () => {
+    return request.get('/statistics/financial')
+  },
+  
+  // 获取运营分析数据
+  getOperationStats: () => {
+    return request.get('/statistics/operation')
+  }
+}
+
+// 导出合同模板相关接口
+export * from './contractTemplate'
+
+// 导出账款管理相关接口
+export * from './account'
