@@ -124,9 +124,17 @@
               <el-icon><Wallet /></el-icon>
               <span>应收已收</span>
             </el-menu-item>
+            <el-menu-item index="/account/receivable-analysis">
+              <el-icon><TrendCharts /></el-icon>
+              <span>收款进度</span>
+            </el-menu-item>
             <el-menu-item index="/account/payment-claim">
               <el-icon><CreditCard /></el-icon>
-              <span>收款认领</span>
+              <span>手动认领</span>
+            </el-menu-item>
+            <el-menu-item index="/account/collection-reminder">
+              <el-icon><Message /></el-icon>
+              <span>自动催缴</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -179,7 +187,8 @@ import {
   Money, 
   Wallet, 
   CreditCard, 
-  UserFilled 
+  UserFilled,
+  Message 
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

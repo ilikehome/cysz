@@ -213,12 +213,30 @@ const router = createRouter({
               }
             },
             {
+              path: '/account/receivable-analysis',
+              name: 'ReceivableAnalysis',
+              component: () => import('@/views/account/ReceivableAnalysis.vue'),
+              meta: {
+                title: '收款进度',
+                icon: 'TrendCharts'
+              }
+            },
+            {
               path: '/account/payment-claim',
               name: 'PaymentClaim',
               component: () => import('@/views/account/PaymentClaim.vue'),
               meta: {
-                title: '收款认领',
+                title: '手动认领',
                 icon: 'CreditCard'
+              }
+            },
+            {
+              path: '/account/collection-reminder',
+              name: 'CollectionReminder',
+              component: () => import('@/views/account/CollectionReminder.vue'),
+              meta: {
+                title: '自动催缴',
+                icon: 'Message'
               }
             }
           ]
