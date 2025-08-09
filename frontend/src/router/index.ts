@@ -184,15 +184,35 @@ const router = createRouter({
             }
           ]
         },
-        // 应收账款管理
+        // 账款管理
         {
-          path: '/receivable',
-          name: 'Receivable',
-          component: () => import('@/views/receivable/Index.vue'),
+          path: '/account',
+          name: 'AccountManagement',
+          redirect: '/account/receivable-received',
           meta: {
-            title: '应收账款管理',
+            title: '账款管理',
             icon: 'Money'
-          }
+          },
+          children: [
+            {
+              path: '/account/receivable-received',
+              name: 'ReceivableReceived',
+              component: () => import('@/views/account/ReceivableReceived.vue'),
+              meta: {
+                title: '应收已收',
+                icon: 'Wallet'
+              }
+            },
+            {
+              path: '/account/payment-claim',
+              name: 'PaymentClaim',
+              component: () => import('@/views/account/PaymentClaim.vue'),
+              meta: {
+                title: '收款认领',
+                icon: 'CreditCard'
+              }
+            }
+          ]
         },
         // 系统管理
         {

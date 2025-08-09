@@ -110,11 +110,21 @@
             </el-menu-item>
           </el-sub-menu>
           
-          <!-- 应收账款管理 -->
-          <el-menu-item index="/receivable">
-            <el-icon><Money /></el-icon>
-            <span>应收账款管理</span>
-          </el-menu-item>
+          <!-- 账款管理 -->
+          <el-sub-menu index="account">
+            <template #title>
+              <el-icon><Money /></el-icon>
+              <span>账款管理</span>
+            </template>
+            <el-menu-item index="/account/receivable-received">
+              <el-icon><Wallet /></el-icon>
+              <span>应收已收</span>
+            </el-menu-item>
+            <el-menu-item index="/account/payment-claim">
+              <el-icon><CreditCard /></el-icon>
+              <span>收款认领</span>
+            </el-menu-item>
+          </el-sub-menu>
           
           <!-- 系统管理 -->
           <el-sub-menu index="system">
