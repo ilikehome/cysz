@@ -101,21 +101,12 @@ const router = createRouter({
         {
           path: '/tenant',
           name: 'Tenant',
-          redirect: '/tenant/index',
+          redirect: '/tenant/info',
           meta: {
             title: '租户管理',
             icon: 'Avatar'
           },
           children: [
-            {
-              path: '/tenant/index',
-              name: 'TenantIndex',
-              component: () => import('@/views/tenant/Index.vue'),
-              meta: {
-                title: '租户管理',
-                icon: 'User'
-              }
-            },
             {
               path: '/tenant/info',
               name: 'TenantInfo',

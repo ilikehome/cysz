@@ -72,10 +72,6 @@
               <el-icon><Avatar /></el-icon>
               <span>租户管理</span>
             </template>
-            <el-menu-item index="/tenant/index">
-              <el-icon><User /></el-icon>
-              <span>租户管理</span>
-            </el-menu-item>
             <el-menu-item index="/tenant/info">
               <el-icon><User /></el-icon>
               <span>租户信息</span>
