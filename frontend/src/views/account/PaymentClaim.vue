@@ -303,7 +303,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageContainer from '@/components/PageContainer.vue'
-import { request } from '@/utils/request'
+import { accountApi } from '@/api'
 
 // 响应式数据
 const loading = ref(false)
@@ -377,13 +377,13 @@ const fetchData = async () => {
       ...searchForm
     }
     
-    const response = await request.get('/account/payment-claim/page', { params })
+    const response = await accountApi.getPaymentClaimPage(params)
     
-    if (response.data.code === 200) {
-      tableData.value = response.data.data.records
-      pagination.total = response.data.data.total
+    if (response.code === 200) {
+      tableData.value = response.data.records
+      pagination.total = response.data.total
     } else {
-      ElMessage.error(response.data.message || '获取数据失败')
+      ElMessage.error(response.message || '获取数据失败')
     }
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -396,9 +396,9 @@ const fetchData = async () => {
 // 获取可认领的合同列表
 const fetchContractOptions = async () => {
   try {
-    const response = await request.get('/account/contracts/claimable')
-    if (response.data.code === 200) {
-      contractOptions.value = response.data.data
+    const response = await accountApi.getClaimableContracts()
+    if (response.code === 200) {
+      contractOptions.value = response.data
     }
   } catch (error) {
     console.error('获取合同列表失败:', error)
@@ -483,17 +483,14 @@ const handleConfirmClaim = async () => {
     if (valid) {
       claimLoading.value = true
       try {
-        const response = await request.post(
-          `/account/payment-claim/${currentTransaction.value.id}/claim`,
-          claimForm
-        )
+        const response = await accountApi.claimPayment(currentTransaction.value.id, claimForm)
         
-        if (response.data.code === 200) {
+        if (response.code === 200) {
           ElMessage.success('认领成功')
           claimDialogVisible.value = false
           fetchData()
         } else {
-          ElMessage.error(response.data.message || '认领失败')
+          ElMessage.error(response.message || '认领失败')
         }
       } catch (error) {
         console.error('认领失败:', error)

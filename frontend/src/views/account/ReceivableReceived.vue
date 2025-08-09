@@ -262,7 +262,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageContainer from '@/components/PageContainer.vue'
-import { request } from '@/utils/request'
+import { accountApi } from '@/api'
 
 // 响应式数据
 const loading = ref(false)
@@ -333,13 +333,13 @@ const fetchData = async () => {
       ...searchForm
     }
     
-    const response = await request.get('/account/receivable-received/page', { params })
+    const response = await accountApi.getReceivableReceivedPage(params)
     
-    if (response.data.code === 200) {
-      tableData.value = response.data.data.records
-      pagination.total = response.data.data.total
+    if (response.code === 200) {
+      tableData.value = response.data.records
+      pagination.total = response.data.total
     } else {
-      ElMessage.error(response.data.message || '获取数据失败')
+      ElMessage.error(response.message || '获取数据失败')
     }
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -380,14 +380,14 @@ const handleConfirmGenerate = async () => {
     if (valid) {
       generateLoading.value = true
       try {
-        const response = await request.post('/account/receivable/generate', generateForm)
+        const response = await accountApi.generateReceivable(generateForm)
         
-        if (response.data.code === 200) {
+        if (response.code === 200) {
           ElMessage.success('生成成功')
           generateDialogVisible.value = false
           fetchData()
         } else {
-          ElMessage.error(response.data.message || '生成失败')
+          ElMessage.error(response.message || '生成失败')
         }
       } catch (error) {
         console.error('生成失败:', error)

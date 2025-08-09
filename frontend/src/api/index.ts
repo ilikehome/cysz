@@ -449,3 +449,6 @@ export const statisticsApi = {
 
 // 导出合同模板相关接口
 export * from './contractTemplate'
+
+// 导出账款管理相关接口
+export * from './account'

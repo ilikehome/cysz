@@ -72,6 +72,10 @@
               <el-icon><Avatar /></el-icon>
               <span>租户管理</span>
             </template>
+            <el-menu-item index="/tenant/index">
+              <el-icon><User /></el-icon>
+              <span>租户管理</span>
+            </el-menu-item>
             <el-menu-item index="/tenant/info">
               <el-icon><User /></el-icon>
               <span>租户信息</span>
@@ -156,6 +160,27 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { 
+  OfficeBuilding, 
+  User, 
+  ArrowDown, 
+  DataBoard, 
+  Postcard, 
+  House, 
+  Grid, 
+  Connection, 
+  Avatar, 
+  Warning, 
+  DataAnalysis, 
+  Document, 
+  TrendCharts, 
+  Setting, 
+  DocumentAdd, 
+  Money, 
+  Wallet, 
+  CreditCard, 
+  UserFilled 
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

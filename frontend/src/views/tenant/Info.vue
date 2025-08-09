@@ -124,8 +124,8 @@ const loadData = async () => {
     }
     
     const response = await tenantApi.getTenantPage(params)
-    if (response.code === 200) {
-      tableData.value = response.data.records
+    if (response.data.code === 200) {
+      tableData.value = response.data.data.records
       pagination.total = response.data.total
     }
   } catch (error) {
@@ -179,7 +179,7 @@ const handleDelete = async (row: any) => {
     )
     
     const response = await tenantApi.deleteTenant(row.id)
-    if (response.code === 200) {
+    if (response.data.code === 200) {
       ElMessage.success('删除成功')
       loadData()
     } else {
