@@ -372,7 +372,7 @@ const logout = () => {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   padding: 0;
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   position: relative;

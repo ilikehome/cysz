@@ -26,7 +26,7 @@ defineProps<Props>()
   display: flex;
   flex-direction: column;
   padding: 24px;
-  overflow: hidden;
+  overflow-y: auto;
   position: relative;
 }
 

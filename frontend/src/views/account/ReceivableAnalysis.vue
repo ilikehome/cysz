@@ -1,14 +1,8 @@
 <template>
   <div class="receivable-analysis">
-    <el-card class="page-header" shadow="never">
-      <div class="header-content">
-        <h2>账款分析</h2>
-        <p>可视化展示应收、已收、未收账款数据，助力管理决策</p>
-      </div>
-    </el-card>
-
-    <!-- 数据概览 -->
-    <el-row :gutter="20" class="overview-cards">
+    <PageContainer title="收款进度" description="可视化展示应收、已收、未收账款数据，助力管理决策">
+      <!-- 数据概览 -->
+      <el-row :gutter="20" class="overview-cards">
       <el-col :span="6">
         <el-card class="overview-card total-receivable">
           <div class="card-content">
@@ -171,6 +165,7 @@
         </el-card>
       </el-col>
     </el-row>
+    </PageContainer>
   </div>
 </template>
 
@@ -180,6 +175,7 @@ import * as echarts from 'echarts'
 import { Money, Check, Clock, TrendCharts, Warning, Bell } from '@element-plus/icons-vue'
 import { receivableAnalysisApi } from '@/api/receivableAnalysis'
 import { ElMessage } from 'element-plus'
+import PageContainer from '@/components/PageContainer.vue'
 
 // 响应式数据
 const dateRange = ref<[string, string]>([])
@@ -442,7 +438,7 @@ onMounted(async () => {
   const now = new Date()
   const endMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const startMonth = `${now.getFullYear()}-${String(now.getMonth() - 5).padStart(2, '0')}`
-  dateRange.value = [startMonth, endMonth]
+  dateRange.value = [startMonth, endMonth] as [string, string]
   
   // 加载基础数据
   await Promise.all([
@@ -478,24 +474,7 @@ onUnmounted(() => {
 
 <style scoped>
 .receivable-analysis {
-  padding: 20px;
-}
-
-.page-header {
-  margin-bottom: 20px;
-}
-
-.header-content h2 {
-  margin: 0 0 8px 0;
-  color: #303133;
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.header-content p {
-  margin: 0;
-  color: #909399;
-  font-size: 14px;
+  padding: 0;
 }
 
 .overview-cards {

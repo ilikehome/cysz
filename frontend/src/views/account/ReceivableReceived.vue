@@ -468,6 +468,10 @@ onMounted(() => {
 <style scoped>
 .receivable-received-container {
   padding: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .search-section {
