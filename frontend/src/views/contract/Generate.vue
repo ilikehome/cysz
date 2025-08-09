@@ -484,33 +484,6 @@ onMounted(() => {
 })
 </script>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import { 
-  Document, 
-  Refresh, 
-  Edit, 
-  Loading, 
-  CircleCheck, 
-  CircleClose, 
-  Download, 
-  View 
-} from '@element-plus/icons-vue'
-
-export default defineComponent({
-  components: {
-    Document,
-    Refresh,
-    Edit,
-    Loading,
-    CircleCheck,
-    CircleClose,
-    Download,
-    View
-  }
-})
-</script>
-
 <style scoped>
 .contract-generate {
   height: 100%;
@@ -625,8 +598,12 @@ export default defineComponent({
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
-  flex: 1;
+  height: 400px;
   overflow-y: auto;
+  padding: 4px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
 }
 
 .template-card {
@@ -637,6 +614,8 @@ export default defineComponent({
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
+  height: fit-content;
+  min-height: 200px;
 }
 
 .template-card:hover {
