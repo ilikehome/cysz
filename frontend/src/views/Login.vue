@@ -89,9 +89,9 @@ const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
 const loginForm = reactive({
-  orgCode: '',
-  username: '',
-  password: ''
+  orgCode: 'ORG001',
+  username: 'admin',
+  password: '123456'
 })
 
 const loginRules = {
@@ -115,10 +115,18 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        await userStore.login(loginForm)
+        console.log('开始登录，表单数据:', loginForm)
+        const result = await userStore.login(loginForm)
+        console.log('登录成功，结果:', result)
+        console.log('当前token:', userStore.token)
+        console.log('当前用户信息:', userStore.userInfo)
+        
         ElMessage.success('登录成功')
-        router.push('/dashboard')
+        console.log('准备跳转到dashboard')
+        await router.push('/dashboard')
+        console.log('跳转完成')
       } catch (error: any) {
+        console.error('登录失败，错误:', error)
         ElMessage.error(error.message || '登录失败')
       } finally {
         loading.value = false

@@ -253,7 +253,7 @@ const router = createRouter({
             {
               path: '/system/role',
               name: 'SystemRole',
-              component: () => import('@/views/system/Role.vue'),
+              component: () => import('@/views/RoleManagement.vue'),
               meta: {
                 title: '角色管理',
                 icon: 'UserFilled'
@@ -314,9 +314,12 @@ router.beforeEach(async (to, from, next) => {
   // 如果有token但没有用户信息，尝试获取用户信息
   if (!userStore.userInfo) {
     try {
+      console.log('路由守卫：尝试获取用户信息，当前token:', userStore.token)
       await userStore.getUserInfo()
+      console.log('路由守卫：获取用户信息成功:', userStore.userInfo)
     } catch (error) {
-      console.error('获取用户信息失败:', error)
+      console.error('路由守卫：获取用户信息失败:', error)
+      console.log('路由守卫：清除token并重定向到登录页')
       userStore.logout()
       next('/login')
       return

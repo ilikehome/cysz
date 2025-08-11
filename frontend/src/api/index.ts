@@ -484,6 +484,42 @@ export const statisticsApi = {
   }
 }
 
+// 角色管理相关接口
+export interface Role {
+  id?: number
+  roleName: string
+  roleCode: string
+  description?: string
+  permissions: string[]
+  userCount?: number
+  createTime?: string
+  updateTime?: string
+}
+
+export interface RoleStats {
+  superAdminCount: number
+  tenantAdminCount: number
+  userCount: number
+  totalUsers: number
+}
+
+export const roleApi = {
+  // 获取角色统计数据
+  getRoleStats: () => {
+    return request.get<RoleStats>('/role/stats')
+  },
+  
+  // 获取角色列表
+  getRoleList: () => {
+    return request.get<Role[]>('/role/list')
+  },
+  
+  // 获取角色权限详情
+  getRolePermissions: (roleCode: string) => {
+    return request.get<{ permissions: string[] }>(`/role/${roleCode}/permissions`)
+  }
+}
+
 // 导出合同模板相关接口
 export * from './contractTemplate'
 

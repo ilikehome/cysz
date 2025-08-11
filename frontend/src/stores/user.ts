@@ -36,12 +36,12 @@ export const useUserStore = defineStore('user', () => {
       const response = await userApi.login(loginData)
       console.log('登录响应:', response) // 添加调试日志
       
-      // 后端返回格式: {code: 200, message: "登录成功", data: {token, userInfo, permissions, orgInfo}}
+      // 后端返回格式: {code: 200, message: "登录成功", data: {token, userInfo, permissions}}
       if (response.code === 200 && response.data) {
-        const { token: newToken, userInfo: info, permissions: perms, orgInfo } = response.data
+        const { token: newToken, userInfo: info, permissions: perms } = response.data
         
         setToken(newToken)
-        setUserInfo({ ...info, orgInfo }) // 包含组织信息
+        setUserInfo(info) // userInfo中已经包含orgInfo
         setPermissions(perms || [])
         
         return response
