@@ -10,18 +10,38 @@
           </div>
         </div>
         
+        <!-- 单位信息区域 -->
+        <div class="org-section">
+          <div class="org-info">
+            <el-icon class="org-icon"><OfficeBuilding /></el-icon>
+            <div class="org-details">
+              <div class="org-name">{{ userStore.userInfo?.orgInfo?.orgName || '云联智管' }}</div>
+              <div class="org-type">{{ getOrgTypeText(userStore.userInfo?.orgInfo?.orgType) }}</div>
+            </div>
+          </div>
+        </div>
+        
         <!-- 用户信息区域 -->
         <div class="user-section">
-          <el-dropdown>
+          <el-dropdown @command="handleUserAction">
             <div class="user-info">
               <el-icon><User /></el-icon>
-              <span class="username">管理员</span>
+              <div class="user-details">
+                <span class="username">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '管理员' }}</span>
+                <span class="user-role">{{ getRoleText(userStore.userInfo?.role) }}</span>
+              </div>
               <el-icon class="arrow-icon"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item>个人中心</el-dropdown-item>
-                <el-dropdown-item divided @click="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item command="profile">
+                  <el-icon><User /></el-icon>
+                  个人中心
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" divided>
+                  <el-icon><SwitchButton /></el-icon>
+                  退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -164,6 +184,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import { 
   OfficeBuilding, 
   User, 
@@ -184,11 +205,13 @@ import {
   Wallet, 
   CreditCard, 
   UserFilled,
-  Message 
+  Message,
+  SwitchButton
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 // 当前激活的菜单
 const activeMenu = computed(() => route.path)
@@ -198,8 +221,42 @@ const currentTitle = computed(() => {
   return route.meta?.title || '首页'
 })
 
+// 获取单位类型文本
+const getOrgTypeText = (type?: string) => {
+  const typeMap: Record<string, string> = {
+    'company': '企业',
+    'government': '政府机构',
+    'institution': '事业单位',
+    'other': '其他'
+  }
+  return typeMap[type || 'company'] || '企业'
+}
+
+// 获取角色文本
+const getRoleText = (role?: string) => {
+  const roleMap: Record<string, string> = {
+    'admin': '管理员',
+    'user': '普通用户'
+  }
+  return roleMap[role || 'user'] || '用户'
+}
+
+// 处理用户操作
+const handleUserAction = (command: string) => {
+  switch (command) {
+    case 'profile':
+      router.push('/profile')
+      break
+    case 'logout':
+      logout()
+      break
+  }
+}
+
 // 退出登录
 const logout = () => {
+  // 调用 store 中的 logout 方法清除用户状态
+  userStore.logout()
   ElMessage.success('退出登录成功')
   router.push('/login')
 }
@@ -298,6 +355,41 @@ const logout = () => {
   width: 100%;
 }
 
+.org-section {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.org-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e5e7eb;
+}
+
+.org-icon {
+  font-size: 18px;
+  color: #60a5fa;
+}
+
+.org-details {
+  flex: 1;
+}
+
+.org-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.org-type {
+  font-size: 11px;
+  color: #94a3b8;
+  opacity: 0.8;
+}
+
 .user-section {
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -313,7 +405,7 @@ const logout = () => {
   border-radius: 8px;
   transition: all 0.3s ease;
   width: 100%;
-  justify-content: space-between;
+  gap: 8px;
 }
 
 .user-section .user-info:hover {
@@ -321,16 +413,30 @@ const logout = () => {
   color: #60a5fa;
 }
 
-.user-section .username {
+.user-details {
   flex: 1;
-  margin-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.username {
   font-size: 14px;
   font-weight: 500;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 11px;
+  color: #94a3b8;
+  opacity: 0.8;
 }
 
 .user-section .arrow-icon {
   font-size: 12px;
   opacity: 0.7;
+  margin-left: auto;
 }
 
 .sidebar-menu {

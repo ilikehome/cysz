@@ -1,4 +1,4 @@
-package com.cysz.minimal;
+package com.cysz.minimal.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,9 +11,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
-/**
- * 最小化安全配置
- */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -21,11 +18,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // 禁用CSRF保护
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 启用CORS
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/test/**").permitAll() // 允许所有认证相关接口和测试接口
-                .anyRequest().permitAll() // 暂时允许所有接口，稍后通过自定义逻辑控制
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/**").permitAll()
+                .anyRequest().authenticated()
             );
         
         return http.build();
@@ -34,11 +32,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // 允许所有来源
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

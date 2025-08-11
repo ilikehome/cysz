@@ -1,4 +1,5 @@
 -- 云联智管地产资管系统初始测试数据
+-- 云联智管地产资管系统初始测试数据
 
 -- 清空现有数据（避免主键冲突）
 SET FOREIGN_KEY_CHECKS = 0;
@@ -8,15 +9,35 @@ DELETE FROM tenant;
 DELETE FROM unit;
 DELETE FROM building;
 DELETE FROM project;
+DELETE FROM users;
+DELETE FROM organizations;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- 重置自增ID
+ALTER TABLE organizations AUTO_INCREMENT = 1;
+ALTER TABLE users AUTO_INCREMENT = 1;
 ALTER TABLE project AUTO_INCREMENT = 1;
 ALTER TABLE building AUTO_INCREMENT = 1;
 ALTER TABLE unit AUTO_INCREMENT = 1;
 ALTER TABLE tenant AUTO_INCREMENT = 1;
 ALTER TABLE contract AUTO_INCREMENT = 1;
 ALTER TABLE receivable_account AUTO_INCREMENT = 1;
+
+-- 插入组织数据
+INSERT INTO organizations (org_code, org_name, org_type, contact_person, contact_phone, contact_email, address, description) VALUES
+('WANDA', '万达集团', 'company', '王健林', '400-888-0000', 'contact@wanda.com', '北京市朝阳区建国路93号万达广场', '中国知名商业地产开发运营企业'),
+('VANKE', '万科集团', 'company', '郁亮', '400-999-0000', 'service@vanke.com', '深圳市盐田区大梅沙环梅路33号万科中心', '中国领先的城乡建设与生活服务商'),
+('POLY', '保利地产', 'company', '刘平', '400-111-0000', 'info@polycn.com', '广州市海珠区阅江中路688号保利国际广场', '中央企业保利集团旗下大型国有房地产企业'),
+('GREENLAND', '绿地集团', 'company', '张玉良', '400-820-0000', 'service@greenland.com', '上海市静安区延安中路1000号绿地中心', '中国领先的超大型城市运营商');
+
+-- 插入用户数据
+INSERT INTO users (username, password, email, real_name, org_id, role) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9P2.nRJ.9eJa6', 'admin@wanda.com', '系统管理员', 1, 'admin'),
+('wanda_user', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9P2.nRJ.9eJa6', 'user@wanda.com', '万达用户', 1, 'user'),
+('vanke_admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9P2.nRJ.9eJa6', 'admin@vanke.com', '万科管理员', 2, 'admin'),
+('vanke_user', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9P2.nRJ.9eJa6', 'user@vanke.com', '万科用户', 2, 'user'),
+('poly_admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9P2.nRJ.9eJa6', 'admin@polycn.com', '保利管理员', 3, 'admin'),
+('greenland_user', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9P2.nRJ.9eJa6', 'user@greenland.com', '绿地用户', 4, 'user');
 
 -- 插入项目数据
 INSERT INTO `project` (`id`, `project_name`, `project_type`, `company_name`, `rent_bill_company`, `property_bill_company`, `property_right_company`, `building_area`, `rent_area`, `property_area`, `city`, `address`, `status`) VALUES

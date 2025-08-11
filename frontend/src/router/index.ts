@@ -260,6 +260,16 @@ const router = createRouter({
               }
             }
           ]
+        },
+        // 个人中心
+        {
+          path: '/profile',
+          name: 'Profile',
+          component: () => import('@/views/Profile.vue'),
+          meta: {
+            title: '个人中心',
+            icon: 'User'
+          }
         }
       ]
     },

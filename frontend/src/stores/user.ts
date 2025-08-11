@@ -31,17 +31,17 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 登录
-  const login = async (loginData: { username: string; password: string }) => {
+  const login = async (loginData: { orgCode: string; username: string; password: string }) => {
     try {
       const response = await userApi.login(loginData)
       console.log('登录响应:', response) // 添加调试日志
       
-      // 后端返回格式: {code: 200, message: "登录成功", data: {token, userInfo, permissions}}
+      // 后端返回格式: {code: 200, message: "登录成功", data: {token, userInfo, permissions, orgInfo}}
       if (response.code === 200 && response.data) {
-        const { token: newToken, userInfo: info, permissions: perms } = response.data
+        const { token: newToken, userInfo: info, permissions: perms, orgInfo } = response.data
         
         setToken(newToken)
-        setUserInfo(info)
+        setUserInfo({ ...info, orgInfo }) // 包含组织信息
         setPermissions(perms || [])
         
         return response
@@ -65,20 +65,30 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await userApi.getUserInfo()
       console.log('获取用户信息响应:', response) // 添加调试日志
+      console.log('response.data:', response.data) // 查看data字段
+      console.log('response.data类型:', typeof response.data) // 查看data类型
       
       // 后端返回格式: {code: 200, message: "获取成功", data: {userInfo, permissions}}
       if (response.code === 200 && response.data) {
+        console.log('开始解构response.data:', response.data)
+        
+        // 修复：直接从 response.data 中解构
         const { userInfo: info, permissions: perms } = response.data
+        
+        console.log('解构后的userInfo:', info)
+        console.log('解构后的permissions:', perms)
         
         setUserInfo(info)
         setPermissions(perms || [])
         
         return response
       } else {
+        console.error('获取用户信息失败:', response)
         throw new Error(response.message || '获取用户信息失败')
       }
     } catch (error) {
       console.error('获取用户信息错误:', error)
+      // 如果是网络错误或其他错误，重新抛出
       throw error
     }
   }

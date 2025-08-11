@@ -1,6 +1,39 @@
 -- 云联智管地产资管系统数据库表结构
 -- 创建时间：2025-01-08
 
+-- 组织表
+CREATE TABLE IF NOT EXISTS organizations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    org_code VARCHAR(50) NOT NULL UNIQUE COMMENT '组织代码',
+    org_name VARCHAR(100) NOT NULL COMMENT '组织名称',
+    org_type VARCHAR(20) DEFAULT 'company' COMMENT '组织类型：company-公司，government-政府机构，institution-事业单位',
+    contact_person VARCHAR(50) COMMENT '联系人',
+    contact_phone VARCHAR(20) COMMENT '联系电话',
+    contact_email VARCHAR(100) COMMENT '联系邮箱',
+    address VARCHAR(200) COMMENT '地址',
+    description TEXT COMMENT '组织描述',
+    status TINYINT DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    real_name VARCHAR(50),
+    org_id BIGINT COMMENT '所属组织ID',
+    role VARCHAR(20) DEFAULT 'user' COMMENT '角色：admin-管理员，user-普通用户',
+    status TINYINT DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (org_id) REFERENCES organizations(id),
+    UNIQUE KEY unique_username_org (username, org_id)
+);
+
 -- 1. 项目管理表
 CREATE TABLE IF NOT EXISTS project (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '项目ID',

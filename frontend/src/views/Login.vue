@@ -13,6 +13,29 @@
         class="login-form"
         @keyup.enter="handleLogin"
       >
+        <el-form-item prop="orgCode">
+          <el-select
+            v-model="loginForm.orgCode"
+            placeholder="请选择您的单位"
+            size="large"
+            class="org-select"
+            filterable
+            :prefix-icon="OfficeBuilding"
+          >
+            <el-option
+              v-for="org in organizations"
+              :key="org.orgCode"
+              :label="org.orgName"
+              :value="org.orgCode"
+            >
+              <div class="org-option">
+                <span class="org-name">{{ org.orgName }}</span>
+                <span class="org-type">{{ getOrgTypeText(org.orgType) }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        
         <el-form-item prop="username">
           <el-input
             v-model="loginForm.username"
@@ -47,18 +70,30 @@
       </el-form>
       
       <div class="login-tips">
-        <p>默认账号：admin / 123456</p>
+        <div class="tips-title">测试账号</div>
+        <div class="tips-content">
+          <div class="tip-item">
+            <strong>万达集团：</strong>admin / 123456 (管理员)
+          </div>
+          <div class="tip-item">
+            <strong>保利地产：</strong>poly_admin / 123456 (管理员)
+          </div>
+          <div class="tip-item">
+            <strong>绿地控股：</strong>greenland_admin / 123456 (管理员)
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, OfficeBuilding } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { userApi } from '@/api'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -66,18 +101,36 @@ const userStore = useUserStore()
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
+// 组织列表
+const organizations = ref<Array<{orgCode: string; orgName: string; orgType: string}>>([])
+
 const loginForm = reactive({
+  orgCode: 'ORG001',
   username: 'admin',
   password: '123456'
 })
 
 const loginRules = {
+  orgCode: [
+    { required: true, message: '请选择您的单位', trigger: 'change' }
+  ],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
   ]
+}
+
+// 获取组织类型文本
+const getOrgTypeText = (type: string) => {
+  const typeMap: Record<string, string> = {
+    'COMPANY': '企业',
+    'GOVERNMENT': '政府机构',
+    'INSTITUTION': '事业单位',
+    'OTHER': '其他'
+  }
+  return typeMap[type] || '企业'
 }
 
 const handleLogin = async () => {
@@ -98,6 +151,31 @@ const handleLogin = async () => {
     }
   })
 }
+
+// 加载组织列表
+const loadOrganizations = async () => {
+  try {
+    const response = await userApi.getOrganizations()
+    if (response.code === 200 && response.data) {
+      organizations.value = response.data
+    }
+  } catch (error) {
+    console.error('加载组织列表失败:', error)
+    // 使用默认组织列表作为备选
+    organizations.value = [
+      { orgCode: 'ORG001', orgName: '万达集团', orgType: 'COMPANY' },
+      { orgCode: 'ORG002', orgName: '保利地产', orgType: 'COMPANY' },
+      { orgCode: 'ORG003', orgName: '绿地控股', orgType: 'COMPANY' },
+      { orgCode: 'ORG004', orgName: '碧桂园集团', orgType: 'COMPANY' },
+      { orgCode: 'ORG005', orgName: '华润置地', orgType: 'COMPANY' }
+    ]
+  }
+}
+
+// 组件挂载时加载组织列表
+onMounted(() => {
+  loadOrganizations()
+})
 </script>
 
 <style scoped>
@@ -240,6 +318,55 @@ const handleLogin = async () => {
   font-weight: 400;
 }
 
+.org-select :deep(.el-select__wrapper) {
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 12px;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.org-select :deep(.el-select__wrapper:hover) {
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.org-select :deep(.el-select__wrapper.is-focused) {
+  border-color: #8b5cf6;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 0 0 3px rgba(139, 92, 246, 0.1),
+    0 4px 12px rgba(139, 92, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.org-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.org-name {
+  font-weight: 500;
+  color: #334155;
+}
+
+.org-type {
+  font-size: 12px;
+  color: #64748b;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 .login-btn {
   width: 100%;
   height: 48px;
@@ -281,16 +408,41 @@ const handleLogin = async () => {
 }
 
 .login-tips {
-  text-align: center;
   color: #64748b;
   font-size: 13px;
   font-weight: 500;
-  opacity: 0.7;
+  opacity: 0.8;
   padding: 16px;
   background: rgba(248, 250, 252, 0.5);
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.3);
   backdrop-filter: blur(10px);
+}
+
+.tips-title {
+  text-align: center;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.tips-content {
+  text-align: left;
+}
+
+.tip-item {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.tip-item:last-child {
+  margin-bottom: 0;
+}
+
+.tip-item strong {
+  color: #334155;
+  font-weight: 600;
 }
 
 @keyframes gradientShift {
