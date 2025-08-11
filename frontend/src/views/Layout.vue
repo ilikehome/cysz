@@ -10,16 +10,6 @@
           </div>
         </div>
         
-        <!-- 单位信息区域 -->
-        <div class="org-section">
-          <div class="org-info">
-            <el-icon class="org-icon"><OfficeBuilding /></el-icon>
-            <div class="org-details">
-              <div class="org-name">{{ userStore.userInfo?.orgInfo?.orgName || '云联智管' }}</div>
-              <div class="org-type">{{ getOrgTypeText(userStore.userInfo?.orgInfo?.orgType) }}</div>
-            </div>
-          </div>
-        </div>
         
         <!-- 用户信息区域 -->
         <div class="user-section">
@@ -29,6 +19,7 @@
               <div class="user-details">
                 <span class="username">{{ userStore.userInfo?.realName || userStore.userInfo?.username || '管理员' }}</span>
                 <span class="user-role">{{ getRoleText(userStore.userInfo?.role) }}</span>
+                <span class="user-org">万达集团</span>
               </div>
               <el-icon class="arrow-icon"><ArrowDown /></el-icon>
             </div>
@@ -238,7 +229,7 @@ const getRoleText = (role?: string) => {
     'admin': '管理员',
     'user': '普通用户'
   }
-  return roleMap[role || 'user'] || '用户'
+  return roleMap[role || 'user'] || '普通用户'
 }
 
 // 处理用户操作
@@ -355,40 +346,6 @@ const logout = () => {
   width: 100%;
 }
 
-.org-section {
-  padding: 12px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(59, 130, 246, 0.1);
-}
-
-.org-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #e5e7eb;
-}
-
-.org-icon {
-  font-size: 18px;
-  color: #60a5fa;
-}
-
-.org-details {
-  flex: 1;
-}
-
-.org-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  line-height: 1.2;
-}
-
-.org-type {
-  font-size: 11px;
-  color: #94a3b8;
-  opacity: 0.8;
-}
 
 .user-section {
   padding: 16px 20px;
@@ -431,6 +388,12 @@ const logout = () => {
   font-size: 11px;
   color: #94a3b8;
   opacity: 0.8;
+}
+
+.user-org {
+  font-size: 11px;
+  color: #60a5fa;
+  font-weight: 500;
 }
 
 .user-section .arrow-icon {
