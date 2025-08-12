@@ -87,13 +87,13 @@
               <el-icon><User /></el-icon>
               <span>租户信息</span>
             </el-menu-item>
+            <el-menu-item index="/tenant/profile">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>租户分析</span>
+            </el-menu-item>
             <el-menu-item index="/tenant/risk">
               <el-icon><Warning /></el-icon>
               <span>风险管控</span>
-            </el-menu-item>
-            <el-menu-item index="/tenant/profile">
-              <el-icon><DataAnalysis /></el-icon>
-              <span>租户画像</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -113,7 +113,7 @@
             </el-menu-item>
             <el-menu-item index="/contract/config">
               <el-icon><Setting /></el-icon>
-              <span>合同配置</span>
+              <span>合同模板</span>
             </el-menu-item>
             <el-menu-item index="/contract/generate">
               <el-icon><DocumentAdd /></el-icon>

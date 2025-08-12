@@ -117,21 +117,21 @@ const router = createRouter({
               }
             },
             {
+              path: '/tenant/profile',
+              name: 'TenantProfile',
+              component: () => import('@/views/tenant/Profile.vue'),
+              meta: {
+                title: '租户分析',
+                icon: 'DataAnalysis'
+              }
+            },
+            {
               path: '/tenant/risk',
               name: 'TenantRisk',
               component: () => import('@/views/tenant/Risk.vue'),
               meta: {
                 title: '风险管控',
                 icon: 'Warning'
-              }
-            },
-            {
-              path: '/tenant/profile',
-              name: 'TenantProfile',
-              component: () => import('@/views/tenant/Profile.vue'),
-              meta: {
-                title: '租户画像',
-                icon: 'DataAnalysis'
               }
             }
           ]
@@ -169,7 +169,7 @@ const router = createRouter({
               name: 'ContractConfig',
               component: () => import('@/views/contract/Config.vue'),
               meta: {
-                title: '合同配置',
+                title: '合同模板',
                 icon: 'Setting'
               }
             },

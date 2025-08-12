@@ -5,21 +5,6 @@
         <div class="card-header">
           <span>运营仪表盘</span>
           <div class="header-actions">
-            <el-select v-model="selectedPeriod" style="width: 120px; margin-right: 12px;">
-              <el-option label="今日" value="today" />
-              <el-option label="本周" value="week" />
-              <el-option label="本月" value="month" />
-              <el-option label="本季度" value="quarter" />
-              <el-option label="本年度" value="year" />
-            </el-select>
-            <el-button type="primary" @click="handleExport">
-              <el-icon><Download /></el-icon>
-              导出报告
-            </el-button>
-            <el-button @click="handleRefresh">
-              <el-icon><Refresh /></el-icon>
-              刷新
-            </el-button>
           </div>
         </div>
       </template>
@@ -34,9 +19,24 @@
               </div>
               <div class="metric-content">
                 <div class="metric-number">{{ metrics.totalProjects }}</div>
-                <div class="metric-label">项目总数</div>
-                <div class="metric-change positive">+{{ metrics.projectGrowth }}%</div>
-                <div class="metric-detail">较上期增长</div>
+                <div class="metric-label">单元总数</div>
+                <div class="metric-detail">使用率{{ metrics.occupancyRate }}%</div>
+                <div class="metric-detail">空置单元{{ metrics.vacantUnits }}个</div>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="6">
+            <div class="metric-card occupancy">
+              <div class="metric-icon">
+                <el-icon><House /></el-icon>
+              </div>
+              <div class="metric-content">
+                <div class="metric-number">{{ metrics.occupancyRate }}%</div>
+                <div class="metric-label">出租率</div>
+                <div class="metric-change" :class="metrics.occupancyChange > 0 ? 'positive' : 'negative'">
+                  {{ metrics.occupancyChange > 0 ? '+' : '' }}{{ metrics.occupancyChange }}%
+                </div>
+                <div class="metric-detail">{{ metrics.occupancyChange > 0 ? '本月增加' : '本月减少' }}{{ Math.abs(metrics.netChange) }}个</div>
               </div>
             </div>
           </el-col>
@@ -66,21 +66,6 @@
               </div>
             </div>
           </el-col>
-          <el-col :span="6">
-            <div class="metric-card occupancy">
-              <div class="metric-icon">
-                <el-icon><House /></el-icon>
-              </div>
-              <div class="metric-content">
-                <div class="metric-number">{{ metrics.occupancyRate }}%</div>
-                <div class="metric-label">出租率</div>
-                <div class="metric-change" :class="metrics.occupancyChange > 0 ? 'positive' : 'negative'">
-                  {{ metrics.occupancyChange > 0 ? '+' : '' }}{{ metrics.occupancyChange }}%
-                </div>
-                <div class="metric-detail">空置单元{{ metrics.vacantUnits }}个</div>
-              </div>
-            </div>
-          </el-col>
         </el-row>
       </div>
       
@@ -90,40 +75,28 @@
           <span>快速操作</span>
         </div>
         <el-row :gutter="16">
-          <el-col :span="4">
-            <div class="action-card" @click="handleQuickAction('tenant')">
+          <el-col :span="6">
+            <div class="action-card tenant-action" @click="handleQuickAction('tenant')">
               <el-icon><UserFilled /></el-icon>
               <span>新增租户</span>
             </div>
           </el-col>
-          <el-col :span="4">
-            <div class="action-card" @click="handleQuickAction('contract')">
+          <el-col :span="6">
+            <div class="action-card contract-action" @click="handleQuickAction('contract')">
               <el-icon><Document /></el-icon>
               <span>签署合同</span>
             </div>
           </el-col>
-          <el-col :span="4">
-            <div class="action-card" @click="handleQuickAction('payment')">
+          <el-col :span="6">
+            <div class="action-card payment-action" @click="handleQuickAction('payment')">
               <el-icon><CreditCard /></el-icon>
-              <span>收款登记</span>
+              <span>认领检查</span>
             </div>
           </el-col>
-          <el-col :span="4">
-            <div class="action-card" @click="handleQuickAction('maintenance')">
-              <el-icon><Tools /></el-icon>
-              <span>维修申报</span>
-            </div>
-          </el-col>
-          <el-col :span="4">
-            <div class="action-card" @click="handleQuickAction('inspection')">
-              <el-icon><View /></el-icon>
-              <span>巡检记录</span>
-            </div>
-          </el-col>
-          <el-col :span="4">
-            <div class="action-card" @click="handleQuickAction('report')">
-              <el-icon><Printer /></el-icon>
-              <span>生成报表</span>
+          <el-col :span="6">
+            <div class="action-card merge-action" @click="handleQuickAction('merge-split')">
+              <el-icon><Operation /></el-icon>
+              <span>单元合并拆分</span>
             </div>
           </el-col>
         </el-row>
@@ -242,56 +215,6 @@
         </el-row>
       </div>
       
-      <!-- 运营洞察 -->
-      <div class="insights-section">
-        <div class="section-title">
-          <span>运营洞察</span>
-        </div>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <div class="insight-card performance">
-              <div class="insight-header">
-                <el-icon><TrendCharts /></el-icon>
-                <span>业绩表现</span>
-              </div>
-              <div class="insight-content">
-                <p>本月收入较上月增长 <strong>{{ insights.revenueGrowth }}%</strong>，超额完成目标</p>
-                <p>出租率达到 <strong>{{ insights.occupancyRate }}%</strong>，高于行业平均水平</p>
-                <p>新增租户 <strong>{{ insights.newTenants }}</strong> 家，续租率 <strong>{{ insights.renewalRate }}%</strong></p>
-                <p>客户满意度评分 <strong>{{ insights.satisfaction }}</strong> 分</p>
-              </div>
-            </div>
-          </el-col>
-          <el-col :span="8">
-            <div class="insight-card trends">
-              <div class="insight-header">
-                <el-icon><DataAnalysis /></el-icon>
-                <span>市场趋势</span>
-              </div>
-              <div class="insight-content">
-                <p>商业地产需求持续增长，预计下季度收入将增长 <strong>8-12%</strong></p>
-                <p>科技类租户占比上升至 <strong>35%</strong>，成为主要增长动力</p>
-                <p>平均租金水平稳中有升，同比增长 <strong>{{ insights.rentGrowth }}%</strong></p>
-                <p>新兴业态如共享办公、直播基地需求旺盛</p>
-              </div>
-            </div>
-          </el-col>
-          <el-col :span="8">
-            <div class="insight-card recommendations">
-              <div class="insight-header">
-                <el-icon><Compass /></el-icon>
-                <span>优化建议</span>
-              </div>
-              <div class="insight-content">
-                <p>建议重点关注空置率较高的项目，制定针对性招商策略</p>
-                <p>可考虑在热门区域增加科技类租户的配套设施</p>
-                <p>建议优化租金结构，提升整体收益水平</p>
-                <p>加强客户关系管理，提高租户粘性和续租率</p>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-      </div>
     </el-card>
   </div>
 </template>
@@ -307,7 +230,6 @@ const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
-const selectedPeriod = ref('month')
 
 // 核心指标数据
 const metrics = reactive({
@@ -321,7 +243,8 @@ const metrics = reactive({
   collectionRate: 95.2,
   occupancyRate: 88.5,
   occupancyChange: 2.3,
-  vacantUnits: 45
+  vacantUnits: 45,
+  netChange: 8
 })
 
 // 即将到期合同
@@ -349,15 +272,6 @@ const vacantUnits = ref([
   { id: 4, projectName: '写字楼D座', buildingName: 'D栋', unitCode: 'D-1501', vacantDays: 65 }
 ])
 
-// 运营洞察
-const insights = reactive({
-  revenueGrowth: 15.7,
-  occupancyRate: 88.5,
-  newTenants: 28,
-  renewalRate: 85.2,
-  satisfaction: 4.6,
-  rentGrowth: 6.8
-})
 
 // 图表引用
 const revenueTrendChart = ref()
@@ -555,9 +469,7 @@ const handleQuickAction = (action: string) => {
     tenant: '/tenant/info',
     contract: '/contract',
     payment: '/receivable',
-    maintenance: '/maintenance',
-    inspection: '/inspection',
-    report: '/reports'
+    'merge-split': '/asset/merge-split'
   }
   
   if (actionMap[action]) {
@@ -580,19 +492,6 @@ const handleViewMore = (type: string) => {
   }
 }
 
-// 导出报告
-const handleExport = () => {
-  ElMessage.success('运营报告导出中...')
-}
-
-// 刷新数据
-const handleRefresh = () => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-    ElMessage.success('数据刷新完成')
-  }, 1000)
-}
 
 // 加载数据
 const loadData = async () => {
@@ -806,28 +705,91 @@ onMounted(() => {
   justify-content: center;
   padding: 20px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: all 0.3s ease;
   height: 100px;
+  position: relative;
+  overflow: hidden;
 }
 
-.action-card:hover {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--action-color);
 }
 
 .action-card .el-icon {
   font-size: 24px;
   margin-bottom: 8px;
+  color: var(--action-color);
 }
 
 .action-card span {
   font-size: 14px;
   font-weight: 500;
+  color: #374151;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--action-shadow);
+}
+
+.action-card:hover .el-icon,
+.action-card:hover span {
+  color: white;
+}
+
+/* 新增租户 - 绿色主题 */
+.tenant-action {
+  --action-color: #10b981;
+  --action-shadow: rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.tenant-action:hover {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* 签署合同 - 蓝色主题 */
+.contract-action {
+  --action-color: #3b82f6;
+  --action-shadow: rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.contract-action:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+/* 认领检查 - 橙色主题 */
+.payment-action {
+  --action-color: #f59e0b;
+  --action-shadow: rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.payment-action:hover {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+/* 单元合并拆分 - 紫色主题 */
+.merge-action {
+  --action-color: #8b5cf6;
+  --action-shadow: rgba(139, 92, 246, 0.3);
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.merge-action:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
 }
 
 .charts-section {
@@ -954,64 +916,6 @@ onMounted(() => {
   background: #f8fafc;
 }
 
-.insights-section {
-  margin-top: 32px;
-}
-
-.insight-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f1f5f9;
-  height: 100%;
-  transition: all 0.3s ease;
-}
-
-.insight-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.insight-card.performance {
-  border-left: 4px solid #10b981;
-}
-
-.insight-card.trends {
-  border-left: 4px solid #3b82f6;
-}
-
-.insight-card.recommendations {
-  border-left: 4px solid #8b5cf6;
-}
-
-.insight-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.insight-header .el-icon {
-  margin-right: 8px;
-  font-size: 18px;
-}
-
-.insight-content {
-  color: #6b7280;
-  line-height: 1.6;
-}
-
-.insight-content p {
-  margin-bottom: 8px;
-}
-
-.insight-content strong {
-  color: #374151;
-  font-weight: 600;
-}
 
 /* 动画效果 */
 @keyframes fadeInUp {
@@ -1060,8 +964,5 @@ onMounted(() => {
     margin-bottom: 20px;
   }
   
-  .insights-section .el-col {
-    margin-bottom: 20px;
-  }
 }
 </style>

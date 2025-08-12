@@ -57,20 +57,6 @@
         </el-form-item>
       </el-form>
       
-      <div class="login-tips">
-        <div class="tips-title">测试账号</div>
-        <div class="tips-content">
-          <div class="tip-item">
-            <strong>单位代码：ORG001</strong> | 用户名：admin | 密码：123456
-          </div>
-          <div class="tip-item">
-            <strong>单位代码：ORG002</strong> | 用户名：poly_admin | 密码：123456
-          </div>
-          <div class="tip-item">
-            <strong>单位代码：ORG003</strong> | 用户名：greenland_admin | 密码：123456
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -316,43 +302,6 @@ const handleLogin = async () => {
   transform: translateY(0);
 }
 
-.login-tips {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 500;
-  opacity: 0.8;
-  padding: 16px;
-  background: rgba(248, 250, 252, 0.5);
-  border-radius: 12px;
-  border: 1px solid rgba(226, 232, 240, 0.3);
-  backdrop-filter: blur(10px);
-}
-
-.tips-title {
-  text-align: center;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.tips-content {
-  text-align: left;
-}
-
-.tip-item {
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-.tip-item:last-child {
-  margin-bottom: 0;
-}
-
-.tip-item strong {
-  color: #334155;
-  font-weight: 600;
-}
 
 @keyframes gradientShift {
   0%, 100% {
@@ -441,10 +390,5 @@ const handleLogin = async () => {
     color: #e2e8f0;
   }
   
-  .login-tips {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(71, 85, 105, 0.3);
-    color: #94a3b8;
-  }
 }
 </style>

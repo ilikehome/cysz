@@ -3,8 +3,8 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>合同配置</span>
-          <el-button type="primary" @click="handleAddTemplate">
+          <span>合同模板</span>
+          <el-button type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新建模板
           </el-button>
@@ -114,30 +114,73 @@
         />
       </div>
     </el-card>
-    
-    <!-- 新建/编辑模板对话框 -->
+
+    <!-- 预览对话框 -->
     <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="1200px"
-      @close="handleDialogClose"
-      :close-on-click-modal="false"
+      v-model="previewVisible"
+      title="模板预览"
+      width="80%"
+      :before-close="handlePreviewClose"
     >
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="120px"
-      >
-        <el-row :gutter="20">
+      <div class="preview-container">
+        <div class="preview-header">
+          <h3>{{ currentTemplate?.templateName }}</h3>
+          <div class="template-meta">
+            <el-tag :type="getTemplateTypeTag(currentTemplate?.templateType)">
+              {{ getTemplateTypeName(currentTemplate?.templateType) }}
+            </el-tag>
+            <span class="version">版本: {{ currentTemplate?.version }}</span>
+          </div>
+        </div>
+        <div class="preview-content">
+          <div class="template-content">
+            <h4>合同模板内容</h4>
+            <div class="content-text">
+              {{ templateContent }}
+            </div>
+          </div>
+          <div class="template-fields" v-if="templateFields.length > 0">
+            <h4>模板字段</h4>
+            <el-table :data="templateFields" style="width: 100%">
+              <el-table-column prop="fieldName" label="字段名称" width="150" />
+              <el-table-column prop="fieldType" label="字段类型" width="120" />
+              <el-table-column prop="required" label="是否必填" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="row.required ? 'danger' : 'info'" size="small">
+                    {{ row.required ? '必填' : '选填' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="description" label="字段描述" />
+            </el-table>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="previewVisible = false">关闭</el-button>
+          <el-button type="primary" @click="handleEditFromPreview">编辑模板</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 编辑对话框 -->
+    <el-dialog
+      v-model="editVisible"
+      :title="editForm.id ? '编辑模板' : '新建模板'"
+      width="90%"
+      :before-close="handleEditClose"
+    >
+      <el-form :model="editForm" :rules="editRules" ref="editFormRef" label-width="120px">
+        <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="模板名称" prop="templateName">
-              <el-input v-model="formData.templateName" placeholder="请输入模板名称" />
+              <el-input v-model="editForm.templateName" placeholder="请输入模板名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="模板类型" prop="templateType">
-              <el-select v-model="formData.templateType" placeholder="请选择模板类型" style="width: 100%">
+              <el-select v-model="editForm.templateType" placeholder="请选择模板类型" style="width: 100%">
                 <el-option label="租赁合同" value="LEASE" />
                 <el-option label="服务合同" value="SERVICE" />
                 <el-option label="销售合同" value="SALES" />
@@ -147,55 +190,58 @@
           </el-col>
         </el-row>
         
-        <el-row :gutter="20">
+        <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="版本号" prop="version">
-              <el-input v-model="formData.version" placeholder="如：v1.0" />
+              <el-input v-model="editForm.version" placeholder="请输入版本号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态">
-              <el-radio-group v-model="formData.status">
-                <el-radio value="ACTIVE">启用</el-radio>
-                <el-radio value="INACTIVE">禁用</el-radio>
-              </el-radio-group>
+            <el-form-item label="状态" prop="status">
+              <el-select v-model="editForm.status" placeholder="请选择状态" style="width: 100%">
+                <el-option label="启用" value="ACTIVE" />
+                <el-option label="禁用" value="INACTIVE" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-form-item label="模板描述">
           <el-input
-            v-model="formData.description"
+            v-model="editForm.description"
             type="textarea"
             :rows="3"
             placeholder="请输入模板描述"
           />
         </el-form-item>
-        
-        <!-- 合同字段配置 -->
-        <el-form-item label="合同字段">
-          <div class="field-config">
-            <div class="field-header">
+
+        <el-form-item label="模板内容" prop="content">
+          <el-input
+            v-model="editForm.content"
+            type="textarea"
+            :rows="10"
+            placeholder="请输入模板内容，可使用变量如：{{甲方名称}}、{{乙方名称}}等"
+          />
+        </el-form-item>
+
+        <el-form-item label="模板字段">
+          <div class="fields-container">
+            <div class="fields-header">
               <span>字段配置</span>
-              <el-button type="primary" size="small" @click="handleAddField">
+              <el-button type="primary" size="small" @click="addField">
                 <el-icon><Plus /></el-icon>
                 添加字段
               </el-button>
             </div>
-            <el-table :data="formData.fields" style="width: 100%; margin-top: 10px;">
-              <el-table-column prop="fieldName" label="字段名称" width="150">
+            <el-table :data="editForm.fields" style="width: 100%">
+              <el-table-column label="字段名称" width="150">
                 <template #default="{ row, $index }">
                   <el-input v-model="row.fieldName" placeholder="字段名称" size="small" />
                 </template>
               </el-table-column>
-              <el-table-column prop="fieldLabel" label="字段标签" width="150">
+              <el-table-column label="字段类型" width="120">
                 <template #default="{ row, $index }">
-                  <el-input v-model="row.fieldLabel" placeholder="字段标签" size="small" />
-                </template>
-              </el-table-column>
-              <el-table-column prop="fieldType" label="字段类型" width="120">
-                <template #default="{ row, $index }">
-                  <el-select v-model="row.fieldType" size="small" style="width: 100%">
+                  <el-select v-model="row.fieldType" placeholder="类型" size="small">
                     <el-option label="文本" value="text" />
                     <el-option label="数字" value="number" />
                     <el-option label="日期" value="date" />
@@ -203,93 +249,52 @@
                   </el-select>
                 </template>
               </el-table-column>
-              <el-table-column prop="required" label="必填" width="80">
+              <el-table-column label="是否必填" width="100">
                 <template #default="{ row, $index }">
-                  <el-checkbox v-model="row.required" />
+                  <el-switch v-model="row.required" />
                 </template>
               </el-table-column>
-              <el-table-column prop="defaultValue" label="默认值" width="150">
+              <el-table-column label="字段描述">
                 <template #default="{ row, $index }">
-                  <el-input v-model="row.defaultValue" placeholder="默认值" size="small" />
+                  <el-input v-model="row.description" placeholder="字段描述" size="small" />
                 </template>
               </el-table-column>
               <el-table-column label="操作" width="80">
                 <template #default="{ row, $index }">
-                  <el-button type="text" @click="handleRemoveField($index)" style="color: #f56c6c">
-                    删除
-                  </el-button>
+                  <el-button type="danger" size="small" @click="removeField($index)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
           </div>
         </el-form-item>
-        
-        <!-- 合同模板内容 -->
-        <el-form-item label="模板内容" prop="templateContent">
-          <div class="template-editor">
-            <div class="editor-toolbar">
-              <el-button-group>
-                <el-button size="small" @click="insertVariable('{{甲方名称}}')">甲方名称</el-button>
-                <el-button size="small" @click="insertVariable('{{乙方名称}}')">乙方名称</el-button>
-                <el-button size="small" @click="insertVariable('{{合同金额}}')">合同金额</el-button>
-                <el-button size="small" @click="insertVariable('{{签订日期}}')">签订日期</el-button>
-                <el-button size="small" @click="insertVariable('{{生效日期}}')">生效日期</el-button>
-                <el-button size="small" @click="insertVariable('{{到期日期}}')">到期日期</el-button>
-              </el-button-group>
-            </div>
-            <el-input
-              ref="templateContentRef"
-              v-model="formData.templateContent"
-              type="textarea"
-              :rows="15"
-              placeholder="请输入合同模板内容，使用 {{变量名}} 格式插入动态变量"
-              style="margin-top: 10px;"
-            />
-          </div>
-        </el-form-item>
       </el-form>
       
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button @click="handlePreviewTemplate" :loading="previewLoading">预览模板</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
-          确定
-        </el-button>
+        <span class="dialog-footer">
+          <el-button @click="editVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
+        </span>
       </template>
-    </el-dialog>
-    
-    <!-- 预览对话框 -->
-    <el-dialog
-      v-model="previewVisible"
-      title="模板预览"
-      width="900px"
-    >
-      <div class="preview-content">
-        <div class="preview-toolbar">
-          <el-button type="primary" @click="handleGeneratePDF">
-            <el-icon><Download /></el-icon>
-            生成PDF
-          </el-button>
-        </div>
-        <div class="preview-body" v-html="previewContent"></div>
-      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { contractTemplateApi, type ContractTemplate, type ContractField } from '@/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 
 // 响应式数据
 const loading = ref(false)
-const dialogVisible = ref(false)
+const saving = ref(false)
 const previewVisible = ref(false)
-const submitLoading = ref(false)
-const previewLoading = ref(false)
-const formRef = ref<FormInstance>()
-const templateContentRef = ref()
+const editVisible = ref(false)
+const currentTemplate = ref<any>(null)
+const editFormRef = ref()
+
+// 模板内容和字段
+const templateContent = ref('')
+const templateFields = ref<any[]>([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -305,26 +310,20 @@ const pagination = reactive({
   total: 0
 })
 
-// 表格数据
-const tableData = ref([])
-
-// 表单数据
-const formData = reactive({
+// 编辑表单数据
+const editForm = reactive({
   id: null,
   templateName: '',
   templateType: '',
-  version: 'v1.0',
+  version: '',
   status: 'ACTIVE',
   description: '',
-  templateContent: '',
+  content: '',
   fields: []
 })
 
-// 预览内容
-const previewContent = ref('')
-
 // 表单验证规则
-const formRules: FormRules = {
+const editRules = {
   templateName: [
     { required: true, message: '请输入模板名称', trigger: 'blur' }
   ],
@@ -334,13 +333,59 @@ const formRules: FormRules = {
   version: [
     { required: true, message: '请输入版本号', trigger: 'blur' }
   ],
-  templateContent: [
+  status: [
+    { required: true, message: '请选择状态', trigger: 'change' }
+  ],
+  content: [
     { required: true, message: '请输入模板内容', trigger: 'blur' }
   ]
 }
 
-// 对话框标题
-const dialogTitle = ref('新建模板')
+// 表格数据 - 模拟数据
+const tableData = ref([
+  {
+    id: 1,
+    templateName: '标准租赁合同模板',
+    templateType: 'LEASE',
+    version: 'v1.0',
+    status: 'ACTIVE',
+    usageCount: 25,
+    createTime: '2024-01-15 10:30:00',
+    updateTime: '2024-01-20 14:20:00',
+    description: '适用于标准房屋租赁业务的合同模板',
+    content: '甲方：{{甲方名称}}\n乙方：{{乙方名称}}\n\n根据《中华人民共和国合同法》等相关法律法规，甲乙双方在平等、自愿、协商一致的基础上，就房屋租赁事宜达成如下协议：\n\n一、租赁房屋基本情况\n房屋地址：{{房屋地址}}\n建筑面积：{{建筑面积}}平方米\n\n二、租赁期限\n租赁期限自{{租赁开始日期}}至{{租赁结束日期}}止。\n\n三、租金及支付方式\n月租金为人民币{{月租金}}元。',
+    fields: [
+      { fieldName: '甲方名称', fieldType: 'text', required: true, description: '出租方名称' },
+      { fieldName: '乙方名称', fieldType: 'text', required: true, description: '承租方名称' },
+      { fieldName: '房屋地址', fieldType: 'text', required: true, description: '租赁房屋的详细地址' },
+      { fieldName: '建筑面积', fieldType: 'number', required: true, description: '房屋建筑面积' },
+      { fieldName: '租赁开始日期', fieldType: 'date', required: true, description: '租赁合同开始日期' },
+      { fieldName: '租赁结束日期', fieldType: 'date', required: true, description: '租赁合同结束日期' },
+      { fieldName: '月租金', fieldType: 'number', required: true, description: '每月租金金额' }
+    ]
+  },
+  {
+    id: 2,
+    templateName: '服务外包合同模板',
+    templateType: 'SERVICE',
+    version: 'v2.1',
+    status: 'ACTIVE',
+    usageCount: 18,
+    createTime: '2024-01-10 09:15:00',
+    updateTime: '2024-01-25 16:45:00',
+    description: '适用于各类服务外包业务的合同模板',
+    content: '委托方：{{委托方名称}}\n承接方：{{承接方名称}}\n\n根据《中华人民共和国合同法》等相关法律法规，委托方与承接方在平等、自愿、协商一致的基础上，就服务外包事宜达成如下协议：\n\n一、服务内容\n服务项目：{{服务项目}}\n服务内容：{{服务内容描述}}\n\n二、服务期限\n服务期限自{{服务开始日期}}至{{服务结束日期}}止。\n\n三、服务费用\n服务费用总计人民币{{服务费用}}元。',
+    fields: [
+      { fieldName: '委托方名称', fieldType: 'text', required: true, description: '委托服务的一方名称' },
+      { fieldName: '承接方名称', fieldType: 'text', required: true, description: '提供服务的一方名称' },
+      { fieldName: '服务项目', fieldType: 'text', required: true, description: '服务项目名称' },
+      { fieldName: '服务内容描述', fieldType: 'text', required: true, description: '详细的服务内容描述' },
+      { fieldName: '服务开始日期', fieldType: 'date', required: true, description: '服务开始日期' },
+      { fieldName: '服务结束日期', fieldType: 'date', required: true, description: '服务结束日期' },
+      { fieldName: '服务费用', fieldType: 'number', required: true, description: '服务费用总额' }
+    ]
+  }
+])
 
 // 获取模板类型标签颜色
 const getTemplateTypeTag = (type: string) => {
@@ -364,6 +409,12 @@ const getTemplateTypeName = (type: string) => {
   return nameMap[type] || type
 }
 
+// 新建模板
+const handleAdd = () => {
+  resetEditForm()
+  editVisible.value = true
+}
+
 // 搜索
 const handleSearch = () => {
   pagination.current = 1
@@ -378,27 +429,33 @@ const handleReset = () => {
   handleSearch()
 }
 
-// 新建模板
-const handleAddTemplate = () => {
-  dialogTitle.value = '新建模板'
-  resetForm()
-  dialogVisible.value = true
-}
-
 // 编辑模板
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑模板'
-  Object.assign(formData, {
-    ...row,
-    fields: row.fields || []
-  })
-  dialogVisible.value = true
+  currentTemplate.value = row
+  editForm.id = row.id
+  editForm.templateName = row.templateName
+  editForm.templateType = row.templateType
+  editForm.version = row.version
+  editForm.status = row.status
+  editForm.description = row.description || ''
+  editForm.content = row.content || ''
+  editForm.fields = row.fields ? [...row.fields] : []
+  editVisible.value = true
 }
 
 // 复制模板
 const handleCopy = async (row: any) => {
   try {
-    const response = await contractTemplateApi.copyTemplate(row.id)
+    const newTemplate = {
+      ...row,
+      id: Date.now(),
+      templateName: row.templateName + ' - 副本',
+      version: 'v1.0',
+      createTime: new Date().toLocaleString(),
+      updateTime: new Date().toLocaleString(),
+      usageCount: 0
+    }
+    tableData.value.push(newTemplate)
     ElMessage.success('复制成功')
     loadData()
   } catch (error: any) {
@@ -408,8 +465,113 @@ const handleCopy = async (row: any) => {
 
 // 预览模板
 const handlePreview = (row: any) => {
-  previewContent.value = generatePreviewContent(row.templateContent)
+  currentTemplate.value = row
+  templateContent.value = row.content || '暂无模板内容'
+  templateFields.value = row.fields || []
   previewVisible.value = true
+}
+
+// 从预览页面编辑
+const handleEditFromPreview = () => {
+  previewVisible.value = false
+  handleEdit(currentTemplate.value)
+}
+
+// 关闭预览对话框
+const handlePreviewClose = () => {
+  previewVisible.value = false
+  currentTemplate.value = null
+  templateContent.value = ''
+  templateFields.value = []
+}
+
+// 关闭编辑对话框
+const handleEditClose = () => {
+  editVisible.value = false
+  resetEditForm()
+}
+
+// 重置编辑表单
+const resetEditForm = () => {
+  editForm.id = null
+  editForm.templateName = ''
+  editForm.templateType = ''
+  editForm.version = ''
+  editForm.status = 'ACTIVE'
+  editForm.description = ''
+  editForm.content = ''
+  editForm.fields = []
+  currentTemplate.value = null
+}
+
+// 添加字段
+const addField = () => {
+  editForm.fields.push({
+    fieldName: '',
+    fieldType: 'text',
+    required: false,
+    description: ''
+  })
+}
+
+// 删除字段
+const removeField = (index: number) => {
+  editForm.fields.splice(index, 1)
+}
+
+// 保存模板
+const handleSave = async () => {
+  try {
+    await editFormRef.value?.validate()
+    saving.value = true
+    
+    // 模拟保存操作
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    if (editForm.id) {
+      // 更新现有模板
+      const index = tableData.value.findIndex(item => item.id === editForm.id)
+      if (index !== -1) {
+        tableData.value[index] = {
+          ...tableData.value[index],
+          templateName: editForm.templateName,
+          templateType: editForm.templateType,
+          version: editForm.version,
+          status: editForm.status,
+          description: editForm.description,
+          content: editForm.content,
+          fields: [...editForm.fields],
+          updateTime: new Date().toLocaleString()
+        }
+      }
+      ElMessage.success('模板更新成功')
+    } else {
+      // 新建模板
+      const newTemplate = {
+        id: Date.now(),
+        templateName: editForm.templateName,
+        templateType: editForm.templateType,
+        version: editForm.version,
+        status: editForm.status,
+        description: editForm.description,
+        content: editForm.content,
+        fields: [...editForm.fields],
+        usageCount: 0,
+        createTime: new Date().toLocaleString(),
+        updateTime: new Date().toLocaleString()
+      }
+      tableData.value.unshift(newTemplate)
+      ElMessage.success('模板创建成功')
+    }
+    
+    editVisible.value = false
+    resetEditForm()
+    loadData()
+  } catch (error: any) {
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    saving.value = false
+  }
 }
 
 // 切换状态
@@ -426,7 +588,8 @@ const handleToggleStatus = async (row: any) => {
       }
     )
     
-    await contractTemplateApi.toggleTemplateStatus(row.id)
+    row.status = row.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+    row.updateTime = new Date().toLocaleString()
     ElMessage.success(`${action}成功`)
     loadData()
   } catch (error: any) {
@@ -449,7 +612,10 @@ const handleDelete = async (row: any) => {
       }
     )
     
-    await contractTemplateApi.deleteTemplate(row.id)
+    const index = tableData.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      tableData.value.splice(index, 1)
+    }
     ElMessage.success('删除成功')
     loadData()
   } catch (error: any) {
@@ -457,88 +623,6 @@ const handleDelete = async (row: any) => {
       ElMessage.error(error.message || '删除失败')
     }
   }
-}
-
-// 添加字段
-const handleAddField = () => {
-  formData.fields.push({
-    fieldName: '',
-    fieldLabel: '',
-    fieldType: 'text',
-    required: false,
-    defaultValue: ''
-  })
-}
-
-// 删除字段
-const handleRemoveField = (index: number) => {
-  formData.fields.splice(index, 1)
-}
-
-// 插入变量
-const insertVariable = (variable: string) => {
-  if (templateContentRef.value) {
-    const textarea = templateContentRef.value.textarea
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const text = formData.templateContent
-    formData.templateContent = text.substring(0, start) + variable + text.substring(end)
-    
-    // 设置光标位置
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + variable.length
-      textarea.focus()
-    }, 0)
-  }
-}
-
-// 预览模板
-const handlePreviewTemplate = async () => {
-  if (!formData.templateContent) {
-    ElMessage.warning('请先输入模板内容')
-    return
-  }
-  
-  try {
-    previewLoading.value = true
-    
-    const response = await contractTemplateApi.previewTemplate({
-      templateContent: formData.templateContent
-    })
-    
-    previewContent.value = response.data.replace(/\n/g, '<br>')
-    previewVisible.value = true
-  } catch (error: any) {
-    ElMessage.error(error.message || '预览失败')
-  } finally {
-    previewLoading.value = false
-  }
-}
-
-// 生成预览内容（保留作为备用）
-const generatePreviewContent = (content: string) => {
-  // 替换变量为示例数据
-  const sampleData = {
-    '{{甲方名称}}': '北京科技有限公司',
-    '{{乙方名称}}': '上海贸易有限公司',
-    '{{合同金额}}': '100,000.00',
-    '{{签订日期}}': '2024年1月15日',
-    '{{生效日期}}': '2024年2月1日',
-    '{{到期日期}}': '2025年1月31日'
-  }
-  
-  let previewText = content
-  Object.entries(sampleData).forEach(([key, value]) => {
-    previewText = previewText.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value)
-  })
-  
-  // 转换为HTML格式
-  return previewText.replace(/\n/g, '<br>')
-}
-
-// 生成PDF
-const handleGeneratePDF = () => {
-  ElMessage.info('PDF生成功能开发中...')
 }
 
 // 分页大小变化
@@ -553,78 +637,12 @@ const handleCurrentChange = (current: number) => {
   loadData()
 }
 
-// 对话框关闭
-const handleDialogClose = () => {
-  resetForm()
-}
-
-// 提交表单
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  
-  try {
-    await formRef.value.validate()
-    submitLoading.value = true
-    
-    const templateData: ContractTemplate = {
-      templateName: formData.templateName,
-      templateType: formData.templateType as 'LEASE' | 'SERVICE' | 'SALES' | 'OTHER',
-      version: formData.version,
-      status: formData.status as 'ACTIVE' | 'INACTIVE',
-      description: formData.description,
-      templateContent: formData.templateContent,
-      fields: formData.fields
-    }
-    
-    if (formData.id) {
-      await contractTemplateApi.updateTemplate(formData.id, templateData)
-      ElMessage.success('更新成功')
-    } else {
-      await contractTemplateApi.createTemplate(templateData)
-      ElMessage.success('创建成功')
-    }
-    
-    dialogVisible.value = false
-    loadData()
-  } catch (error: any) {
-    ElMessage.error(error.message || '操作失败')
-  } finally {
-    submitLoading.value = false
-  }
-}
-
-// 重置表单
-const resetForm = () => {
-  Object.assign(formData, {
-    id: null,
-    templateName: '',
-    templateType: '',
-    version: 'v1.0',
-    status: 'ACTIVE',
-    description: '',
-    templateContent: '',
-    fields: []
-  })
-  formRef.value?.resetFields()
-}
-
 // 加载数据
 const loadData = async () => {
   try {
     loading.value = true
-    
-    const params = {
-      current: pagination.current,
-      size: pagination.size,
-      keyword: searchForm.keyword || undefined,
-      templateType: searchForm.templateType || undefined,
-      status: searchForm.status || undefined
-    }
-    
-    const response = await contractTemplateApi.getTemplatePage(params)
-    tableData.value = response.data.records
-    pagination.total = response.data.total
-    
+    // 这里可以调用实际的API
+    pagination.total = tableData.value.length
   } catch (error: any) {
     ElMessage.error(error.message || '加载数据失败')
   } finally {
@@ -644,7 +662,6 @@ onMounted(() => {
   flex-direction: column;
   padding: 24px;
   overflow: hidden;
-  position: relative;
 }
 
 .contract-config :deep(.el-card) {
@@ -656,12 +673,6 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95);
-  transition: all 0.3s ease;
-}
-
-.contract-config :deep(.el-card):hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
 }
 
 .contract-config :deep(.el-card__header) {
@@ -725,59 +736,136 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.field-config {
-  width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
-  background: #f8fafc;
+/* 预览对话框样式 */
+.preview-container {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-.field-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.preview-header {
+  padding: 20px 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.preview-header h3 {
+  font-size: 20px;
+  color: #1f2937;
   margin-bottom: 12px;
 }
 
-.field-header span {
+.template-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.version {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.template-content h4,
+.template-fields h4 {
+  font-size: 16px;
+  color: #374151;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.content-text {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #374151;
+  font-family: 'Courier New', monospace;
+}
+
+/* 编辑对话框样式 */
+.fields-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fields-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
   font-weight: 600;
   color: #374151;
 }
 
-.template-editor {
-  width: 100%;
+/* 对话框样式优化 */
+:deep(.el-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.editor-toolbar {
-  margin-bottom: 12px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.preview-content {
-  max-height: 600px;
-  overflow-y: auto;
-}
-
-.preview-toolbar {
-  margin-bottom: 16px;
-  text-align: right;
-  padding-bottom: 12px;
+:deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 20px 24px;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.preview-body {
-  padding: 20px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  line-height: 1.8;
-  font-size: 14px;
+:deep(.el-dialog__body) {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* 表单样式优化 */
+:deep(.el-form-item__label) {
+  font-weight: 600;
   color: #374151;
-  white-space: pre-wrap;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+:deep(.el-textarea__inner) {
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+}
+
+:deep(.el-select .el-input__wrapper) {
+  border-radius: 8px;
+}
+
+/* 按钮样式优化 */
+:deep(.el-button) {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 动画效果 */
@@ -794,5 +882,27 @@ onMounted(() => {
 
 .contract-config {
   animation: fadeInUp 0.6s ease forwards;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .contract-config {
+    padding: 16px;
+  }
+  
+  .search-area {
+    padding: 16px;
+  }
+  
+  :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+  
+  .template-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 </style>
