@@ -71,10 +71,6 @@
               <el-icon><Grid /></el-icon>
               <span>单元管理</span>
             </el-menu-item>
-            <el-menu-item index="/asset/merge-split">
-              <el-icon><Connection /></el-icon>
-              <span>单元合并拆分</span>
-            </el-menu-item>
           </el-sub-menu>
           
           <!-- 租户管理 -->
@@ -118,6 +114,10 @@
             <el-menu-item index="/contract/generate">
               <el-icon><DocumentAdd /></el-icon>
               <span>合同生成</span>
+            </el-menu-item>
+            <el-menu-item index="/contract/auto">
+              <el-icon><MagicStick /></el-icon>
+              <span>自动合同</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -192,6 +192,7 @@ import {
   TrendCharts, 
   Setting, 
   DocumentAdd, 
+  MagicStick,
   Money, 
   Wallet, 
   CreditCard, 

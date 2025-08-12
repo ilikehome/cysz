@@ -87,12 +87,12 @@ const router = createRouter({
               }
             },
             {
-              path: '/asset/merge-split',
-              name: 'AssetMergeSplit',
-              component: () => import('@/views/asset/MergeSplit.vue'),
+              path: '/contract/auto',
+              name: 'ContractAuto',
+              component: () => import('@/views/contract/Auto.vue'),
               meta: {
-                title: '单元合并拆分',
-                icon: 'Connection'
+                title: '自动合同',
+                icon: 'MagicStick'
               }
             }
           ]

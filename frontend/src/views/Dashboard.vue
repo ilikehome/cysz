@@ -94,10 +94,6 @@
             </div>
           </el-col>
           <el-col :span="6">
-            <div class="action-card merge-action" @click="handleQuickAction('merge-split')">
-              <el-icon><Operation /></el-icon>
-              <span>单元合并拆分</span>
-            </div>
           </el-col>
         </el-row>
       </div>
@@ -468,8 +464,7 @@ const handleQuickAction = (action: string) => {
   const actionMap: Record<string, string> = {
     tenant: '/tenant/info',
     contract: '/contract',
-    payment: '/receivable',
-    'merge-split': '/asset/merge-split'
+    payment: '/receivable'
   }
   
   if (actionMap[action]) {
@@ -780,17 +775,6 @@ onMounted(() => {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
-/* 单元合并拆分 - 紫色主题 */
-.merge-action {
-  --action-color: #8b5cf6;
-  --action-shadow: rgba(139, 92, 246, 0.3);
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  border: 1px solid rgba(139, 92, 246, 0.2);
-}
-
-.merge-action:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-}
 
 .charts-section {
   margin-bottom: 32px;
