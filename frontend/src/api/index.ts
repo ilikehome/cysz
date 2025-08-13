@@ -248,6 +248,15 @@ export const unitApi = {
     return request.get<PageResult<Unit>>('/unit/page', { params })
   },
   
+  // 获取单元列表
+  getUnitList: (params?: {
+    projectId?: number
+    buildingId?: number
+    unitStatus?: string
+  }) => {
+    return request.get('/unit/list', { params })
+  },
+  
   // 创建单元
   createUnit: (data: Unit) => {
     return request.post('/unit', data)
@@ -384,15 +393,17 @@ export interface Contract {
   projectId: number
   startDate: string
   endDate: string
+  signDate?: string
   signatory?: string
   contractType?: string
-  contractStatus: 'DRAFT' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED'
+  contractStatus: 'DRAFT' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED' | 'UNSIGNED_EFFECTIVE' | 'SIGNED_EFFECTIVE'
   rentBillCompany?: string
   propertyBillCompany?: string
   leaseNo?: string
   tenantId: number
   tenantName?: string
   unitId: number
+  unitIds?: number[]
   unitDescription?: string
   rentMode?: string
   monthlyRent?: number

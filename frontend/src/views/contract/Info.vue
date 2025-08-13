@@ -1387,10 +1387,8 @@ const handleFloorChange = (floorIds: number[]) => {
   formData.unitIds = []
   unitOptions.value = []
   
-  // 加载对应的单元数据
-  if (floorIds.length > 0) {
-    loadUnitsByFloors(floorIds)
-  }
+  // 楼层变化时不需要重新加载单元，因为单元已经按楼栋加载了
+  // 这里可以添加楼层相关的逻辑处理
 }
 
 // 处理单元变化
@@ -1478,18 +1476,27 @@ const loadFloorsByBuildings = async (buildingIds: number[]) => {
   }
 }
 
-// 根据楼层加载单元
-const loadUnitsByFloors = async (floorIds: number[]) => {
+// 根据楼栋加载单元
+const loadUnitsByBuildings = async (buildingIds: number[]) => {
   try {
-    // 使用分页接口获取单元，这里需要根据实际API调整
-    const response = await unitApi.getUnitPage({ current: 1, size: 1000 })
-    // 过滤出指定楼层的单元
-    const filteredUnits = response.data.records.filter((unit: any) => 
-      floorIds.includes(unit.floorId)
-    )
-    unitOptions.value = filteredUnits
+    if (buildingIds.length === 0) {
+      unitOptions.value = []
+      return
+    }
+    
+    // 获取所有选中楼栋的单元
+    const allUnits: any[] = []
+    for (const buildingId of buildingIds) {
+      const response = await unitApi.getUnitList({ buildingId })
+      if (response.data && Array.isArray(response.data)) {
+        allUnits.push(...response.data)
+      }
+    }
+    
+    unitOptions.value = allUnits
   } catch (error) {
     console.error('加载单元选项失败:', error)
+    ElMessage.error('加载单元选项失败')
   }
 }
 

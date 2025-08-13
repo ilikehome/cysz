@@ -179,6 +179,46 @@ public class UnitController {
         return response;
     }
     
+    @GetMapping("/list")
+    public Map<String, Object> getUnitList(
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) Long buildingId,
+            @RequestParam(required = false) String unitStatus) {
+        
+        List<Unit> allUnits = new ArrayList<>(unitStorage.values());
+        
+        // 过滤条件
+        List<Unit> filteredUnits = allUnits.stream()
+                .filter(unit -> projectId == null || unit.getProjectId().equals(projectId))
+                .filter(unit -> buildingId == null || unit.getBuildingId().equals(buildingId))
+                .filter(unit -> unitStatus == null || unitStatus.isEmpty() || unit.getUnitStatus().equals(unitStatus))
+                .filter(unit -> unit.getStatus() == 1)
+                .toList();
+        
+        // 转换为简化格式
+        List<Map<String, Object>> unitList = filteredUnits.stream().map(unit -> {
+            Map<String, Object> unitInfo = new HashMap<>();
+            unitInfo.put("id", unit.getId());
+            unitInfo.put("unitCode", unit.getUnitCode());
+            unitInfo.put("unitDescription", unit.getUnitDescription());
+            unitInfo.put("unitName", unit.getUnitCode() + " " + (unit.getUnitDescription() != null ? unit.getUnitDescription() : ""));
+            unitInfo.put("projectId", unit.getProjectId());
+            unitInfo.put("buildingId", unit.getBuildingId());
+            unitInfo.put("unitStatus", unit.getUnitStatus());
+            unitInfo.put("buildingArea", unit.getBuildingArea());
+            unitInfo.put("rentArea", unit.getRentArea());
+            unitInfo.put("propertyArea", unit.getPropertyArea());
+            return unitInfo;
+        }).toList();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", unitList);
+        
+        return response;
+    }
+    
     @PostMapping("/merge")
     public Map<String, Object> mergeUnits(@RequestBody Map<String, Object> request) {
         @SuppressWarnings("unchecked")
