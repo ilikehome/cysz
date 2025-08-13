@@ -15,7 +15,101 @@
       <el-radio-group v-model="operationType" @change="handleOperationChange">
         <el-radio-button label="merge">单元合并</el-radio-button>
         <el-radio-button label="split">单元拆分</el-radio-button>
+        <el-radio-button label="history">操作历史</el-radio-button>
       </el-radio-group>
+    </el-card>
+
+    <!-- 操作历史 -->
+    <el-card v-if="operationType === 'history'" class="history-card">
+      <template #header>
+        <div class="card-header">
+          <span>操作历史记录</span>
+          <el-button type="primary" @click="loadHistory">
+            刷新记录
+          </el-button>
+        </div>
+      </template>
+
+      <div class="history-content">
+        <div class="history-filters">
+          <el-form :model="historyQuery" inline>
+            <el-form-item label="操作类型">
+              <el-select v-model="historyQuery.operationType" placeholder="全部" clearable>
+                <el-option label="合并" value="merge" />
+                <el-option label="拆分" value="split" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="操作时间">
+              <el-date-picker
+                v-model="historyQuery.dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+            <el-form-item label="操作人">
+              <el-input v-model="historyQuery.operator" placeholder="请输入操作人" clearable />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="searchHistory">查询</el-button>
+              <el-button @click="resetHistoryQuery">重置</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+
+        <el-table :data="historyList" style="width: 100%" v-loading="historyLoading">
+          <el-table-column prop="operationType" label="操作类型" width="100">
+            <template #default="scope">
+              <el-tag :type="scope.row.operationType === 'merge' ? 'success' : 'warning'">
+                {{ scope.row.operationType === 'merge' ? '合并' : '拆分' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="operationTime" label="操作时间" width="180" />
+          <el-table-column prop="operator" label="操作人" width="120" />
+          <el-table-column prop="sourceUnits" label="源单元" width="200">
+            <template #default="scope">
+              <div class="unit-list">
+                <el-tag v-for="unit in scope.row.sourceUnits" :key="unit.id" size="small" style="margin: 2px;">
+                  {{ unit.unitNumber }} - {{ unit.unitName }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="targetUnits" label="目标单元" width="200">
+            <template #default="scope">
+              <div class="unit-list">
+                <el-tag v-for="unit in scope.row.targetUnits" :key="unit.id" size="small" type="success" style="margin: 2px;">
+                  {{ unit.unitNumber }} - {{ unit.unitName }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="operationReason" label="操作原因" min-width="150" show-overflow-tooltip />
+          <el-table-column label="操作" width="120">
+            <template #default="scope">
+              <el-button type="text" @click="viewHistoryDetail(scope.row)">
+                查看详情
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="historyQuery.current"
+            v-model:page-size="historyQuery.size"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="historyTotal"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="loadHistory"
+            @current-change="loadHistory"
+          />
+        </div>
+      </div>
     </el-card>
 
     <!-- 单元合并 -->
@@ -195,6 +289,44 @@
         </div>
       </div>
     </el-card>
+
+    <!-- 历史详情对话框 -->
+    <el-dialog v-model="historyDetailVisible" title="操作详情" width="800px">
+      <div v-if="currentHistoryDetail" class="history-detail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="操作类型">
+            <el-tag :type="currentHistoryDetail.operationType === 'merge' ? 'success' : 'warning'">
+              {{ currentHistoryDetail.operationType === 'merge' ? '合并' : '拆分' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="操作时间">{{ currentHistoryDetail.operationTime }}</el-descriptions-item>
+          <el-descriptions-item label="操作人">{{ currentHistoryDetail.operator }}</el-descriptions-item>
+          <el-descriptions-item label="操作原因">{{ currentHistoryDetail.operationReason }}</el-descriptions-item>
+        </el-descriptions>
+
+        <div class="detail-section">
+          <h4>源单元信息</h4>
+          <el-table :data="currentHistoryDetail.sourceUnits" style="width: 100%">
+            <el-table-column prop="unitNumber" label="单元编号" />
+            <el-table-column prop="unitName" label="单元名称" />
+            <el-table-column prop="buildingArea" label="建筑面积(㎡)" />
+            <el-table-column prop="rentArea" label="计租面积(㎡)" />
+            <el-table-column prop="unitType" label="单元类型" />
+          </el-table>
+        </div>
+
+        <div class="detail-section">
+          <h4>目标单元信息</h4>
+          <el-table :data="currentHistoryDetail.targetUnits" style="width: 100%">
+            <el-table-column prop="unitNumber" label="单元编号" />
+            <el-table-column prop="unitName" label="单元名称" />
+            <el-table-column prop="buildingArea" label="建筑面积(㎡)" />
+            <el-table-column prop="rentArea" label="计租面积(㎡)" />
+            <el-table-column prop="unitType" label="单元类型" />
+          </el-table>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -204,7 +336,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { unitApi } from '@/api'
 
 // 操作类型
-const operationType = ref<'merge' | 'split'>('merge')
+const operationType = ref<'merge' | 'split' | 'history'>('merge')
 
 // 单元列表
 const unitList = ref<any[]>([])
@@ -223,6 +355,20 @@ const mergeForm = ref({
 // 拆分相关
 const selectedUnit = ref<any>(null)
 const splitUnits = ref<any[]>([])
+
+// 历史记录相关
+const historyList = ref<any[]>([])
+const historyLoading = ref(false)
+const historyTotal = ref(0)
+const historyQuery = ref({
+  current: 1,
+  size: 20,
+  operationType: '',
+  dateRange: null as any,
+  operator: ''
+})
+const historyDetailVisible = ref(false)
+const currentHistoryDetail = ref<any>(null)
 
 // 计算属性
 const totalSplitBuildingArea = computed(() => {
@@ -249,6 +395,10 @@ const handleOperationChange = () => {
   selectedUnit.value = null
   splitUnits.value = []
   resetForms()
+  
+  if (operationType.value === 'history') {
+    loadHistory()
+  }
 }
 
 const resetForms = () => {
@@ -439,6 +589,86 @@ const handleSplit = async () => {
   }
 }
 
+// 历史记录相关方法
+const loadHistory = async () => {
+  historyLoading.value = true
+  try {
+    const params = {
+      ...historyQuery.value,
+      startDate: historyQuery.value.dateRange?.[0],
+      endDate: historyQuery.value.dateRange?.[1]
+    }
+    delete params.dateRange
+    
+    // 这里应该调用实际的历史记录API
+    // const response = await unitApi.getOperationHistory(params)
+    
+    // 模拟数据
+    const mockData = {
+      records: [
+        {
+          id: 1,
+          operationType: 'merge',
+          operationTime: '2024-01-15 10:30:00',
+          operator: '张三',
+          operationReason: '业务需要合并相邻单元',
+          sourceUnits: [
+            { id: 1, unitNumber: 'A101', unitName: '办公室A', buildingArea: 50, rentArea: 45, unitType: 'office' },
+            { id: 2, unitNumber: 'A102', unitName: '办公室B', buildingArea: 60, rentArea: 55, unitType: 'office' }
+          ],
+          targetUnits: [
+            { id: 3, unitNumber: 'A101-102', unitName: '大办公室', buildingArea: 110, rentArea: 100, unitType: 'office' }
+          ]
+        },
+        {
+          id: 2,
+          operationType: 'split',
+          operationTime: '2024-01-14 14:20:00',
+          operator: '李四',
+          operationReason: '租户需求拆分为小单元',
+          sourceUnits: [
+            { id: 4, unitNumber: 'B201', unitName: '大会议室', buildingArea: 120, rentArea: 110, unitType: 'office' }
+          ],
+          targetUnits: [
+            { id: 5, unitNumber: 'B201-1', unitName: '会议室1', buildingArea: 60, rentArea: 55, unitType: 'office' },
+            { id: 6, unitNumber: 'B201-2', unitName: '会议室2', buildingArea: 60, rentArea: 55, unitType: 'office' }
+          ]
+        }
+      ],
+      total: 2
+    }
+    
+    historyList.value = mockData.records
+    historyTotal.value = mockData.total
+  } catch (error) {
+    console.error('加载历史记录失败:', error)
+    ElMessage.error('加载历史记录失败')
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+const searchHistory = () => {
+  historyQuery.value.current = 1
+  loadHistory()
+}
+
+const resetHistoryQuery = () => {
+  historyQuery.value = {
+    current: 1,
+    size: 20,
+    operationType: '',
+    dateRange: null,
+    operator: ''
+  }
+  loadHistory()
+}
+
+const viewHistoryDetail = (row: any) => {
+  currentHistoryDetail.value = row
+  historyDetailVisible.value = true
+}
+
 const getStatusType = (status: string) => {
   const statusMap: Record<string, string> = {
     'available': 'success',
@@ -500,7 +730,8 @@ onMounted(() => {
 
 .operation-card,
 .merge-card,
-.split-card {
+.split-card,
+.history-card {
   margin-bottom: 24px;
 }
 
@@ -511,7 +742,8 @@ onMounted(() => {
 }
 
 .merge-content,
-.split-content {
+.split-content,
+.history-content {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -586,7 +818,46 @@ onMounted(() => {
   color: #e6a23c;
 }
 
+/* 历史记录样式 */
+.history-filters {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.unit-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.history-detail {
+  padding: 16px 0;
+}
+
+.detail-section {
+  margin-top: 24px;
+}
+
+.detail-section h4 {
+  margin: 0 0 16px 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 500;
+}
+
 :deep(.el-radio-button__inner) {
   padding: 12px 20px;
+}
+
+:deep(.el-descriptions) {
+  margin-bottom: 24px;
 }
 </style>
