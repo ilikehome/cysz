@@ -3,87 +3,132 @@ import request from '@/utils/request'
 // 合同生成相关API
 
 /**
- * 生成合同PDF
+ * 生成合同应收账款
  */
-export function generateContractPDF(data: any) {
+export function generateContractReceivables(contractId: number, generateType: number, periods?: number) {
+  const params: any = { generateType }
+  if (periods) params.periods = periods
   return request({
-    url: '/contract-generate/generate-pdf',
+    url: `/contracts/${contractId}/generate-receivables`,
     method: 'post',
-    data
+    params
   })
 }
 
 /**
- * 下载合同PDF
+ * 获取合同生成进度
  */
-export function downloadContractPDF(contractNo: string) {
+export function getContractGenerationProgress(contractId: number) {
   return request({
-    url: `/contract-generate/download/${contractNo}`,
-    method: 'get',
-    responseType: 'blob'
-  })
-}
-
-/**
- * 预览合同PDF
- */
-export function previewContractPDF(contractNo: string) {
-  return request({
-    url: `/contract-generate/preview/${contractNo}`,
-    method: 'get',
-    responseType: 'blob'
-  })
-}
-
-/**
- * 获取生成进度
- */
-export function getGenerateProgress(taskId: string) {
-  return request({
-    url: `/contract-generate/progress/${taskId}`,
+    url: `/contracts/${contractId}/generation-progress`,
     method: 'get'
   })
 }
 
 /**
- * 批量生成合同
+ * 获取合同详细信息
  */
-export function batchGenerateContracts(data: any) {
+export function getContractDetail(contractId: number) {
   return request({
-    url: '/contract-generate/batch-generate',
-    method: 'post',
-    data
+    url: `/contracts/${contractId}`,
+    method: 'get'
   })
 }
 
 /**
- * 获取合同生成历史
+ * 获取合同列表
  */
-export function getGenerateHistory(params: any) {
+export function getContractPage(params: any) {
   return request({
-    url: '/contract-generate/history',
+    url: '/contracts',
     method: 'get',
     params
   })
 }
 
 /**
- * 删除生成的合同文件
+ * 创建合同
  */
-export function deleteGeneratedContract(contractId: string) {
+export function createContract(data: any) {
   return request({
-    url: `/contract-generate/delete/${contractId}`,
+    url: '/contracts',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 更新合同
+ */
+export function updateContract(contractId: number, data: any) {
+  return request({
+    url: `/contracts/${contractId}`,
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 删除合同
+ */
+export function deleteContract(contractId: number) {
+  return request({
+    url: `/contracts/${contractId}`,
     method: 'delete'
   })
 }
 
 /**
- * 验证合同数据
+ * 获取合同统计信息
  */
-export function validateContractData(data: any) {
+export function getContractStatistics() {
   return request({
-    url: '/contract-generate/validate',
-    method: 'post',
-    data
+    url: '/contracts/statistics',
+    method: 'get'
+  })
+}
+
+/**
+ * 获取合同应收账款列表
+ */
+export function getContractReceivables(contractId: number) {
+  return request({
+    url: `/contracts/${contractId}/receivables`,
+    method: 'get'
+  })
+}
+
+/**
+ * 获取合同已收款列表
+ */
+export function getContractReceived(contractId: number) {
+  return request({
+    url: `/contracts/${contractId}/received`,
+    method: 'get'
+  })
+}
+
+/**
+ * 导出合同数据
+ */
+export function exportContractData(params: any) {
+  return request({
+    url: '/contracts/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+/**
+ * 生成合同报表
+ */
+export function generateContractReport(reportType: string, startDate: string, endDate: string, projectId?: number) {
+  const params: any = { reportType, startDate, endDate }
+  if (projectId) params.projectId = projectId
+  return request({
+    url: '/contracts/report',
+    method: 'get',
+    params
   })
 }

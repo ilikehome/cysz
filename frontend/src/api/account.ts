@@ -4,14 +4,19 @@ import request from '@/utils/request'
 
 // 应收已收管理
 export const accountApi = {
-  // 获取应收已收分页数据
-  getReceivableReceivedPage: (params: any) => {
-    return request.get('/account/receivable-received/page', { params })
+  // 获取应收账款分页数据
+  getReceivablePage: (params: any) => {
+    return request.get('/receivables', { params })
+  },
+
+  // 获取已收款分页数据
+  getReceivedPage: (params: any) => {
+    return request.get('/received', { params })
   },
 
   // 生成应收账款
   generateReceivable: (data: any) => {
-    return request.post('/account/receivable/generate', data)
+    return request.post('/receivables/generate', data)
   },
 
   // 获取收款认领分页数据
@@ -21,7 +26,7 @@ export const accountApi = {
 
   // 执行收款认领
   claimPayment: (transactionId: number, data: any) => {
-    return request.post(`/account/payment-claim/${transactionId}/claim`, data)
+    return request.post(`/received/claim`, data)
   },
 
   // 获取可认领的合同列表
@@ -40,8 +45,12 @@ export const accountApi = {
   },
 
   // 导入银行流水
-  importBankTransactions: (data: any) => {
-    return request.post('/account/bank-transactions/import', data)
+  importBankFlow: (data: FormData) => {
+    return request.post('/received/import', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   },
 
   // 自动匹配应收已收
@@ -49,29 +58,40 @@ export const accountApi = {
     return request.post('/account/receivable-received/auto-match', data)
   },
 
-  // 导出应收已收数据
-  exportReceivableReceived: (params: any) => {
-    return request.get('/account/receivable-received/export', { params, responseType: 'blob' })
+  // 导出应收账款
+  exportReceivable: (params: any) => {
+    return request.get('/receivables/export', { 
+      params,
+      responseType: 'blob'
+    })
   },
 
-  // 导出收款认领数据
-  exportPaymentClaim: (params: any) => {
-    return request.get('/account/payment-claim/export', { params, responseType: 'blob' })
+  // 导出已收账款
+  exportReceived: (params: any) => {
+    return request.get('/received/export', { 
+      params,
+      responseType: 'blob'
+    })
   },
 
-  // 获取账款统计数据
-  getAccountStatistics: () => {
-    return request.get('/account/statistics')
+  // 获取应收账款统计数据
+  getReceivableStatistics: (params: any) => {
+    return request.get('/receivables/statistics', { params })
+  },
+
+  // 获取已收款统计数据
+  getReceivedStatistics: (params: any) => {
+    return request.get('/received/statistics', { params })
   },
 
   // 获取应收账款详情
   getReceivableDetail: (id: number) => {
-    return request.get(`/account/receivable/${id}`)
+    return request.get(`/receivables/${id}`)
   },
 
   // 获取已收账款详情
   getReceivedDetail: (id: number) => {
-    return request.get(`/account/received/${id}`)
+    return request.get(`/received/${id}`)
   },
 
   // 获取银行流水详情
@@ -81,30 +101,37 @@ export const accountApi = {
 
   // 更新应收账款
   updateReceivable: (id: number, data: any) => {
-    return request.put(`/account/receivable/${id}`, data)
+    return request.put(`/receivables/${id}`, data)
   },
 
   // 删除应收账款
   deleteReceivable: (id: number) => {
-    return request.delete(`/account/receivable/${id}`)
+    return request.delete(`/receivables/${id}`)
   },
 
   // 删除已收账款
   deleteReceived: (id: number) => {
-    return request.delete(`/account/received/${id}`)
+    return request.delete(`/received/${id}`)
   },
 
-  // 手动匹配应收已收
-  manualMatchReceivable: (receivableId: number, receivedId: number) => {
-    return request.post('/account/receivable-received/manual-match', {
-      receivableId,
-      receivedId
-    })
+  // 手动匹配应收账款
+  manualMatchReceivable: (data: any) => {
+    return request.post('/receivables/manual-match', data)
   },
 
-  // 取消匹配
-  unmatchReceivable: (matchId: number) => {
-    return request.post(`/account/receivable-received/unmatch/${matchId}`)
+  // 手动匹配已收款
+  manualMatchReceived: (data: any) => {
+    return request.post('/received/manual-match', data)
+  },
+
+  // 自动匹配应收账款
+  autoMatchReceivable: (data: any) => {
+    return request.post('/receivables/auto-match', data)
+  },
+
+  // 自动匹配已收款
+  autoMatchReceived: (data: any) => {
+    return request.post('/received/auto-match', data)
   }
 }
 

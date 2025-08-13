@@ -39,7 +39,7 @@ export interface User {
 export const userApi = {
   // 用户登录
   login: (data: { orgCode: string; username: string; password: string }) => {
-    return request.post('/auth/login', data)
+    return request.post('/api/auth/login', data)
   },
   
   // 获取用户信息

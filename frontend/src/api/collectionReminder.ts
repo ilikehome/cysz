@@ -1,19 +1,21 @@
-import axios from 'axios'
+import request from '@/utils/request'
 
 // 自动催缴相关API
 export const collectionReminderApi = {
-  // 获取催缴设置
-  getSettings: () => {
-    return axios.get('/api/collection-reminder/settings')
+  // 获取应收账款提醒
+  getReceivableReminders: (reminderType: string, days: number = 7) => {
+    return request.get('/receivables/reminders', { 
+      params: { reminderType, days } 
+    })
   },
 
-  // 更新催缴设置
-  updateSettings: (settings: any) => {
-    return axios.post('/api/collection-reminder/settings', settings)
+  // 获取应收账款统计信息（用作催缴统计）
+  getStatistics: () => {
+    return request.get('/receivables/statistics')
   },
 
-  // 获取催缴记录列表
-  getRecords: (params: {
+  // 获取应收账款分页列表（用作待催缴列表）
+  getPendingReceivables: (params: {
     current?: number
     size?: number
     keyword?: string
@@ -21,45 +23,33 @@ export const collectionReminderApi = {
     startDate?: string
     endDate?: string
   }) => {
-    return axios.get('/api/collection-reminder/records', { params })
+    return request.get('/receivables', { params })
   },
 
-  // 手动发送催缴短信
-  sendManualReminder: (data: {
-    receivableIds: number[]
-    templateId: number
-  }) => {
-    return axios.post('/api/collection-reminder/send-manual', data)
+  // 更新应收账款状态（用于催缴后更新状态）
+  updateReceivableStatus: (id: number, receivedAmount: number) => {
+    return request.post(`/receivables/${id}/update-status`, null, {
+      params: { receivedAmount }
+    })
   },
 
-  // 获取催缴统计数据
-  getStatistics: () => {
-    return axios.get('/api/collection-reminder/statistics')
+  // 获取应收账款分析数据（用作催缴记录分析）
+  getAnalysisData: (analysisType: string, startDate: string, endDate: string, projectId?: number) => {
+    const params: any = { analysisType, startDate, endDate }
+    if (projectId) params.projectId = projectId
+    return request.get('/receivables/analysis', { params })
   },
 
-  // 获取待催缴的应收款列表
-  getPendingReceivables: (params: {
-    current?: number
-    size?: number
-  }) => {
-    return axios.get('/api/collection-reminder/pending-receivables', { params })
+  // 批量生成应收账款（可用于催缴相关操作）
+  batchGenerate: (data: any) => {
+    return request.post('/receivables/batch-generate', data)
   },
 
-  // 批量设置催缴优先级
-  setPriority: (data: {
-    receivableIds: number[]
-    priority: string
-  }) => {
-    return axios.post('/api/collection-reminder/set-priority', data)
-  },
-
-  // 获取短信模板列表
-  getSmsTemplates: () => {
-    return axios.get('/api/collection-reminder/sms-templates')
-  },
-
-  // 保存短信模板
-  saveSmsTemplate: (template: any) => {
-    return axios.post('/api/collection-reminder/sms-templates', template)
+  // 导出应收账款（可用于催缴记录导出）
+  exportData: (params: any) => {
+    return request.get('/receivables/export', { 
+      params,
+      responseType: 'blob'
+    })
   }
 }

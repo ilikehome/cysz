@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cysz.property.mapper.ProjectMapper">
+
+    <!-- 项目VO结果映射 -->
+    <resultMap id="ProjectVOMap" type="com.cysz.property.vo.ProjectVO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="type" property="type"/>
+        <result column="status" property="status"/>
+        <result column="address" property="address"/>
+        <result column="total_area" property="totalArea"/>
+        <result column="rentable_area" property="rentableArea"/>
+        <result column="building_count" property="buildingCount"/>
+        <result column="unit_count" property="unitCount"/>
+        <result column="description" property="description"/>
+        <result column="start_date" property="startDate"/>
+        <result column="completion_date" property="completionDate"/>
+        <result column="delivery_date" property="deliveryDate"/>
+        <result column="developer" property="developer"/>
+        <result column="property_company" property="propertyCompany"/>
+        <result column="contact_person" property="contactPerson"/>
+        <result column="contact_phone" property="contactPhone"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础查询字段 -->
+    <sql id="BaseColumns">
+        id, name, code, type, status, address, total_area, rentable_area,
+        building_count, unit_count, description, start_date, completion_date,
+        delivery_date, developer, property_company, contact_person, contact_phone,
+        create_by, create_time, update_by, update_time
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="QueryConditions">
+        <where>
+            deleted = 0
+            <if test="query.name != null and query.name.trim() != ''">
+                AND name LIKE CONCAT('%', #{query.name}, '%')
+            </if>
+            <if test="query.code != null and query.code.trim() != ''">
+                AND code LIKE CONCAT('%', #{query.code}, '%')
+            </if>
+            <if test="query.type != null and query.type.trim() != ''">
+                AND type = #{query.type}
+            </if>
+            <if test="query.status != null and query.status.trim() != ''">
+                AND status = #{query.status}
+            </if>
+            <if test="query.address != null and query.address.trim() != ''">
+                AND address LIKE CONCAT('%', #{query.address}, '%')
+            </if>
+            <if test="query.developer != null and query.developer.trim() != ''">
+                AND developer LIKE CONCAT('%', #{query.developer}, '%')
+            </if>
+            <if test="query.propertyCompany != null and query.propertyCompany.trim() != ''">
+                AND property_company LIKE CONCAT('%', #{query.propertyCompany}, '%')
+            </if>
+            <if test="query.startDateBegin != null">
+                AND start_date &gt;= #{query.startDateBegin}
+            </if>
+            <if test="query.startDateEnd != null">
+                AND start_date &lt;= #{query.startDateEnd}
+            </if>
+            <if test="query.completionDateBegin != null">
+                AND completion_date &gt;= #{query.completionDateBegin}
+            </if>
+            <if test="query.completionDateEnd != null">
+                AND completion_date &lt;= #{query.completionDateEnd}
+            </if>
+            <if test="query.deliveryDateBegin != null">
+                AND delivery_date &gt;= #{query.deliveryDateBegin}
+            </if>
+            <if test="query.deliveryDateEnd != null">
+                AND delivery_date &lt;= #{query.deliveryDateEnd}
+            </if>
+            <if test="query.keyword != null and query.keyword.trim() != ''">
+                AND (
+                    name LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR code LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR address LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR developer LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR property_company LIKE CONCAT('%', #{query.keyword}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <!-- 排序条件 -->
+    <sql id="OrderBy">
+        <choose>
+            <when test="query.sortField != null and query.sortField.trim() != ''">
+                ORDER BY ${query.sortField} ${query.sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+    </sql>
+
+    <!-- 分页查询项目列表 -->
+    <select id="selectProjectPage" resultMap="ProjectVOMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        CASE type
+            WHEN 'COMMERCIAL' THEN '商业地产'
+            WHEN 'RESIDENTIAL' THEN '住宅地产'
+            WHEN 'OFFICE' THEN '办公地产'
+            WHEN 'INDUSTRIAL' THEN '工业地产'
+            WHEN 'MIXED' THEN '综合地产'
+            ELSE type
+        END AS typeName,
+        CASE status
+            WHEN 'PLANNING' THEN '规划中'
+            WHEN 'CONSTRUCTION' THEN '建设中'
+            WHEN 'COMPLETED' THEN '已竣工'
+            WHEN 'DELIVERED' THEN '已交付'
+            WHEN 'OPERATION' THEN '运营中'
+            WHEN 'SUSPENDED' THEN '暂停'
+            ELSE status
+        END AS statusName
+        FROM project
+        <include refid="QueryConditions"/>
+        <include refid="OrderBy"/>
+    </select>
+
+    <!-- 根据ID查询项目详情 -->
+    <select id="selectProjectById" resultMap="ProjectVOMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        CASE type
+            WHEN 'COMMERCIAL' THEN '商业地产'
+            WHEN 'RESIDENTIAL' THEN '住宅地产'
+            WHEN 'OFFICE' THEN '办公地产'
+            WHEN 'INDUSTRIAL' THEN '工业地产'
+            WHEN 'MIXED' THEN '综合地产'
+            ELSE type
+        END AS typeName,
+        CASE status
+            WHEN 'PLANNING' THEN '规划中'
+            WHEN 'CONSTRUCTION' THEN '建设中'
+            WHEN 'COMPLETED' THEN '已竣工'
+            WHEN 'DELIVERED' THEN '已交付'
+            WHEN 'OPERATION' THEN '运营中'
+            WHEN 'SUSPENDED' THEN '暂停'
+            ELSE status
+        END AS statusName
+        FROM project
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <!-- 查询所有项目列表（用于下拉选择） -->
+    <select id="selectProjectList" resultMap="ProjectVOMap">
+        SELECT id, name, code, type, status
+        FROM project
+        WHERE deleted = 0 AND status IN ('COMPLETED', 'DELIVERED', 'OPERATION')
+        ORDER BY name ASC
+    </select>
+
+    <!-- 根据编码查询项目 -->
+    <select id="selectByCode" resultType="com.cysz.property.entity.Project">
+        SELECT * FROM project
+        WHERE code = #{code} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!-- 根据名称查询项目 -->
+    <select id="selectByName" resultType="com.cysz.property.entity.Project">
+        SELECT * FROM project
+        WHERE name = #{name} AND deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+        LIMIT 1
+    </select>
+
+</mapper>
