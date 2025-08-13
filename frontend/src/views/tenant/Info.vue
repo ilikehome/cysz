@@ -17,22 +17,30 @@
           <el-form-item label="租户名称">
             <el-input
               v-model="searchForm.keyword"
-              placeholder="请输入租户名称或编码"
+              placeholder="请输入租户名称"
               clearable
               style="width: 200px"
             />
           </el-form-item>
-          <el-form-item label="租户类别">
+          <el-form-item label="租户性质">
             <el-select
-              v-model="searchForm.tenantCategory"
-              placeholder="请选择租户类别"
+              v-model="searchForm.tenantNature"
+              placeholder="请选择租户性质"
               clearable
               style="width: 150px"
             >
-              <el-option label="企业" value="企业" />
               <el-option label="个人" value="个人" />
-              <el-option label="机构" value="机构" />
+              <el-option label="公司" value="公司" />
+              <el-option label="政府机构" value="政府机构" />
             </el-select>
+          </el-form-item>
+          <el-form-item label="业态">
+            <el-input
+              v-model="searchForm.businessFormat"
+              placeholder="请输入业态"
+              clearable
+              style="width: 150px"
+            />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
@@ -53,18 +61,19 @@
         :data="tableData"
         style="width: 100%"
       >
-        <el-table-column prop="tenantCode" label="租户编码" width="120" />
         <el-table-column prop="tenantName" label="租户名称" min-width="150" />
-        <el-table-column prop="tenantCategory" label="租户类别" width="100">
+        <el-table-column prop="tenantNature" label="租户性质" width="100">
           <template #default="{ row }">
-            <el-tag :type="getTenantCategoryTag(row.tenantCategory)">
-              {{ row.tenantCategory }}
+            <el-tag :type="getTenantNatureTag(row.tenantNature)">
+              {{ row.tenantNature }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="legalPerson" label="法人姓名" width="120" />
-        <el-table-column prop="contactPhone" label="联系电话" width="130" />
-        <el-table-column prop="socialCreditCode" label="社会信用代码" width="180" />
+        <el-table-column prop="brand" label="品牌" width="120" />
+        <el-table-column prop="businessFormat" label="业态" width="100" />
+        <el-table-column prop="legalPersonName" label="法人姓名" width="120" />
+        <el-table-column prop="legalPersonPhone" label="法人手机号" width="130" />
+        <el-table-column prop="socialCreditCode" label="社会信用代码" width="180" show-overflow-tooltip />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -93,7 +102,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="800px"
+      width="1000px"
       @close="handleDialogClose"
     >
       <el-form
@@ -102,44 +111,123 @@
         :rules="formRules"
         label-width="120px"
       >
+        <!-- 基本信息 -->
+        <el-divider content-position="left">基本信息</el-divider>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="租户编码" prop="tenantCode">
-              <el-input
-                v-model="formData.tenantCode"
-                placeholder="请输入租户编码"
-                :disabled="!!formData.id"
-              />
-            </el-form-item>
-          </el-col>
           <el-col :span="12">
             <el-form-item label="租户名称" prop="tenantName">
               <el-input v-model="formData.tenantName" placeholder="请输入租户名称" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="租户性质" prop="tenantNature">
+              <el-select v-model="formData.tenantNature" placeholder="请选择租户性质" style="width: 100%">
+                <el-option label="个人" value="个人" />
+                <el-option label="公司" value="公司" />
+                <el-option label="政府机构" value="政府机构" />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
         
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="租户类别" prop="tenantCategory">
-              <el-select v-model="formData.tenantCategory" placeholder="请选择租户类别">
-                <el-option label="企业" value="企业" />
-                <el-option label="个人" value="个人" />
-                <el-option label="机构" value="机构" />
+          <el-col :span="8">
+            <el-form-item label="品牌">
+              <el-input v-model="formData.brand" placeholder="请输入品牌名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="品牌资质">
+              <el-select v-model="formData.brandQualification" placeholder="请选择品牌资质" style="width: 100%">
+                <el-option label="直营" value="直营" />
+                <el-option label="加盟" value="加盟" />
+                <el-option label="联营" value="联营" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="证件类型">
-              <el-select v-model="formData.certificateType" placeholder="请选择证件类型">
-                <el-option label="营业执照" value="营业执照" />
-                <el-option label="身份证" value="身份证" />
-                <el-option label="组织机构代码证" value="组织机构代码证" />
+          <el-col :span="8">
+            <el-form-item label="业态">
+              <el-select v-model="formData.businessFormat" placeholder="请选择业态" style="width: 100%">
+                <!-- 零售业态 -->
+                <el-option-group label="零售业态">
+                  <el-option label="百货商场" value="百货商场" />
+                  <el-option label="购物中心" value="购物中心" />
+                  <el-option label="超市" value="超市" />
+                  <el-option label="便利店" value="便利店" />
+                  <el-option label="专卖店" value="专卖店" />
+                  <el-option label="品牌店" value="品牌店" />
+                  <el-option label="折扣店" value="折扣店" />
+                  <el-option label="免税店" value="免税店" />
+                </el-option-group>
+                
+                <!-- 餐饮业态 -->
+                <el-option-group label="餐饮业态">
+                  <el-option label="正餐" value="正餐" />
+                  <el-option label="快餐" value="快餐" />
+                  <el-option label="休闲餐饮" value="休闲餐饮" />
+                  <el-option label="咖啡厅" value="咖啡厅" />
+                  <el-option label="茶饮店" value="茶饮店" />
+                  <el-option label="酒吧" value="酒吧" />
+                  <el-option label="烘焙店" value="烘焙店" />
+                  <el-option label="甜品店" value="甜品店" />
+                </el-option-group>
+                
+                <!-- 娱乐业态 -->
+                <el-option-group label="娱乐业态">
+                  <el-option label="电影院" value="电影院" />
+                  <el-option label="KTV" value="KTV" />
+                  <el-option label="游戏厅" value="游戏厅" />
+                  <el-option label="健身房" value="健身房" />
+                  <el-option label="美容美发" value="美容美发" />
+                  <el-option label="SPA" value="SPA" />
+                  <el-option label="儿童乐园" value="儿童乐园" />
+                  <el-option label="密室逃脱" value="密室逃脱" />
+                </el-option-group>
+                
+                <!-- 服务业态 -->
+                <el-option-group label="服务业态">
+                  <el-option label="银行" value="银行" />
+                  <el-option label="保险" value="保险" />
+                  <el-option label="通讯营业厅" value="通讯营业厅" />
+                  <el-option label="快递服务" value="快递服务" />
+                  <el-option label="洗衣店" value="洗衣店" />
+                  <el-option label="维修服务" value="维修服务" />
+                  <el-option label="教育培训" value="教育培训" />
+                  <el-option label="医疗诊所" value="医疗诊所" />
+                </el-option-group>
+                
+                <!-- 办公业态 -->
+                <el-option-group label="办公业态">
+                  <el-option label="写字楼" value="写字楼" />
+                  <el-option label="联合办公" value="联合办公" />
+                  <el-option label="创业孵化器" value="创业孵化器" />
+                  <el-option label="会议中心" value="会议中心" />
+                  <el-option label="展示厅" value="展示厅" />
+                </el-option-group>
+                
+                <!-- 住宿业态 -->
+                <el-option-group label="住宿业态">
+                  <el-option label="酒店" value="酒店" />
+                  <el-option label="民宿" value="民宿" />
+                  <el-option label="青年旅社" value="青年旅社" />
+                  <el-option label="公寓式酒店" value="公寓式酒店" />
+                </el-option-group>
+                
+                <!-- 其他业态 -->
+                <el-option-group label="其他业态">
+                  <el-option label="仓储物流" value="仓储物流" />
+                  <el-option label="汽车服务" value="汽车服务" />
+                  <el-option label="宠物服务" value="宠物服务" />
+                  <el-option label="文化艺术" value="文化艺术" />
+                  <el-option label="其他" value="其他" />
+                </el-option-group>
               </el-select>
             </el-form-item>
           </el-col>
         </el-row>
-        
+
+        <!-- 证件信息 -->
+        <el-divider content-position="left">证件信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="社会信用代码">
@@ -156,37 +244,118 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="工商注册号">
-              <el-input v-model="formData.businessLicense" placeholder="请输入工商注册号" />
+              <el-input v-model="formData.businessRegistrationNumber" placeholder="请输入工商注册号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="法人姓名">
-              <el-input v-model="formData.legalPerson" placeholder="请输入法人姓名" />
+            <el-form-item label="个体户证件号">
+              <el-input v-model="formData.individualLicenseNumber" placeholder="请输入个体户证件号" />
             </el-form-item>
           </el-col>
         </el-row>
-        
+
+        <!-- 企业性质 -->
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="企业性质">
+              <el-select v-model="formData.enterpriseNature" placeholder="请选择企业性质" style="width: 100%">
+                <el-option label="内资企业" value="内资企业" />
+                <el-option label="港澳台投资企业" value="港澳台投资企业" />
+                <el-option label="外商投资企业" value="外商投资企业" />
+                <el-option label="个体经营户" value="个体经营户" />
+                <el-option label="有限责任公司（自然人独资）" value="有限责任公司（自然人独资）" />
+                <el-option label="有限责任公司分公司（外商投资企业法人独资）" value="有限责任公司分公司（外商投资企业法人独资）" />
+                <el-option label="有限责任公司（自然人投资或控股）" value="有限责任公司（自然人投资或控股）" />
+                <el-option label="有限责任公司分公司(自然人投资或控股)" value="有限责任公司分公司(自然人投资或控股)" />
+                <el-option label="有限责任公司分公司（非自然人投资或控股的法）" value="有限责任公司分公司（非自然人投资或控股的法）" />
+                <el-option label="有限责任公司（自然人投资或控股的法人独资）" value="有限责任公司（自然人投资或控股的法人独资）" />
+                <el-option label="其他有限责任公司" value="其他有限责任公司" />
+                <el-option label="其他股份有限公司（非上市）" value="其他股份有限公司（非上市）" />
+                <el-option label="有限责任公司（外商投资企业法人独资）" value="有限责任公司（外商投资企业法人独资）" />
+                <el-option label="中外合资" value="中外合资" />
+                <el-option label="外国法人独资" value="外国法人独资" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 经营信息 -->
+        <el-divider content-position="left">经营信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="经营范围">
+              <el-input
+                v-model="formData.businessScope"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入经营范围"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 法人信息 -->
+        <el-divider content-position="left">法人信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="法人姓名">
+              <el-input v-model="formData.legalPersonName" placeholder="请输入法人姓名" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="法人手机号" prop="legalPersonPhone">
+              <el-input v-model="formData.legalPersonPhone" placeholder="请输入法人手机号" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="法人身份证">
+              <el-input v-model="formData.legalPersonIdCard" placeholder="请输入法人身份证号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 财务信息 -->
+        <el-divider content-position="left">财务信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="联系电话" prop="contactPhone">
-              <el-input v-model="formData.contactPhone" placeholder="请输入联系电话" />
+            <el-form-item label="财务联系人">
+              <el-input v-model="formData.financeContact" placeholder="请输入财务联系人" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="联系邮箱">
-              <el-input v-model="formData.contactEmail" placeholder="请输入联系邮箱" />
+            <el-form-item label="财务电话">
+              <el-input v-model="formData.financePhone" placeholder="请输入财务电话" />
             </el-form-item>
           </el-col>
         </el-row>
-        
-        <el-form-item label="公司注册地">
-          <el-input
-            v-model="formData.registeredAddress"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入公司注册地址"
-          />
-        </el-form-item>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="付款人名称">
+              <el-input v-model="formData.payerName" placeholder="请输入付款人名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="付款账号">
+              <el-input v-model="formData.paymentAccount" placeholder="请输入付款账号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 备注 -->
+        <el-divider content-position="left">其他信息</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="备注">
+              <el-input
+                v-model="formData.remark"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入备注信息"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       
       <template #footer>
@@ -213,7 +382,8 @@ const formRef = ref<FormInstance>()
 // 搜索表单
 const searchForm = reactive({
   keyword: '',
-  tenantCategory: ''
+  tenantNature: '',
+  businessFormat: ''
 })
 
 // 分页数据
@@ -228,32 +398,37 @@ const tableData = ref<Tenant[]>([])
 
 // 表单数据
 const formData = reactive({
-  id: null,
-  tenantCode: '',
+  id: undefined as number | undefined,
   tenantName: '',
-  tenantCategory: '',
+  tenantNature: '',
+  enterpriseNature: '',
   socialCreditCode: '',
-  certificateType: '',
   taxpayerId: '',
-  businessLicense: '',
-  legalPerson: '',
-  registeredAddress: '',
-  contactPhone: '',
-  contactEmail: ''
+  businessRegistrationNumber: '',
+  individualLicenseNumber: '',
+  brand: '',
+  brandQualification: '',
+  businessFormat: '',
+  businessScope: '',
+  legalPersonName: '',
+  legalPersonPhone: '',
+  legalPersonIdCard: '',
+  financeContact: '',
+  financePhone: '',
+  payerName: '',
+  paymentAccount: '',
+  remark: ''
 })
 
 // 表单验证规则
 const formRules: FormRules = {
-  tenantCode: [
-    { required: true, message: '请输入租户编码', trigger: 'blur' }
-  ],
   tenantName: [
     { required: true, message: '请输入租户名称', trigger: 'blur' }
   ],
-  tenantCategory: [
-    { required: true, message: '请选择租户类别', trigger: 'change' }
+  tenantNature: [
+    { required: true, message: '请选择租户性质', trigger: 'change' }
   ],
-  contactPhone: [
+  legalPersonPhone: [
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
   ]
 }
@@ -261,14 +436,14 @@ const formRules: FormRules = {
 // 对话框标题
 const dialogTitle = ref('新建租户')
 
-// 获取租户类别标签颜色
-const getTenantCategoryTag = (category: string) => {
+// 获取租户性质标签颜色
+const getTenantNatureTag = (nature: string) => {
   const tagMap: Record<string, string> = {
-    '企业': 'primary',
     '个人': 'success',
-    '机构': 'warning'
+    '公司': 'primary',
+    '政府机构': 'warning'
   }
-  return tagMap[category] || 'info'
+  return tagMap[nature] || 'info'
 }
 
 // 搜索
@@ -280,7 +455,8 @@ const handleSearch = () => {
 // 重置搜索
 const handleReset = () => {
   searchForm.keyword = ''
-  searchForm.tenantCategory = ''
+  searchForm.tenantNature = ''
+  searchForm.businessFormat = ''
   handleSearch()
 }
 
@@ -376,18 +552,26 @@ const handleSubmit = async () => {
 // 重置表单
 const resetForm = () => {
   Object.assign(formData, {
-    id: null,
-    tenantCode: '',
+    id: undefined,
     tenantName: '',
-    tenantCategory: '',
+    tenantNature: '',
+    enterpriseNature: '',
     socialCreditCode: '',
-    certificateType: '',
     taxpayerId: '',
-    businessLicense: '',
-    legalPerson: '',
-    registeredAddress: '',
-    contactPhone: '',
-    contactEmail: ''
+    businessRegistrationNumber: '',
+    individualLicenseNumber: '',
+    brand: '',
+    brandQualification: '',
+    businessFormat: '',
+    businessScope: '',
+    legalPersonName: '',
+    legalPersonPhone: '',
+    legalPersonIdCard: '',
+    financeContact: '',
+    financePhone: '',
+    payerName: '',
+    paymentAccount: '',
+    remark: ''
   })
   formRef.value?.resetFields()
 }
@@ -401,7 +585,8 @@ const loadData = async () => {
       current: pagination.current,
       size: pagination.size,
       keyword: searchForm.keyword || undefined,
-      tenantCategory: searchForm.tenantCategory || undefined
+      tenantNature: searchForm.tenantNature || undefined,
+      businessFormat: searchForm.businessFormat || undefined
     }
     
     const response = await tenantApi.getTenantPage(params)
@@ -651,6 +836,69 @@ onMounted(() => {
 .pagination :deep(.btn-prev:hover),
 .pagination :deep(.btn-next:hover) {
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 对话框样式优化 */
+:deep(.el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:deep(.el-dialog__title) {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+:deep(.el-dialog__body) {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+:deep(.el-divider) {
+  margin: 24px 0 16px 0;
+}
+
+:deep(.el-divider__text) {
+  font-weight: 600;
+  color: #374151;
+  background: #f8fafc;
+  padding: 0 16px;
+}
+
+/* 表单样式优化 */
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #374151;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-select .el-input__wrapper) {
+  border-radius: 8px;
+}
+
+:deep(.el-textarea__inner) {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-textarea__inner:hover) {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
