@@ -29,9 +29,8 @@
               clearable
               style="width: 150px"
             >
-              <el-option label="草稿" value="DRAFT" />
-              <el-option label="生效" value="ACTIVE" />
-              <el-option label="过期" value="EXPIRED" />
+              <el-option label="未盖章生效" value="UNSIGNED_EFFECTIVE" />
+              <el-option label="已盖章生效" value="SIGNED_EFFECTIVE" />
               <el-option label="终止" value="TERMINATED" />
             </el-select>
           </el-form-item>
@@ -900,7 +899,7 @@ const formData = reactive({
     { minAmount: null, maxAmount: null, commissionRate: null }
   ] as CommissionRule[],
   
-  contractStatus: 'DRAFT'
+  contractStatus: 'UNSIGNED_EFFECTIVE'
 })
 
 // 表单验证规则
@@ -961,9 +960,8 @@ const dialogTitle = ref('新建合同')
 // 获取合同状态标签颜色
 const getContractStatusTag = (status: string) => {
   const tagMap: Record<string, string> = {
-    'DRAFT': 'info',
-    'ACTIVE': 'success',
-    'EXPIRED': 'warning',
+    'UNSIGNED_EFFECTIVE': 'warning',
+    'SIGNED_EFFECTIVE': 'success',
     'TERMINATED': 'danger'
   }
   return tagMap[status] || 'info'
@@ -972,9 +970,8 @@ const getContractStatusTag = (status: string) => {
 // 获取合同状态名称
 const getContractStatusName = (status: string) => {
   const nameMap: Record<string, string> = {
-    'DRAFT': '草稿',
-    'ACTIVE': '生效',
-    'EXPIRED': '过期',
+    'UNSIGNED_EFFECTIVE': '未盖章生效',
+    'SIGNED_EFFECTIVE': '已盖章生效',
     'TERMINATED': '终止'
   }
   return nameMap[status] || status
@@ -1265,7 +1262,7 @@ const resetForm = () => {
       { minAmount: null, maxAmount: null, commissionRate: null }
     ],
     
-    contractStatus: 'DRAFT'
+    contractStatus: 'UNSIGNED_EFFECTIVE'
   })
   formRef.value?.resetFields()
 }
