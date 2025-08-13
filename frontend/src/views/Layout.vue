@@ -107,7 +107,7 @@
             </template>
             <el-menu-item index="/contract/info">
               <el-icon><Document /></el-icon>
-              <span>合同信息</span>
+              <span>合同档案</span>
             </el-menu-item>
             <el-menu-item index="/contract/business-analysis">
               <el-icon><TrendCharts /></el-icon>

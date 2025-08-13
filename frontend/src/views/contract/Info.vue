@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>合同信息</span>
+          <span>合同档案</span>
           <el-button type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>
             新建合同

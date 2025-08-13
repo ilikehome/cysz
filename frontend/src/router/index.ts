@@ -151,7 +151,7 @@ const router = createRouter({
               name: 'ContractInfo',
               component: () => import('@/views/contract/Info.vue'),
               meta: {
-                title: '合同信息',
+                title: '合同档案',
                 icon: 'Document'
               }
             },
