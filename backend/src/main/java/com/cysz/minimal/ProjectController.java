@@ -29,6 +29,80 @@ public class ProjectController {
             project.put("id", rs.getInt("id"));
             project.put("projectName", rs.getString("project_name"));
             project.put("projectType", rs.getString("project_type"));
+            project.put("companyName", rs.getString("company_name"));
+            project.put("managementOrg", rs.getString("management_org"));
+            project.put("rentBillCompany", rs.getString("rent_bill_company"));
+            project.put("rentBillBankAccount", rs.getString("rent_bill_bank_account"));
+            project.put("propertyBillCompany", rs.getString("property_bill_company"));
+            project.put("propertyRightCompany", rs.getString("property_right_company"));
+            project.put("buildingArea", rs.getBigDecimal("building_area"));
+            project.put("rentArea", rs.getBigDecimal("rent_area"));
+            project.put("propertyArea", rs.getBigDecimal("property_area"));
+            project.put("city", rs.getString("city"));
+            project.put("address", rs.getString("address"));
+            project.put("projectManager", rs.getString("project_manager"));
+            project.put("contactPhone", rs.getString("contact_phone"));
+            project.put("status", rs.getInt("status"));
+            project.put("createTime", rs.getTimestamp("create_time"));
+            project.put("updateTime", rs.getTimestamp("update_time"));
+            return project;
+        }
+    };
+package com.cysz.minimal;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+/**
+ * 项目管理控制器 - 使用数据库
+ */
+@RestController
+@RequestMapping("/project")
+@CrossOrigin
+public class ProjectController {
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+    
+package com.cysz.minimal;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+/**
+ * 项目管理控制器 - 使用数据库
+ */
+@RestController
+@RequestMapping("/project")
+@CrossOrigin
+public class ProjectController {
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+    
+    private static final RowMapper<Map<String, Object>> PROJECT_ROW_MAPPER = new RowMapper<Map<String, Object>>() {
+        @Override
+        public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Map<String, Object> project = new HashMap<>();
+            project.put("id", rs.getInt("id"));
+            project.put("projectName", rs.getString("project_name"));
+            project.put("projectType", rs.getString("project_type"));
             project.put("managementOrg", rs.getString("management_org"));
             project.put("rentBillCompany", rs.getString("rent_bill_company"));
             project.put("rentBillBankAccount", rs.getString("rent_bill_bank_account"));
@@ -148,9 +222,10 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "INSERT INTO project (project_name, project_type, management_org, rent_bill_company, " +
-                        "rent_bill_bank_account, city, address, project_manager, contact_phone, status) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO project (project_name, project_type, company_name, management_org, rent_bill_company, " +
+                        "rent_bill_bank_account, property_bill_company, property_right_company, building_area, rent_area, " +
+                        "property_area, city, address, project_manager, contact_phone, status) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             // 如果没有指定状态，默认为正常状态(1)
             Integer status = projectData.get("status") != null ? (Integer) projectData.get("status") : 1;
@@ -158,9 +233,15 @@ public class ProjectController {
             jdbcTemplate.update(sql,
                 projectData.get("projectName"),
                 projectData.get("projectType"),
+                projectData.get("companyName"),
                 projectData.get("managementOrg"),
                 projectData.get("rentBillCompany"),
                 projectData.get("rentBillBankAccount"),
+                projectData.get("propertyBillCompany"),
+                projectData.get("propertyRightCompany"),
+                projectData.get("buildingArea"),
+                projectData.get("rentArea"),
+                projectData.get("propertyArea"),
                 projectData.get("city"),
                 projectData.get("address"),
                 projectData.get("projectManager"),
@@ -194,16 +275,23 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "UPDATE project SET project_name = ?, project_type = ?, management_org = ?, " +
-                        "rent_bill_company = ?, rent_bill_bank_account = ?, city = ?, address = ?, " +
-                        "project_manager = ?, contact_phone = ?, status = ? WHERE id = ?";
+            String sql = "UPDATE project SET project_name = ?, project_type = ?, company_name = ?, management_org = ?, " +
+                        "rent_bill_company = ?, rent_bill_bank_account = ?, property_bill_company = ?, " +
+                        "property_right_company = ?, building_area = ?, rent_area = ?, property_area = ?, " +
+                        "city = ?, address = ?, project_manager = ?, contact_phone = ?, status = ? WHERE id = ?";
             
             int updated = jdbcTemplate.update(sql,
                 projectData.get("projectName"),
                 projectData.get("projectType"),
+                projectData.get("companyName"),
                 projectData.get("managementOrg"),
                 projectData.get("rentBillCompany"),
                 projectData.get("rentBillBankAccount"),
+                projectData.get("propertyBillCompany"),
+                projectData.get("propertyRightCompany"),
+                projectData.get("buildingArea"),
+                projectData.get("rentArea"),
+                projectData.get("propertyArea"),
                 projectData.get("city"),
                 projectData.get("address"),
                 projectData.get("projectManager"),
