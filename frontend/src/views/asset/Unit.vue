@@ -4,10 +4,33 @@
       <template #header>
         <div class="card-header">
           <span>单元管理</span>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>
-            新建单元
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="handleAddBuilding">
+              <el-icon><OfficeBuilding /></el-icon>
+              新建楼栋
+            </el-button>
+            <el-button type="warning" @click="handleAddFloor">
+              <el-icon><Grid /></el-icon>
+              新建楼层
+            </el-button>
+            <el-button type="primary" @click="handleAddUnit">
+              <el-icon><Plus /></el-icon>
+              新建单元
+            </el-button>
+            <el-dropdown @command="handleDeleteCommand">
+              <el-button type="danger">
+                <el-icon><Delete /></el-icon>
+                删除管理
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="deleteBuilding">删除楼栋</el-dropdown-item>
+                  <el-dropdown-item command="deleteFloor">删除楼层</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </div>
       </template>
       
@@ -37,17 +60,19 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="单元状态">
+          <el-form-item label="资产状态">
             <el-select
               v-model="searchForm.unitStatus"
               placeholder="请选择状态"
               clearable
               style="width: 120px"
             >
-              <el-option label="空置" value="VACANT" />
-              <el-option label="已租" value="OCCUPIED" />
-              <el-option label="维修" value="MAINTENANCE" />
-              <el-option label="预留" value="RESERVED" />
+              <el-option label="可租" value="RENTABLE" />
+              <el-option label="自用" value="SELF_USE" />
+              <el-option label="公用" value="PUBLIC_USE" />
+              <el-option label="返租" value="LEASE_BACK" />
+              <el-option label="停用" value="DISABLED" />
+              <el-option label="自持出租" value="SELF_RENTAL" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -70,19 +95,27 @@
         style="width: 100%"
       >
         <el-table-column prop="unitCode" label="单元编码" width="120" />
-        <el-table-column prop="unitDescription" label="单元说明" min-width="150" />
+        <el-table-column prop="unitName" label="单元名称" width="120" />
         <el-table-column prop="projectName" label="所属项目" width="120" />
         <el-table-column prop="buildingName" label="所属楼栋" width="120" />
-        <el-table-column prop="unitStatus" label="单元状态" width="100">
+        <el-table-column prop="floorName" label="所属楼层" width="120" />
+        <el-table-column prop="unitStatus" label="资产状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getUnitStatusTag(row.unitStatus)">
               {{ getUnitStatusName(row.unitStatus) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="unitPurpose" label="单元用途" width="120" />
+        <el-table-column prop="unitPurpose" label="用途" width="120" />
         <el-table-column prop="buildingArea" label="建筑面积(㎡)" width="120" />
         <el-table-column prop="rentArea" label="计租面积(㎡)" width="120" />
+        <el-table-column prop="isMultiTenant" label="一位多租" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.isMultiTenant ? 'success' : 'info'">
+              {{ row.isMultiTenant ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -107,7 +140,136 @@
       </div>
     </el-card>
     
-    <!-- 新建/编辑对话框 -->
+    <!-- 新建楼栋对话框 -->
+    <el-dialog
+      v-model="buildingDialogVisible"
+      title="新建楼栋"
+      width="600px"
+      @close="handleBuildingDialogClose"
+    >
+      <el-form
+        ref="buildingFormRef"
+        :model="buildingFormData"
+        :rules="buildingFormRules"
+        label-width="120px"
+      >
+        <el-form-item label="所属项目" prop="projectId">
+          <el-select v-model="buildingFormData.projectId" placeholder="请选择所属项目" style="width: 100%">
+            <el-option
+              v-for="project in projectList"
+              :key="project.id"
+              :label="project.projectName"
+              :value="project.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="楼栋名称" prop="buildingName">
+          <el-input v-model="buildingFormData.buildingName" placeholder="请输入楼栋名称" />
+        </el-form-item>
+        <el-form-item label="楼栋编码" prop="buildingCode">
+          <el-input v-model="buildingFormData.buildingCode" placeholder="请输入楼栋编码" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input
+            v-model="buildingFormData.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注信息"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="buildingDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleBuildingSubmit" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 新建楼层对话框 -->
+    <el-dialog
+      v-model="floorDialogVisible"
+      title="新建楼层"
+      width="600px"
+      @close="handleFloorDialogClose"
+    >
+      <el-form
+        ref="floorFormRef"
+        :model="floorFormData"
+        :rules="floorFormRules"
+        label-width="120px"
+      >
+        <el-form-item label="所属楼栋" prop="buildingId">
+          <el-select v-model="floorFormData.buildingId" placeholder="请选择所属楼栋" style="width: 100%">
+            <el-option
+              v-for="building in allBuildingList"
+              :key="building.id"
+              :label="`${building.buildingName} (${building.buildingCode})`"
+              :value="building.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="楼层名称" prop="floorName">
+          <el-input v-model="floorFormData.floorName" placeholder="请输入楼层名称" />
+        </el-form-item>
+        <el-form-item label="楼层编码" prop="floorCode">
+          <el-input v-model="floorFormData.floorCode" placeholder="请输入楼层编码" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input
+            v-model="floorFormData.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注信息"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="floorDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleFloorSubmit" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 查看单元对话框 -->
+    <el-dialog
+      v-model="viewDialogVisible"
+      title="查看单元详情"
+      width="800px"
+    >
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="单元名称">{{ viewData.unitName }}</el-descriptions-item>
+        <el-descriptions-item label="单元编码">{{ viewData.unitCode }}</el-descriptions-item>
+        <el-descriptions-item label="所属项目">{{ viewData.projectName }}</el-descriptions-item>
+        <el-descriptions-item label="所属楼栋">{{ viewData.buildingName }}</el-descriptions-item>
+        <el-descriptions-item label="所属楼层">{{ viewData.floorName }}</el-descriptions-item>
+        <el-descriptions-item label="资产状态">
+          <el-tag :type="getUnitStatusTag(viewData.unitStatus)">
+            {{ getUnitStatusName(viewData.unitStatus) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="用途">{{ viewData.unitPurpose || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="建筑面积">{{ viewData.buildingArea ? viewData.buildingArea + '㎡' : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="计租面积">{{ viewData.rentArea ? viewData.rentArea + '㎡' : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="一位多租">
+          <el-tag :type="viewData.isMultiTenant ? 'success' : 'info'">
+            {{ viewData.isMultiTenant ? '是' : '否' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间" :span="2">{{ viewData.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">{{ viewData.remark || '-' }}</el-descriptions-item>
+      </el-descriptions>
+      
+      <template #footer>
+        <el-button @click="viewDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="handleEditFromView">编辑</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 新建/编辑单元对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
@@ -122,6 +284,11 @@
       >
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="单元名称" prop="unitName">
+              <el-input v-model="formData.unitName" placeholder="请输入单元名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="单元编码" prop="unitCode">
               <el-input
                 v-model="formData.unitCode"
@@ -130,69 +297,57 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="单元用途">
-              <el-input v-model="formData.unitPurpose" placeholder="请输入单元用途" />
-            </el-form-item>
-          </el-col>
         </el-row>
         
-        <el-form-item label="单元说明">
-          <el-input
-            v-model="formData.unitDescription"
-            type="textarea"
-            :rows="2"
-            placeholder="请输入单元说明"
-          />
-        </el-form-item>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="所属项目" prop="projectId">
-              <el-select
-                v-model="formData.projectId"
-                placeholder="请选择所属项目"
-                style="width: 100%"
-                @change="handleProjectChange"
-              >
-                <el-option
-                  v-for="project in projectList"
-                  :key="project.id"
-                  :label="project.projectName"
-                  :value="project.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属楼栋" prop="buildingId">
-              <el-select
-                v-model="formData.buildingId"
-                placeholder="请选择所属楼栋"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="building in buildingList"
-                  :key="building.id"
-                  :label="building.buildingName"
-                  :value="building.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-form-item label="单元状态" prop="unitStatus">
-          <el-select v-model="formData.unitStatus" placeholder="请选择单元状态">
-            <el-option label="空置" value="VACANT" />
-            <el-option label="已租" value="OCCUPIED" />
-            <el-option label="维修" value="MAINTENANCE" />
-            <el-option label="预留" value="RESERVED" />
+        <el-form-item label="所属楼层" prop="floorId">
+          <el-select
+            v-model="formData.floorId"
+            placeholder="请选择所属楼层"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="floor in floorList"
+              :key="floor.id"
+              :label="`${floor.floorName} (${floor.floorCode})`"
+              :value="floor.id"
+            />
           </el-select>
         </el-form-item>
         
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="12">
+            <el-form-item label="资产状态" prop="unitStatus">
+              <el-select v-model="formData.unitStatus" placeholder="请选择资产状态" style="width: 100%">
+                <el-option label="可租" value="RENTABLE" />
+                <el-option label="自用" value="SELF_USE" />
+                <el-option label="公用" value="PUBLIC_USE" />
+                <el-option label="返租" value="LEASE_BACK" />
+                <el-option label="停用" value="DISABLED" />
+                <el-option label="自持出租" value="SELF_RENTAL" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="用途">
+              <el-select v-model="formData.unitPurpose" placeholder="请选择单元用途" style="width: 100%">
+                <el-option label="办公" value="OFFICE" />
+                <el-option label="仓库" value="WAREHOUSE" />
+                <el-option label="货运" value="FREIGHT" />
+                <el-option label="商业" value="COMMERCIAL" />
+                <el-option label="会议室" value="MEETING_ROOM" />
+                <el-option label="营业房" value="BUSINESS_ROOM" />
+                <el-option label="停车位" value="PARKING" />
+                <el-option label="广告位" value="ADVERTISING" />
+                <el-option label="公寓" value="APARTMENT" />
+                <el-option label="多经点位" value="MULTI_BUSINESS" />
+                <el-option label="推广场地" value="PROMOTION_VENUE" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="建筑面积(㎡)">
               <el-input-number
                 v-model="formData.buildingArea"
@@ -202,7 +357,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="计租面积(㎡)">
               <el-input-number
                 v-model="formData.rentArea"
@@ -212,17 +367,24 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="产权面积(㎡)">
-              <el-input-number
-                v-model="formData.propertyArea"
-                :precision="2"
-                :min="0"
-                style="width: 100%"
-              />
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="是否一位多租">
+              <el-switch v-model="formData.isMultiTenant" />
             </el-form-item>
           </el-col>
         </el-row>
+        
+        <el-form-item label="备注">
+          <el-input
+            v-model="formData.remark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入备注信息"
+          />
+        </el-form-item>
       </el-form>
       
       <template #footer>
@@ -238,13 +400,18 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { unitApi, projectApi, buildingApi, type Unit, type Project, type Building } from '@/api'
+import { unitApi, projectApi, buildingApi, floorApi, type Unit, type Project, type Building, type Floor } from '@/api'
 
 // 响应式数据
 const loading = ref(false)
 const dialogVisible = ref(false)
+const viewDialogVisible = ref(false)
+const buildingDialogVisible = ref(false)
+const floorDialogVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref<FormInstance>()
+const buildingFormRef = ref<FormInstance>()
+const floorFormRef = ref<FormInstance>()
 
 // 搜索表单
 const searchForm = reactive({
@@ -265,37 +432,96 @@ const projectList = ref<Project[]>([])
 
 // 楼栋列表
 const buildingList = ref<Building[]>([])
+const allBuildingList = ref<Building[]>([])
+
+// 楼层列表
+const floorList = ref<any[]>([])
 
 // 表格数据
 const tableData = ref<Unit[]>([])
 
+// 查看数据
+const viewData = ref<Unit>({
+  unitName: '',
+  unitCode: '',
+  floorId: 0,
+  unitStatus: 'RENTABLE',
+  unitPurpose: '',
+  buildingArea: 0,
+  rentArea: 0,
+  isMultiTenant: false,
+  remark: ''
+})
+
+// 楼栋表单数据
+const buildingFormData = reactive({
+  projectId: null,
+  buildingName: '',
+  buildingCode: '',
+  remark: ''
+})
+
+// 楼层表单数据
+const floorFormData = reactive({
+  buildingId: null,
+  floorName: '',
+  floorCode: '',
+  remark: ''
+})
+
 // 表单数据
 const formData = reactive({
   id: null,
+  unitName: '',
   unitCode: '',
-  unitDescription: '',
-  projectId: null,
-  buildingId: null,
-  unitStatus: 'VACANT',
+  floorId: null,
+  unitStatus: 'RENTABLE',
   unitPurpose: '',
   buildingArea: null,
   rentArea: null,
-  propertyArea: null
+  isMultiTenant: false,
+  remark: ''
 })
 
 // 表单验证规则
 const formRules: FormRules = {
+  unitName: [
+    { required: true, message: '请输入单元名称', trigger: 'blur' }
+  ],
   unitCode: [
     { required: true, message: '请输入单元编码', trigger: 'blur' }
   ],
+  floorId: [
+    { required: true, message: '请选择所属楼层', trigger: 'change' }
+  ],
+  unitStatus: [
+    { required: true, message: '请选择资产状态', trigger: 'change' }
+  ]
+}
+
+// 楼栋表单验证规则
+const buildingFormRules: FormRules = {
   projectId: [
     { required: true, message: '请选择所属项目', trigger: 'change' }
   ],
+  buildingName: [
+    { required: true, message: '请输入楼栋名称', trigger: 'blur' }
+  ],
+  buildingCode: [
+    { required: true, message: '请输入楼栋编码', trigger: 'blur' }
+  ]
+}
+
+// 楼层表单验证规则
+const floorFormRules: FormRules = {
   buildingId: [
     { required: true, message: '请选择所属楼栋', trigger: 'change' }
   ],
-  unitStatus: [
-    { required: true, message: '请选择单元状态', trigger: 'change' }
+  floorName: [
+    { required: true, message: '请输入楼层名称', trigger: 'blur' }
+  ],
+  floorCode: [
+    { required: true, message: '请输入楼层编码', trigger: 'blur' }
   ]
 }
 
@@ -305,10 +531,12 @@ const dialogTitle = ref('新建单元')
 // 获取单元状态标签颜色
 const getUnitStatusTag = (status: string) => {
   const tagMap: Record<string, string> = {
-    'VACANT': 'info',
-    'OCCUPIED': 'success',
-    'MAINTENANCE': 'warning',
-    'RESERVED': 'primary'
+    'RENTABLE': 'success',
+    'SELF_USE': 'primary',
+    'PUBLIC_USE': 'info',
+    'LEASE_BACK': 'warning',
+    'DISABLED': 'danger',
+    'SELF_RENTAL': 'success'
   }
   return tagMap[status] || 'info'
 }
@@ -316,10 +544,12 @@ const getUnitStatusTag = (status: string) => {
 // 获取单元状态名称
 const getUnitStatusName = (status: string) => {
   const nameMap: Record<string, string> = {
-    'VACANT': '空置',
-    'OCCUPIED': '已租',
-    'MAINTENANCE': '维修',
-    'RESERVED': '预留'
+    'RENTABLE': '可租',
+    'SELF_USE': '自用',
+    'PUBLIC_USE': '公用',
+    'LEASE_BACK': '返租',
+    'DISABLED': '停用',
+    'SELF_RENTAL': '自持出租'
   }
   return nameMap[status] || status
 }
@@ -355,26 +585,64 @@ const handleReset = () => {
   handleSearch()
 }
 
-// 新建
-const handleAdd = () => {
+// 新建楼栋
+const handleAddBuilding = () => {
+  resetBuildingForm()
+  buildingDialogVisible.value = true
+}
+
+// 新建楼层
+const handleAddFloor = () => {
+  resetFloorForm()
+  loadAllBuildingList()
+  floorDialogVisible.value = true
+}
+
+// 新建单元
+const handleAddUnit = () => {
   dialogTitle.value = '新建单元'
   resetForm()
   dialogVisible.value = true
 }
 
+// 删除命令处理
+const handleDeleteCommand = (command: string) => {
+  if (command === 'deleteBuilding') {
+    ElMessage.info('删除楼栋功能开发中...')
+  } else if (command === 'deleteFloor') {
+    ElMessage.info('删除楼层功能开发中...')
+  }
+}
+
 // 查看
 const handleView = (row: Unit) => {
-  ElMessage.info('查看功能开发中...')
+  Object.assign(viewData.value, row)
+  viewDialogVisible.value = true
+}
+
+// 从查看对话框进入编辑
+const handleEditFromView = () => {
+  viewDialogVisible.value = false
+  handleEdit(viewData.value)
 }
 
 // 编辑
 const handleEdit = (row: Unit) => {
   dialogTitle.value = '编辑单元'
-  Object.assign(formData, row)
-  // 加载对应项目的楼栋列表
-  if (row.projectId) {
-    handleProjectChange(row.projectId)
-  }
+  Object.assign(formData, {
+    id: row.id,
+    unitName: row.unitName,
+    unitCode: row.unitCode,
+    floorId: row.floorId,
+    unitStatus: row.unitStatus,
+    unitPurpose: row.unitPurpose,
+    buildingArea: row.buildingArea,
+    rentArea: row.rentArea,
+    isMultiTenant: row.isMultiTenant,
+    remark: row.remark
+  })
+  // 加载楼层列表
+  loadFloorList()
   dialogVisible.value = true
 }
 
@@ -427,15 +695,15 @@ const handleSubmit = async () => {
     submitLoading.value = true
     
     const unitData: Unit = {
+      unitName: formData.unitName,
       unitCode: formData.unitCode,
-      unitDescription: formData.unitDescription,
-      projectId: formData.projectId!,
-      buildingId: formData.buildingId!,
+      floorId: formData.floorId!,
       unitStatus: formData.unitStatus as 'VACANT' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED',
       unitPurpose: formData.unitPurpose || undefined,
       buildingArea: formData.buildingArea || undefined,
       rentArea: formData.rentArea || undefined,
-      propertyArea: formData.propertyArea || undefined
+      isMultiTenant: formData.isMultiTenant,
+      remark: formData.remark || undefined
     }
     
     if (formData.id) {
@@ -460,17 +728,121 @@ const resetForm = () => {
   Object.assign(formData, {
     id: null,
     unitCode: '',
-    unitDescription: '',
-    projectId: null,
-    buildingId: null,
-    unitStatus: 'VACANT',
+    unitName: '',
+    floorId: null,
+    unitStatus: 'RENTABLE',
     unitPurpose: '',
     buildingArea: null,
     rentArea: null,
-    propertyArea: null
+    isMultiTenant: false,
+    remark: ''
   })
-  buildingList.value = []
+  floorList.value = []
   formRef.value?.resetFields()
+}
+
+// 重置楼栋表单
+const resetBuildingForm = () => {
+  Object.assign(buildingFormData, {
+    projectId: null,
+    buildingName: '',
+    buildingCode: '',
+    remark: ''
+  })
+  buildingFormRef.value?.resetFields()
+}
+
+// 重置楼层表单
+const resetFloorForm = () => {
+  Object.assign(floorFormData, {
+    buildingId: null,
+    floorName: '',
+    floorCode: '',
+    remark: ''
+  })
+  floorFormRef.value?.resetFields()
+}
+
+// 楼栋对话框关闭
+const handleBuildingDialogClose = () => {
+  resetBuildingForm()
+}
+
+// 楼层对话框关闭
+const handleFloorDialogClose = () => {
+  resetFloorForm()
+}
+
+// 楼栋提交
+const handleBuildingSubmit = async () => {
+  if (!buildingFormRef.value) return
+  
+  try {
+    await buildingFormRef.value.validate()
+    submitLoading.value = true
+    
+    const buildingData = {
+      projectId: buildingFormData.projectId,
+      buildingName: buildingFormData.buildingName,
+      buildingCode: buildingFormData.buildingCode,
+      remark: buildingFormData.remark
+    }
+    
+    await buildingApi.createBuilding(buildingData)
+    ElMessage.success('楼栋创建成功')
+    buildingDialogVisible.value = false
+    loadAllBuildingList()
+  } catch (error: any) {
+    ElMessage.error(error.message || '创建失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+// 楼层提交
+const handleFloorSubmit = async () => {
+  if (!floorFormRef.value) return
+  
+  try {
+    await floorFormRef.value.validate()
+    submitLoading.value = true
+    
+    const floorData = {
+      buildingId: floorFormData.buildingId,
+      floorName: floorFormData.floorName,
+      floorCode: floorFormData.floorCode,
+      remark: floorFormData.remark
+    }
+    
+    await floorApi.createFloor(floorData)
+    ElMessage.success('楼层创建成功')
+    floorDialogVisible.value = false
+    loadFloorList()
+  } catch (error: any) {
+    ElMessage.error(error.message || '创建失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+// 加载所有楼栋列表
+const loadAllBuildingList = async () => {
+  try {
+    const response = await buildingApi.getBuildingPage({ current: 1, size: 1000 })
+    allBuildingList.value = response.data.records
+  } catch (error: any) {
+    ElMessage.error(error.message || '加载楼栋列表失败')
+  }
+}
+
+// 加载楼层列表
+const loadFloorList = async () => {
+  try {
+    const response = await floorApi.getFloorPage({ current: 1, size: 1000 })
+    floorList.value = response.data.records
+  } catch (error: any) {
+    ElMessage.error(error.message || '加载楼层列表失败')
+  }
 }
 
 // 加载数据
@@ -509,6 +881,8 @@ const loadProjectList = async () => {
 onMounted(() => {
   loadData()
   loadProjectList()
+  loadFloorList()
+  loadAllBuildingList()
 })
 </script>
 

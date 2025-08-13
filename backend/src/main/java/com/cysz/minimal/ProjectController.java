@@ -29,15 +29,13 @@ public class ProjectController {
             project.put("id", rs.getInt("id"));
             project.put("projectName", rs.getString("project_name"));
             project.put("projectType", rs.getString("project_type"));
-            project.put("companyName", rs.getString("company_name"));
+            project.put("managementOrg", rs.getString("management_org"));
             project.put("rentBillCompany", rs.getString("rent_bill_company"));
-            project.put("propertyBillCompany", rs.getString("property_bill_company"));
-            project.put("propertyRightCompany", rs.getString("property_right_company"));
-            project.put("buildingArea", rs.getBigDecimal("building_area"));
-            project.put("rentArea", rs.getBigDecimal("rent_area"));
-            project.put("propertyArea", rs.getBigDecimal("property_area"));
+            project.put("rentBillBankAccount", rs.getString("rent_bill_bank_account"));
             project.put("city", rs.getString("city"));
             project.put("address", rs.getString("address"));
+            project.put("projectManager", rs.getString("project_manager"));
+            project.put("contactPhone", rs.getString("contact_phone"));
             project.put("status", rs.getInt("status"));
             project.put("createTime", rs.getTimestamp("create_time"));
             project.put("updateTime", rs.getTimestamp("update_time"));
@@ -53,7 +51,8 @@ public class ProjectController {
             @RequestParam(defaultValue = "1") int current,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String projectType) {
+            @RequestParam(required = false) String projectType,
+            @RequestParam(required = false) Integer status) {
         
         System.out.println("项目分页查询 - current: " + current + ", size: " + size);
         
@@ -61,7 +60,7 @@ public class ProjectController {
         
         try {
             // 构建查询条件
-            StringBuilder whereClause = new StringBuilder(" WHERE status = 1");
+            StringBuilder whereClause = new StringBuilder(" WHERE 1=1");
             List<Object> params = new ArrayList<>();
             
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -74,14 +73,19 @@ public class ProjectController {
                 params.add(projectType);
             }
             
+            if (status != null) {
+                whereClause.append(" AND status = ?");
+                params.add(status);
+            }
+            
             // 查询总数
             String countSql = "SELECT COUNT(*) FROM project" + whereClause.toString();
             int total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
             
-            // 分页查询数据
+            // 分页查询数据 - 正常状态的项目放在前面，按创建时间倒序排列
             int offset = (current - 1) * size;
             String dataSql = "SELECT * FROM project" + whereClause.toString() + 
-                           " ORDER BY create_time DESC LIMIT ? OFFSET ?";
+                           " ORDER BY status DESC, create_time DESC LIMIT ? OFFSET ?";
             params.add(size);
             params.add(offset);
             
@@ -144,22 +148,24 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "INSERT INTO project (project_name, project_type, company_name, rent_bill_company, " +
-                        "property_bill_company, property_right_company, building_area, rent_area, property_area, " +
-                        "city, address, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+            String sql = "INSERT INTO project (project_name, project_type, management_org, rent_bill_company, " +
+                        "rent_bill_bank_account, city, address, project_manager, contact_phone, status) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            // 如果没有指定状态，默认为正常状态(1)
+            Integer status = projectData.get("status") != null ? (Integer) projectData.get("status") : 1;
             
             jdbcTemplate.update(sql,
                 projectData.get("projectName"),
                 projectData.get("projectType"),
-                projectData.get("companyName"),
+                projectData.get("managementOrg"),
                 projectData.get("rentBillCompany"),
-                projectData.get("propertyBillCompany"),
-                projectData.get("propertyRightCompany"),
-                projectData.get("buildingArea"),
-                projectData.get("rentArea"),
-                projectData.get("propertyArea"),
+                projectData.get("rentBillBankAccount"),
                 projectData.get("city"),
-                projectData.get("address")
+                projectData.get("address"),
+                projectData.get("projectManager"),
+                projectData.get("contactPhone"),
+                status
             );
             
             response.put("code", 200);
@@ -188,23 +194,21 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "UPDATE project SET project_name = ?, project_type = ?, company_name = ?, " +
-                        "rent_bill_company = ?, property_bill_company = ?, property_right_company = ?, " +
-                        "building_area = ?, rent_area = ?, property_area = ?, city = ?, address = ? " +
-                        "WHERE id = ? AND status = 1";
+            String sql = "UPDATE project SET project_name = ?, project_type = ?, management_org = ?, " +
+                        "rent_bill_company = ?, rent_bill_bank_account = ?, city = ?, address = ?, " +
+                        "project_manager = ?, contact_phone = ?, status = ? WHERE id = ?";
             
             int updated = jdbcTemplate.update(sql,
                 projectData.get("projectName"),
                 projectData.get("projectType"),
-                projectData.get("companyName"),
+                projectData.get("managementOrg"),
                 projectData.get("rentBillCompany"),
-                projectData.get("propertyBillCompany"),
-                projectData.get("propertyRightCompany"),
-                projectData.get("buildingArea"),
-                projectData.get("rentArea"),
-                projectData.get("propertyArea"),
+                projectData.get("rentBillBankAccount"),
                 projectData.get("city"),
                 projectData.get("address"),
+                projectData.get("projectManager"),
+                projectData.get("contactPhone"),
+                projectData.get("status"),
                 id
             );
             

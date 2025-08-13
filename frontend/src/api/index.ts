@@ -100,17 +100,15 @@ export const userApi = {
 export interface Project {
   id?: number
   projectName: string
-  projectType: 'COMPLEX' | 'APARTMENT' | 'OFFICE' | 'COMMERCIAL'
-  companyName?: string
-  rentBillCompany?: string
-  propertyBillCompany?: string
-  propertyRightCompany?: string
-  buildingArea?: number
-  rentArea?: number
-  propertyArea?: number
-  city?: string
-  address?: string
-  status?: number
+  projectType: 'COMPLEX' | 'COMMERCIAL_DISTRICT' | 'HOTEL' | 'APARTMENT' | 'OFFICE'
+  managementOrg: string
+  rentBillCompany: string
+  rentBillBankAccount?: string
+  city: string
+  address: string
+  projectManager: string
+  contactPhone: string
+  status: number
   createTime?: string
   updateTime?: string
 }
@@ -185,23 +183,63 @@ export const buildingApi = {
   }
 }
 
+// 楼层相关接口
+export interface Floor {
+  id?: number
+  buildingId: number
+  buildingName?: string
+  floorName: string
+  floorCode: string
+  remark?: string
+  createTime?: string
+  updateTime?: string
+}
+
 // 单元相关接口
 export interface Unit {
   id?: number
+  unitName: string
   unitCode: string
-  unitDescription?: string
-  projectId: number
-  projectName?: string
-  buildingId: number
+  floorId: number
+  floorName?: string
   buildingName?: string
-  unitStatus: 'VACANT' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED'
+  projectName?: string
+  unitStatus: 'RENTABLE' | 'SELF_USE' | 'PUBLIC_USE' | 'LEASE_BACK' | 'DISABLED' | 'SELF_RENTAL'
   unitPurpose?: string
   buildingArea?: number
   rentArea?: number
-  propertyArea?: number
+  isMultiTenant: boolean
+  remark?: string
   status?: number
   createTime?: string
   updateTime?: string
+}
+
+export const floorApi = {
+  // 楼层分页查询
+  getFloorPage: (params: PageQuery) => {
+    return request.get<PageResult<Floor>>('/floor/page', { params })
+  },
+  
+  // 根据楼栋ID获取楼层列表
+  getFloorsByBuilding: (buildingId: number) => {
+    return request.get<Floor[]>(`/floor/building/${buildingId}`)
+  },
+  
+  // 创建楼层
+  createFloor: (data: Floor) => {
+    return request.post('/floor', data)
+  },
+  
+  // 更新楼层
+  updateFloor: (id: number, data: Floor) => {
+    return request.put(`/floor/${id}`, data)
+  },
+  
+  // 删除楼层
+  deleteFloor: (id: number) => {
+    return request.delete(`/floor/${id}`)
+  }
 }
 
 export const unitApi = {
