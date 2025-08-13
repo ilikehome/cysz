@@ -176,10 +176,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="text" @click="handleView(row)">查看</el-button>
             <el-button type="text" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="text" @click="handleDownloadPDF(row)">
+              <el-icon><Download /></el-icon>
+              下载PDF
+            </el-button>
             <el-button type="text" @click="handleDelete(row)" style="color: #f56c6c">删除</el-button>
           </template>
         </el-table-column>
@@ -452,6 +456,121 @@
         <el-button type="primary" @click="handleUploadSubmit" :loading="uploadLoading">
           确定上传
         </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 合同预览对话框 -->
+    <el-dialog
+      v-model="previewDialogVisible"
+      title="合同预览"
+      width="1400px"
+      @close="handlePreviewDialogClose"
+    >
+      <div class="preview-container">
+        <!-- 步骤指示器 -->
+        <el-steps :active="previewStep" align-center class="preview-steps">
+          <el-step title="选择模板" description="选择合同模板" />
+          <el-step title="合同预览" description="预览最终合同" />
+          <el-step title="完成" description="保存或下载" />
+        </el-steps>
+
+        <!-- 步骤1：选择模板 -->
+        <div v-if="previewStep === 0" class="step-panel">
+          <h3>选择合同模板</h3>
+          <div class="template-grid">
+            <div
+              v-for="template in contractTemplates"
+              :key="template.id"
+              class="template-card"
+              :class="{ active: selectedTemplate?.id === template.id }"
+              @click="selectTemplate(template)"
+            >
+              <div class="template-icon">
+                <el-icon><Document /></el-icon>
+              </div>
+              <div class="template-info">
+                <h4>{{ template.templateName }}</h4>
+                <p>{{ template.description }}</p>
+                <el-tag :type="getTemplateTypeTag(template.templateType)" size="small">
+                  {{ getTemplateTypeName(template.templateType) }}
+                </el-tag>
+                <div class="template-stats">
+                  <span>使用次数: {{ template.usageCount }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 步骤2：合同预览 -->
+        <div v-if="previewStep === 1" class="step-panel">
+          <h3>合同预览</h3>
+          <div class="preview-content">
+            <div class="contract-info-panel">
+              <h4>合同信息</h4>
+              <el-descriptions :column="2" border>
+                <el-descriptions-item label="合同编号">{{ formData.contractNo }}</el-descriptions-item>
+                <el-descriptions-item label="合同名称">{{ formData.contractName }}</el-descriptions-item>
+                <el-descriptions-item label="合同类型">{{ formData.contractType }}</el-descriptions-item>
+                <el-descriptions-item label="租户名称">{{ formData.tenantName }}</el-descriptions-item>
+                <el-descriptions-item label="签订日期">{{ formData.signDate }}</el-descriptions-item>
+                <el-descriptions-item label="开始时间">{{ formData.startDate }}</el-descriptions-item>
+                <el-descriptions-item label="结束时间">{{ formData.endDate }}</el-descriptions-item>
+                <el-descriptions-item label="租金模式">{{ formData.rentMode }}</el-descriptions-item>
+              </el-descriptions>
+            </div>
+            
+            <div class="contract-template-panel">
+              <h4>合同内容预览</h4>
+              <div class="contract-content">
+                {{ mergedContractContent }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 步骤3：完成 -->
+        <div v-if="previewStep === 2" class="step-panel">
+          <h3>操作完成</h3>
+          <div class="completion-panel">
+            <el-result icon="success" title="合同预览完成">
+              <template #sub-title>
+                <p>您可以选择下载合同PDF或保存合同信息到合同档案</p>
+              </template>
+              <template #extra>
+                <div class="action-buttons">
+                  <el-button type="primary" @click="downloadContractPDF" :loading="downloadLoading">
+                    <el-icon><Download /></el-icon>
+                    下载合同PDF
+                  </el-button>
+                  <el-button type="success" @click="saveContract" :loading="saveLoading">
+                    <el-icon><DocumentAdd /></el-icon>
+                    保存到合同档案
+                  </el-button>
+                </div>
+              </template>
+            </el-result>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="preview-footer">
+          <el-button v-if="previewStep > 0" @click="prevStep">
+            <el-icon><ArrowLeft /></el-icon>
+            上一步
+          </el-button>
+          <el-button @click="previewDialogVisible = false">取消</el-button>
+          <el-button 
+            v-if="previewStep < 2" 
+            type="primary" 
+            @click="nextStep"
+            :disabled="previewStep === 0 && !selectedTemplate"
+          >
+            下一步
+            <el-icon><ArrowRight /></el-icon>
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -946,8 +1065,8 @@
       
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
-          确定
+        <el-button type="primary" @click="handlePreview" :loading="submitLoading">
+          预览
         </el-button>
       </template>
     </el-dialog>
@@ -957,7 +1076,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadInstance, type UploadFile } from 'element-plus'
-import { Plus, Search, Refresh, Upload, UploadFilled } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Upload, UploadFilled, Document, Download, DocumentAdd, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { contractApi, projectApi, buildingApi, floorApi, unitApi, type Contract } from '@/api'
 
 // 响应式数据
@@ -965,15 +1084,26 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
 const uploadDialogVisible = ref(false)
+const previewDialogVisible = ref(false)
 const submitLoading = ref(false)
 const uploadLoading = ref(false)
+const downloadLoading = ref(false)
+const saveLoading = ref(false)
 const formRef = ref<FormInstance>()
 const uploadFormRef = ref<FormInstance>()
 const uploadRef = ref<UploadInstance>()
 const viewData = ref<any>(null)
 
+// 预览相关数据
+const previewStep = ref(0)
+const selectedTemplate = ref<any>(null)
+const mergedContractContent = ref('')
+
 // 未盖章生效的合同列表
 const unsignedContracts = ref<Contract[]>([])
+
+// 合同模板列表
+const contractTemplates = ref<any[]>([])
 
 // 选项数据
 const projectOptions = ref<any[]>([])
@@ -1377,6 +1507,270 @@ const handleReset = () => {
   handleSearch()
 }
 
+// 预览合同
+const handlePreview = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    // 加载合同模板
+    await loadContractTemplates()
+    // 重置预览状态
+    previewStep.value = 0
+    selectedTemplate.value = null
+    mergedContractContent.value = ''
+    // 显示预览对话框
+    previewDialogVisible.value = true
+    dialogVisible.value = false
+  } catch (error: any) {
+    ElMessage.error('请完善合同信息')
+  }
+}
+
+// 选择模板
+const selectTemplate = (template: any) => {
+  selectedTemplate.value = template
+}
+
+// 下一步
+const nextStep = () => {
+  if (previewStep.value === 0 && selectedTemplate.value) {
+    // 合并合同信息和模板内容
+    mergeContractContent()
+    previewStep.value = 1
+  } else if (previewStep.value === 1) {
+    previewStep.value = 2
+  }
+}
+
+// 上一步
+const prevStep = () => {
+  if (previewStep.value > 0) {
+    previewStep.value--
+  }
+}
+
+// 合并合同内容
+const mergeContractContent = () => {
+  if (!selectedTemplate.value) return
+  
+  let content = selectedTemplate.value.content || ''
+  
+  // 替换模板变量
+  const replacements: Record<string, string> = {
+    '{{甲方名称}}': '出租方', // 这里可以从项目信息中获取
+    '{{乙方名称}}': formData.tenantName || '',
+    '{{合同编号}}': formData.contractNo || '',
+    '{{合同名称}}': formData.contractName || '',
+    '{{房屋地址}}': '', // 从单元信息中获取
+    '{{建筑面积}}': formData.buildingArea?.toString() || '',
+    '{{计租面积}}': formData.rentableArea?.toString() || '',
+    '{{签约面积}}': formData.contractArea?.toString() || '',
+    '{{租赁开始日期}}': formData.startDate || '',
+    '{{租赁结束日期}}': formData.endDate || '',
+    '{{签订日期}}': formData.signDate || '',
+    '{{月租金}}': formData.periodRent?.toString() || '',
+    '{{首期租金}}': formData.firstPeriodRent?.toString() || '',
+    '{{保证金}}': formData.depositAmount?.toString() || '',
+    '{{租金模式}}': formData.rentMode || '',
+    '{{付款频率}}': formData.paymentFrequency || '',
+    '{{业态}}': formData.businessFormat || '',
+    '{{经营品牌}}': formData.businessBrand || ''
+  }
+  
+  // 执行替换
+  Object.entries(replacements).forEach(([key, value]) => {
+    content = content.replace(new RegExp(key, 'g'), value)
+  })
+  
+  mergedContractContent.value = content
+}
+
+// 下载合同PDF
+const downloadContractPDF = async () => {
+  try {
+    downloadLoading.value = true
+    
+    // 这里应该调用后端API生成PDF
+    // const response = await contractApi.generateContractPDF({
+    //   contractData: formData,
+    //   templateId: selectedTemplate.value.id,
+    //   content: mergedContractContent.value
+    // })
+    
+    // 模拟下载
+    const blob = new Blob([mergedContractContent.value], { type: 'text/plain' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${formData.contractName || '合同'}.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('合同PDF下载成功')
+  } catch (error: any) {
+    ElMessage.error(error.message || '下载失败')
+  } finally {
+    downloadLoading.value = false
+  }
+}
+
+// 保存合同
+const saveContract = async () => {
+  try {
+    saveLoading.value = true
+    
+    const contractData: any = {
+      ...formData,
+      templateId: selectedTemplate.value?.id,
+      contractContent: mergedContractContent.value,
+      contractStatus: 'UNSIGNED_EFFECTIVE', // 未盖章生效
+      // 处理日期格式
+      signDate: formData.signDate || undefined,
+      startDate: formData.startDate || undefined,
+      endDate: formData.endDate || undefined,
+      depositLatestDate: formData.depositLatestDate || undefined,
+      firstPaymentLatestDate: formData.firstPaymentLatestDate || undefined
+    }
+    
+    await contractApi.createContract(contractData)
+    ElMessage.success('合同保存成功')
+    
+    // 关闭预览对话框并刷新数据
+    previewDialogVisible.value = false
+    loadData()
+  } catch (error: any) {
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    saveLoading.value = false
+  }
+}
+
+// 关闭预览对话框
+const handlePreviewDialogClose = () => {
+  previewDialogVisible.value = false
+  previewStep.value = 0
+  selectedTemplate.value = null
+  mergedContractContent.value = ''
+}
+
+// 加载合同模板
+const loadContractTemplates = async () => {
+  try {
+    // 这里应该调用实际的API
+    // const response = await contractApi.getTemplateList({ status: 'ACTIVE' })
+    // contractTemplates.value = response.data
+    
+    // 模拟数据
+    contractTemplates.value = [
+      {
+        id: 1,
+        templateName: '标准租赁合同模板',
+        templateType: 'LEASE',
+        description: '适用于标准房屋租赁业务的合同模板',
+        usageCount: 25,
+        content: `合同编号：{{合同编号}}
+合同名称：{{合同名称}}
+
+甲方（出租方）：{{甲方名称}}
+乙方（承租方）：{{乙方名称}}
+
+根据《中华人民共和国合同法》等相关法律法规，甲乙双方在平等、自愿、协商一致的基础上，就房屋租赁事宜达成如下协议：
+
+一、租赁房屋基本情况
+房屋地址：{{房屋地址}}
+建筑面积：{{建筑面积}}平方米
+计租面积：{{计租面积}}平方米
+签约面积：{{签约面积}}平方米
+
+二、租赁期限
+租赁期限自{{租赁开始日期}}至{{租赁结束日期}}止。
+
+三、租金及支付方式
+租金模式：{{租金模式}}
+月租金：{{月租金}}元
+首期租金：{{首期租金}}元
+付款频率：{{付款频率}}
+
+四、保证金
+保证金金额：{{保证金}}元
+
+五、其他约定
+业态：{{业态}}
+经营品牌：{{经营品牌}}
+
+本合同一式两份，甲乙双方各执一份，具有同等法律效力。
+
+甲方签字：________________    日期：{{签订日期}}
+乙方签字：________________    日期：{{签订日期}}`
+      },
+      {
+        id: 2,
+        templateName: '商业租赁合同模板',
+        templateType: 'LEASE',
+        description: '适用于商业用途的租赁合同',
+        usageCount: 18,
+        content: `商业租赁合同
+
+合同编号：{{合同编号}}
+合同名称：{{合同名称}}
+
+出租方（甲方）：{{甲方名称}}
+承租方（乙方）：{{乙方名称}}
+
+经甲乙双方友好协商，就商业用房租赁事宜达成如下协议：
+
+第一条 租赁物业
+物业地址：{{房屋地址}}
+租赁面积：{{签约面积}}平方米
+用途：{{业态}}
+
+第二条 租赁期限
+租期：{{租赁开始日期}} 至 {{租赁结束日期}}
+
+第三条 租金条款
+租金标准：{{租金模式}}
+租金金额：{{月租金}}元/月
+支付方式：{{付款频率}}
+
+第四条 保证金
+金额：{{保证金}}元
+
+甲方：________________
+乙方：________________
+签约日期：{{签订日期}}`
+      }
+    ]
+  } catch (error: any) {
+    console.error('加载合同模板失败:', error)
+    ElMessage.error('加载合同模板失败')
+  }
+}
+
+// 获取模板类型标签颜色
+const getTemplateTypeTag = (type: string) => {
+  const tagMap: Record<string, string> = {
+    'LEASE': 'primary',
+    'SERVICE': 'success',
+    'SALES': 'warning',
+    'OTHER': 'info'
+  }
+  return tagMap[type] || 'info'
+}
+
+// 获取模板类型名称
+const getTemplateTypeName = (type: string) => {
+  const nameMap: Record<string, string> = {
+    'LEASE': '租赁合同',
+    'SERVICE': '服务合同',
+    'SALES': '销售合同',
+    'OTHER': '其他合同'
+  }
+  return nameMap[type] || type
+}
+
 // 上传盖章合同
 const handleUploadContract = () => {
   resetUploadForm()
@@ -1402,6 +1796,44 @@ const handleEdit = (row: Contract) => {
   dialogTitle.value = '编辑合同'
   Object.assign(formData, row)
   dialogVisible.value = true
+}
+
+// 下载合同PDF
+const handleDownloadPDF = async (row: Contract) => {
+  try {
+    downloadLoading.value = true
+    
+    // 这里应该调用后端API下载合同PDF
+    // const response = await contractApi.downloadContractPDF(row.id!)
+    
+    // 模拟下载
+    const contractContent = `合同编号：${row.contractNo}
+合同名称：${row.contractName}
+租户名称：${row.tenantName}
+合同类型：${row.contractType}
+签订日期：${row.signDate}
+开始时间：${row.startDate}
+结束时间：${row.endDate}
+合同状态：${getContractStatusName(row.contractStatus)}
+
+这是一个模拟的合同内容，实际应该从后端获取完整的合同PDF文件。`
+    
+    const blob = new Blob([contractContent], { type: 'text/plain' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${row.contractName || '合同'}_${row.contractNo}.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('合同PDF下载成功')
+  } catch (error: any) {
+    ElMessage.error(error.message || '下载失败')
+  } finally {
+    downloadLoading.value = false
+  }
 }
 
 // 删除
@@ -2110,6 +2542,156 @@ onMounted(() => {
   color: #374151;
 }
 
+/* 预览对话框样式 */
+.preview-container {
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.preview-steps {
+  margin-bottom: 32px;
+}
+
+.step-panel {
+  padding: 24px 0;
+}
+
+.step-panel h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* 模板选择样式 */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.template-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+.template-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+}
+
+.template-card.active {
+  border-color: #10b981;
+  background: #f0fdf4;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.template-icon {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.template-icon .el-icon {
+  font-size: 48px;
+  color: #10b981;
+}
+
+.template-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.template-info p {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.template-stats {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* 预览内容样式 */
+.preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.contract-info-panel,
+.contract-template-panel {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+}
+
+.contract-info-panel h4,
+.contract-template-panel h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.contract-content {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 20px;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #374151;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* 完成页面样式 */
+.completion-panel {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.action-buttons .el-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+/* 预览对话框底部 */
+.preview-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-footer .el-button {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+}
+
 /* 添加加载动画 */
 @keyframes fadeInUp {
   from {
@@ -2124,5 +2706,31 @@ onMounted(() => {
 
 .contract-management {
   animation: fadeInUp 0.6s ease forwards;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .template-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .template-card {
+    padding: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .action-buttons .el-button {
+    width: 100%;
+  }
+  
+  .preview-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 </style>
