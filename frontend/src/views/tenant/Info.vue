@@ -35,12 +35,86 @@
             </el-select>
           </el-form-item>
           <el-form-item label="业态">
-            <el-input
+            <el-select
               v-model="searchForm.businessFormat"
-              placeholder="请输入业态"
+              placeholder="请选择业态"
               clearable
               style="width: 150px"
-            />
+            >
+              <!-- 零售业态 -->
+              <el-option-group label="零售业态">
+                <el-option label="百货商场" value="百货商场" />
+                <el-option label="购物中心" value="购物中心" />
+                <el-option label="超市" value="超市" />
+                <el-option label="便利店" value="便利店" />
+                <el-option label="专卖店" value="专卖店" />
+                <el-option label="品牌店" value="品牌店" />
+                <el-option label="折扣店" value="折扣店" />
+                <el-option label="免税店" value="免税店" />
+              </el-option-group>
+              
+              <!-- 餐饮业态 -->
+              <el-option-group label="餐饮业态">
+                <el-option label="正餐" value="正餐" />
+                <el-option label="快餐" value="快餐" />
+                <el-option label="休闲餐饮" value="休闲餐饮" />
+                <el-option label="咖啡厅" value="咖啡厅" />
+                <el-option label="茶饮店" value="茶饮店" />
+                <el-option label="酒吧" value="酒吧" />
+                <el-option label="烘焙店" value="烘焙店" />
+                <el-option label="甜品店" value="甜品店" />
+              </el-option-group>
+              
+              <!-- 娱乐业态 -->
+              <el-option-group label="娱乐业态">
+                <el-option label="电影院" value="电影院" />
+                <el-option label="KTV" value="KTV" />
+                <el-option label="游戏厅" value="游戏厅" />
+                <el-option label="健身房" value="健身房" />
+                <el-option label="美容美发" value="美容美发" />
+                <el-option label="SPA" value="SPA" />
+                <el-option label="儿童乐园" value="儿童乐园" />
+                <el-option label="密室逃脱" value="密室逃脱" />
+              </el-option-group>
+              
+              <!-- 服务业态 -->
+              <el-option-group label="服务业态">
+                <el-option label="银行" value="银行" />
+                <el-option label="保险" value="保险" />
+                <el-option label="通讯营业厅" value="通讯营业厅" />
+                <el-option label="快递服务" value="快递服务" />
+                <el-option label="洗衣店" value="洗衣店" />
+                <el-option label="维修服务" value="维修服务" />
+                <el-option label="教育培训" value="教育培训" />
+                <el-option label="医疗诊所" value="医疗诊所" />
+              </el-option-group>
+              
+              <!-- 办公业态 -->
+              <el-option-group label="办公业态">
+                <el-option label="写字楼" value="写字楼" />
+                <el-option label="联合办公" value="联合办公" />
+                <el-option label="创业孵化器" value="创业孵化器" />
+                <el-option label="会议中心" value="会议中心" />
+                <el-option label="展示厅" value="展示厅" />
+              </el-option-group>
+              
+              <!-- 住宿业态 -->
+              <el-option-group label="住宿业态">
+                <el-option label="酒店" value="酒店" />
+                <el-option label="民宿" value="民宿" />
+                <el-option label="青年旅社" value="青年旅社" />
+                <el-option label="公寓式酒店" value="公寓式酒店" />
+              </el-option-group>
+              
+              <!-- 其他业态 -->
+              <el-option-group label="其他业态">
+                <el-option label="仓储物流" value="仓储物流" />
+                <el-option label="汽车服务" value="汽车服务" />
+                <el-option label="宠物服务" value="宠物服务" />
+                <el-option label="文化艺术" value="文化艺术" />
+                <el-option label="其他" value="其他" />
+              </el-option-group>
+            </el-select>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
@@ -69,11 +143,29 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="enterpriseNature" label="企业性质" width="180" show-overflow-tooltip />
+        <el-table-column prop="socialCreditCode" label="社会信用代码" width="180" show-overflow-tooltip />
+        <el-table-column prop="taxpayerId" label="纳税人识别号" width="150" show-overflow-tooltip />
+        <el-table-column prop="businessRegistrationNumber" label="工商注册号" width="150" show-overflow-tooltip />
+        <el-table-column prop="individualLicenseNumber" label="个体户证件号" width="150" show-overflow-tooltip />
         <el-table-column prop="brand" label="品牌" width="120" />
-        <el-table-column prop="businessFormat" label="业态" width="100" />
+        <el-table-column prop="brandQualification" label="品牌资质" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.brandQualification" type="info" size="small">
+              {{ row.brandQualification }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="businessFormat" label="业态" width="120" />
+        <el-table-column prop="businessScope" label="经营范围" width="200" show-overflow-tooltip />
         <el-table-column prop="legalPersonName" label="法人姓名" width="120" />
         <el-table-column prop="legalPersonPhone" label="法人手机号" width="130" />
-        <el-table-column prop="socialCreditCode" label="社会信用代码" width="180" show-overflow-tooltip />
+        <el-table-column prop="legalPersonIdCard" label="法人身份证" width="180" show-overflow-tooltip />
+        <el-table-column prop="financeContact" label="财务联系人" width="120" />
+        <el-table-column prop="financePhone" label="财务电话" width="130" />
+        <el-table-column prop="payerName" label="付款人名称" width="120" />
+        <el-table-column prop="paymentAccount" label="付款账号" width="180" show-overflow-tooltip />
+        <el-table-column prop="remark" label="备注" width="150" show-overflow-tooltip />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -98,6 +190,77 @@
       </div>
     </el-card>
     
+    <!-- 查看详情对话框 -->
+    <el-dialog
+      v-model="viewDialogVisible"
+      title="租户详情"
+      width="1000px"
+    >
+      <div v-if="viewData" class="tenant-detail">
+        <!-- 基本信息 -->
+        <el-divider content-position="left">基本信息</el-divider>
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="租户名称">{{ viewData.tenantName }}</el-descriptions-item>
+          <el-descriptions-item label="租户性质">
+            <el-tag :type="getTenantNatureTag(viewData.tenantNature)">
+              {{ viewData.tenantNature }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="品牌">{{ viewData.brand || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="品牌资质">
+            <el-tag v-if="viewData.brandQualification" type="info" size="small">
+              {{ viewData.brandQualification }}
+            </el-tag>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="业态">{{ viewData.businessFormat || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="企业性质">{{ viewData.enterpriseNature || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 证件信息 -->
+        <el-divider content-position="left">证件信息</el-divider>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="社会信用代码">{{ viewData.socialCreditCode || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="纳税人识别号">{{ viewData.taxpayerId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="工商注册号">{{ viewData.businessRegistrationNumber || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="个体户证件号">{{ viewData.individualLicenseNumber || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 经营信息 -->
+        <el-divider content-position="left">经营信息</el-divider>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="经营范围">{{ viewData.businessScope || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 法人信息 -->
+        <el-divider content-position="left">法人信息</el-divider>
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="法人姓名">{{ viewData.legalPersonName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="法人手机号">{{ viewData.legalPersonPhone || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="法人身份证">{{ viewData.legalPersonIdCard || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 财务信息 -->
+        <el-divider content-position="left">财务信息</el-divider>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="财务联系人">{{ viewData.financeContact || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="财务电话">{{ viewData.financePhone || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="付款人名称">{{ viewData.payerName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="付款账号">{{ viewData.paymentAccount || '-' }}</el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 其他信息 -->
+        <el-divider content-position="left">其他信息</el-divider>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="备注">{{ viewData.remark || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      
+      <template #footer>
+        <el-button @click="viewDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 新建/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
@@ -376,8 +539,10 @@ import { tenantApi, type Tenant } from '@/api'
 // 响应式数据
 const loading = ref(false)
 const dialogVisible = ref(false)
+const viewDialogVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref<FormInstance>()
+const viewData = ref<any>(null)
 
 // 搜索表单
 const searchForm = reactive({
@@ -469,7 +634,8 @@ const handleAdd = () => {
 
 // 查看
 const handleView = (row: any) => {
-  ElMessage.info('查看功能开发中...')
+  viewData.value = { ...row }
+  viewDialogVisible.value = true
 }
 
 // 编辑
