@@ -2,17 +2,22 @@
   <div class="layout-container">
     <el-container>
       <!-- 侧边栏 -->
-      <el-aside width="250px" class="sidebar">
+      <el-aside :width="sidebarCollapsed ? '64px' : '250px'" class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
         <div class="logo">
           <div class="logo-content">
             <el-icon class="logo-icon"><OfficeBuilding /></el-icon>
-            <h2>云联智管</h2>
+            <h2 v-show="!sidebarCollapsed">云联智管</h2>
+          </div>
+          <div class="collapse-btn" @click="toggleSidebar">
+            <el-icon>
+              <Expand v-if="sidebarCollapsed" />
+              <Fold v-else />
+            </el-icon>
           </div>
         </div>
         
-        
         <!-- 用户信息区域 -->
-        <div class="user-section">
+        <div class="user-section" v-show="!sidebarCollapsed">
           <el-dropdown @command="handleUserAction">
             <div class="user-info">
               <el-icon><User /></el-icon>
@@ -43,6 +48,7 @@
           class="sidebar-menu"
           router
           unique-opened
+          :collapse="sidebarCollapsed"
           background-color="#304156"
           text-color="#bfcbd9"
           active-text-color="#409EFF"
@@ -172,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -182,7 +188,6 @@ import {
   ArrowDown, 
   DataBoard, 
   Postcard, 
-  House, 
   Grid, 
   Connection, 
   Avatar, 
@@ -198,12 +203,17 @@ import {
   CreditCard, 
   UserFilled,
   Message,
-  SwitchButton
+  SwitchButton,
+  Expand,
+  Fold
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+// 侧边栏收缩状态
+const sidebarCollapsed = ref(false)
 
 // 当前激活的菜单
 const activeMenu = computed(() => route.path)
@@ -213,15 +223,11 @@ const currentTitle = computed(() => {
   return route.meta?.title || '首页'
 })
 
-// 获取单位类型文本
-const getOrgTypeText = (type?: string) => {
-  const typeMap: Record<string, string> = {
-    'company': '企业',
-    'government': '政府机构',
-    'institution': '事业单位',
-    'other': '其他'
-  }
-  return typeMap[type || 'company'] || '企业'
+// 切换侧边栏收缩状态
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  // 保存用户偏好到localStorage
+  localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed.value))
 }
 
 // 获取角色文本
@@ -252,6 +258,14 @@ const logout = () => {
   ElMessage.success('退出登录成功')
   router.push('/login')
 }
+
+// 初始化侧边栏状态
+onMounted(() => {
+  const savedState = localStorage.getItem('sidebarCollapsed')
+  if (savedState !== null) {
+    sidebarCollapsed.value = savedState === 'true'
+  }
+})
 </script>
 
 <style scoped>
@@ -287,6 +301,7 @@ const logout = () => {
   text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .logo-content {
@@ -295,6 +310,10 @@ const logout = () => {
   justify-content: center;
   gap: 12px;
   transition: all 0.3s ease;
+}
+
+.sidebar-collapsed .logo-content {
+  justify-content: center;
 }
 
 .logo-content:hover {
@@ -306,6 +325,7 @@ const logout = () => {
   color: #60a5fa;
   filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.3));
   animation: pulse 2s infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse {
@@ -329,6 +349,7 @@ const logout = () => {
   background-clip: text;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .logo h2::after {
@@ -347,11 +368,39 @@ const logout = () => {
   width: 100%;
 }
 
+.collapse-btn {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #bfcbd9;
+}
+
+.collapse-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.sidebar-collapsed .collapse-btn {
+  right: 50%;
+  transform: translateY(-50%) translateX(50%);
+}
 
 .user-section {
   padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .user-section .user-info {
@@ -438,6 +487,22 @@ const logout = () => {
   transform: translateX(4px);
 }
 
+/* 收缩状态样式 */
+.sidebar-collapsed .sidebar-menu :deep(.el-menu-item),
+.sidebar-collapsed .sidebar-menu :deep(.el-sub-menu__title) {
+  margin: 4px 8px;
+  justify-content: center;
+}
+
+.sidebar-collapsed .sidebar-menu :deep(.el-menu-item:hover),
+.sidebar-collapsed .sidebar-menu :deep(.el-sub-menu__title:hover) {
+  transform: none;
+}
+
+.sidebar-collapsed .sidebar-menu :deep(.el-menu--collapse .el-sub-menu__icon-arrow) {
+  display: none;
+}
+
 .main-content {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   padding: 0;
@@ -446,6 +511,7 @@ const logout = () => {
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .main-content::before {
@@ -459,5 +525,23 @@ const logout = () => {
     radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
   pointer-events: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+  }
+  
+  .sidebar-collapsed {
+    transform: translateX(-100%);
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
 }
 </style>
