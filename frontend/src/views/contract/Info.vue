@@ -4,10 +4,16 @@
       <template #header>
         <div class="card-header">
           <span>合同档案</span>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>
-            新建合同
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="handleUploadContract">
+              <el-icon><Upload /></el-icon>
+              上传盖章合同
+            </el-button>
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>
+              新建合同
+            </el-button>
+          </div>
         </div>
       </template>
       
@@ -308,6 +314,147 @@
       </template>
     </el-dialog>
     
+    <!-- 上传盖章合同对话框 -->
+    <el-dialog
+      v-model="uploadDialogVisible"
+      title="上传盖章合同"
+      width="800px"
+      @close="handleUploadDialogClose"
+    >
+      <el-form
+        ref="uploadFormRef"
+        :model="uploadFormData"
+        :rules="uploadFormRules"
+        label-width="120px"
+      >
+        <el-form-item label="上传合同文件" prop="contractFile">
+          <el-upload
+            ref="uploadRef"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="handleFileChange"
+            :on-remove="handleFileRemove"
+            accept=".pdf,.doc,.docx"
+            drag
+          >
+            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <div class="el-upload__text">
+              将文件拖到此处，或<em>点击上传</em>
+            </div>
+            <template #tip>
+              <div class="el-upload__tip">
+                只能上传 PDF/DOC/DOCX 文件，且不超过 10MB
+              </div>
+            </template>
+          </el-upload>
+        </el-form-item>
+        
+        <el-form-item label="是否关联合同">
+          <el-radio-group v-model="uploadFormData.linkType" @change="handleLinkTypeChange">
+            <el-radio label="new">新建合同</el-radio>
+            <el-radio label="existing">关联已有合同</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        
+        <!-- 关联已有合同 -->
+        <div v-if="uploadFormData.linkType === 'existing'">
+          <el-form-item label="选择合同" prop="existingContractId">
+            <el-select
+              v-model="uploadFormData.existingContractId"
+              placeholder="请选择要关联的合同"
+              style="width: 100%"
+              filterable
+            >
+              <el-option
+                v-for="contract in unsignedContracts"
+                :key="contract.id"
+                :label="`${contract.contractNo} - ${contract.contractName}`"
+                :value="contract.id"
+              />
+            </el-select>
+          </el-form-item>
+        </div>
+        
+        <!-- 新建合同信息 -->
+        <div v-if="uploadFormData.linkType === 'new'">
+          <el-divider content-position="left">合同基本信息</el-divider>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="合同编号" prop="contractNo">
+                <el-input
+                  v-model="uploadFormData.contractNo"
+                  placeholder="请输入合同编号"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="合同名称" prop="contractName">
+                <el-input
+                  v-model="uploadFormData.contractName"
+                  placeholder="请输入合同名称"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="合同类型" prop="contractType">
+                <el-select v-model="uploadFormData.contractType" placeholder="请选择合同类型" style="width: 100%">
+                  <el-option label="商铺" value="商铺" />
+                  <el-option label="办公" value="办公" />
+                  <el-option label="公寓" value="公寓" />
+                  <el-option label="酒店" value="酒店" />
+                  <el-option label="车位" value="车位" />
+                  <el-option label="广告" value="广告" />
+                  <el-option label="场地" value="场地" />
+                  <el-option label="多经点位" value="多经点位" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="租户名称" prop="tenantName">
+                <el-input
+                  v-model="uploadFormData.tenantName"
+                  placeholder="请输入租户名称"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="签订日期" prop="signDate">
+                <el-date-picker
+                  v-model="uploadFormData.signDate"
+                  type="date"
+                  placeholder="请选择签订日期"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="所属项目" prop="projectId">
+                <el-select v-model="uploadFormData.projectId" placeholder="请选择所属项目" style="width: 100%">
+                  <el-option
+                    v-for="project in projectOptions"
+                    :key="project.id"
+                    :label="project.projectName"
+                    :value="project.id"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+      </el-form>
+      
+      <template #footer>
+        <el-button @click="uploadDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleUploadSubmit" :loading="uploadLoading">
+          确定上传
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- 新建/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
@@ -809,16 +956,24 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadInstance, type UploadFile } from 'element-plus'
+import { Plus, Search, Refresh, Upload, UploadFilled } from '@element-plus/icons-vue'
 import { contractApi, projectApi, buildingApi, floorApi, unitApi, type Contract } from '@/api'
 
 // 响应式数据
 const loading = ref(false)
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
+const uploadDialogVisible = ref(false)
 const submitLoading = ref(false)
+const uploadLoading = ref(false)
 const formRef = ref<FormInstance>()
+const uploadFormRef = ref<FormInstance>()
+const uploadRef = ref<UploadInstance>()
 const viewData = ref<any>(null)
+
+// 未盖章生效的合同列表
+const unsignedContracts = ref<Contract[]>([])
 
 // 选项数据
 const projectOptions = ref<any[]>([])
@@ -902,6 +1057,20 @@ const formData = reactive({
   contractStatus: 'UNSIGNED_EFFECTIVE'
 })
 
+// 上传表单数据
+const uploadFormData = reactive({
+  contractFile: null as File | null,
+  linkType: 'new' as 'new' | 'existing',
+  existingContractId: null as number | null,
+  // 新建合同时的基本信息
+  contractNo: '',
+  contractName: '',
+  contractType: '',
+  tenantName: '',
+  signDate: '',
+  projectId: null as number | null
+})
+
 // 表单验证规则
 const formRules: FormRules = {
   contractNo: [
@@ -951,6 +1120,97 @@ const formRules: FormRules = {
   ],
   paymentFrequency: [
     { required: true, message: '请选择付款频率', trigger: 'change' }
+  ]
+}
+
+// 上传表单验证规则
+const uploadFormRules: FormRules = {
+  contractFile: [
+    { required: true, message: '请上传合同文件', trigger: 'change' }
+  ],
+  existingContractId: [
+    { 
+      required: true, 
+      message: '请选择要关联的合同', 
+      trigger: 'change',
+      validator: (rule: any, value: any, callback: any) => {
+        if (uploadFormData.linkType === 'existing' && !value) {
+          callback(new Error('请选择要关联的合同'))
+        } else {
+          callback()
+        }
+      }
+    }
+  ],
+  contractNo: [
+    { 
+      required: true, 
+      message: '请输入合同编号', 
+      trigger: 'blur',
+      validator: (rule: any, value: any, callback: any) => {
+        if (uploadFormData.linkType === 'new' && !value) {
+          callback(new Error('请输入合同编号'))
+        } else {
+          callback()
+        }
+      }
+    }
+  ],
+  contractName: [
+    { 
+      required: true, 
+      message: '请输入合同名称', 
+      trigger: 'blur',
+      validator: (rule: any, value: any, callback: any) => {
+        if (uploadFormData.linkType === 'new' && !value) {
+          callback(new Error('请输入合同名称'))
+        } else {
+          callback()
+        }
+      }
+    }
+  ],
+  contractType: [
+    { 
+      required: true, 
+      message: '请选择合同类型', 
+      trigger: 'change',
+      validator: (rule: any, value: any, callback: any) => {
+        if (uploadFormData.linkType === 'new' && !value) {
+          callback(new Error('请选择合同类型'))
+        } else {
+          callback()
+        }
+      }
+    }
+  ],
+  tenantName: [
+    { 
+      required: true, 
+      message: '请输入租户名称', 
+      trigger: 'blur',
+      validator: (rule: any, value: any, callback: any) => {
+        if (uploadFormData.linkType === 'new' && !value) {
+          callback(new Error('请输入租户名称'))
+        } else {
+          callback()
+        }
+      }
+    }
+  ],
+  projectId: [
+    { 
+      required: true, 
+      message: '请选择所属项目', 
+      trigger: 'change',
+      validator: (rule: any, value: any, callback: any) => {
+        if (uploadFormData.linkType === 'new' && !value) {
+          callback(new Error('请选择所属项目'))
+        } else {
+          callback()
+        }
+      }
+    }
   ]
 }
 
@@ -1117,6 +1377,13 @@ const handleReset = () => {
   handleSearch()
 }
 
+// 上传盖章合同
+const handleUploadContract = () => {
+  resetUploadForm()
+  loadUnsignedContracts()
+  uploadDialogVisible.value = true
+}
+
 // 新建
 const handleAdd = () => {
   dialogTitle.value = '新建合同'
@@ -1210,6 +1477,130 @@ const handleSubmit = async () => {
   } finally {
     submitLoading.value = false
   }
+}
+
+// 文件上传处理
+const handleFileChange = (file: UploadFile) => {
+  if (file.raw) {
+    // 检查文件大小（10MB）
+    if (file.raw.size > 10 * 1024 * 1024) {
+      ElMessage.error('文件大小不能超过 10MB')
+      return false
+    }
+    
+    // 检查文件类型
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if (!allowedTypes.includes(file.raw.type)) {
+      ElMessage.error('只能上传 PDF、DOC、DOCX 格式的文件')
+      return false
+    }
+    
+    uploadFormData.contractFile = file.raw
+  }
+}
+
+// 文件移除处理
+const handleFileRemove = () => {
+  uploadFormData.contractFile = null
+}
+
+// 关联类型变化处理
+const handleLinkTypeChange = (type: string) => {
+  if (type === 'existing') {
+    // 清空新建合同的表单数据
+    uploadFormData.contractNo = ''
+    uploadFormData.contractName = ''
+    uploadFormData.contractType = ''
+    uploadFormData.tenantName = ''
+    uploadFormData.signDate = ''
+    uploadFormData.projectId = null
+  } else {
+    // 清空关联合同选择
+    uploadFormData.existingContractId = null
+  }
+}
+
+// 加载未盖章生效的合同
+const loadUnsignedContracts = async () => {
+  try {
+    const response = await contractApi.getContractPage({
+      current: 1,
+      size: 1000,
+      contractStatus: 'UNSIGNED_EFFECTIVE'
+    })
+    unsignedContracts.value = response.data.records
+  } catch (error: any) {
+    console.error('加载未盖章合同失败:', error)
+  }
+}
+
+// 上传对话框关闭
+const handleUploadDialogClose = () => {
+  resetUploadForm()
+}
+
+// 上传提交
+const handleUploadSubmit = async () => {
+  if (!uploadFormRef.value) return
+  
+  try {
+    await uploadFormRef.value.validate()
+    uploadLoading.value = true
+    
+    if (uploadFormData.linkType === 'existing') {
+      // 关联已有合同，更新合同状态为已盖章生效
+      await contractApi.updateContract(uploadFormData.existingContractId!, {
+        contractStatus: 'SIGNED_EFFECTIVE'
+      })
+      
+      // TODO: 上传文件到服务器并关联到合同
+      // await contractApi.uploadContractFile(uploadFormData.existingContractId!, uploadFormData.contractFile!)
+      
+      ElMessage.success('合同状态已更新为已盖章生效')
+    } else {
+      // 新建合同，状态为已盖章生效
+      const contractData = {
+        contractNo: uploadFormData.contractNo,
+        contractName: uploadFormData.contractName,
+        contractType: uploadFormData.contractType,
+        tenantName: uploadFormData.tenantName,
+        signDate: uploadFormData.signDate,
+        projectId: uploadFormData.projectId,
+        contractStatus: 'SIGNED_EFFECTIVE'
+      }
+      
+      const response = await contractApi.createContract(contractData)
+      
+      // TODO: 上传文件到服务器并关联到新建的合同
+      // await contractApi.uploadContractFile(response.data.id, uploadFormData.contractFile!)
+      
+      ElMessage.success('合同创建成功，状态为已盖章生效')
+    }
+    
+    uploadDialogVisible.value = false
+    loadData()
+  } catch (error: any) {
+    ElMessage.error(error.message || '操作失败')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
+// 重置上传表单
+const resetUploadForm = () => {
+  Object.assign(uploadFormData, {
+    contractFile: null,
+    linkType: 'new',
+    existingContractId: null,
+    contractNo: '',
+    contractName: '',
+    contractType: '',
+    tenantName: '',
+    signDate: '',
+    projectId: null
+  })
+  uploadFormRef.value?.resetFields()
+  uploadRef.value?.clearFiles()
 }
 
 // 重置表单
@@ -1362,19 +1753,37 @@ onMounted(() => {
   margin-right: 12px;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 12px;
+}
+
 .card-header :deep(.el-button) {
   border-radius: 10px;
   padding: 10px 20px;
   font-weight: 500;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border: none;
+}
+
+.card-header :deep(.el-button--primary) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
-.card-header :deep(.el-button:hover) {
+.card-header :deep(.el-button--primary:hover) {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.card-header :deep(.el-button--success) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.card-header :deep(.el-button--success:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.3);
 }
 
 .search-area {
@@ -1650,6 +2059,55 @@ onMounted(() => {
 
 .contract-detail :deep(.el-descriptions__content) {
   color: #6b7280;
+}
+
+/* 上传对话框样式 */
+:deep(.el-upload-dragger) {
+  border-radius: 12px;
+  border: 2px dashed #d1d5db;
+  background: #f9fafb;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-upload-dragger:hover) {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+:deep(.el-upload-dragger .el-icon--upload) {
+  font-size: 48px;
+  color: #10b981;
+  margin-bottom: 16px;
+}
+
+:deep(.el-upload__text) {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+:deep(.el-upload__text em) {
+  color: #10b981;
+  font-weight: 500;
+}
+
+:deep(.el-upload__tip) {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+:deep(.el-radio-group) {
+  display: flex;
+  gap: 24px;
+}
+
+:deep(.el-radio) {
+  margin-right: 0;
+}
+
+:deep(.el-radio__label) {
+  font-weight: 500;
+  color: #374151;
 }
 
 /* 添加加载动画 */
