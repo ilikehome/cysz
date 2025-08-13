@@ -63,13 +63,13 @@
               <el-icon><Postcard /></el-icon>
               <span>项目管理</span>
             </el-menu-item>
-            <el-menu-item index="/asset/building">
-              <el-icon><House /></el-icon>
-              <span>楼栋管理</span>
-            </el-menu-item>
             <el-menu-item index="/asset/unit">
               <el-icon><Grid /></el-icon>
               <span>单元管理</span>
+            </el-menu-item>
+            <el-menu-item index="/asset/merge-split">
+              <el-icon><Connection /></el-icon>
+              <span>合并拆分</span>
             </el-menu-item>
           </el-sub-menu>
           

@@ -69,21 +69,21 @@ const router = createRouter({
               }
             },
             {
-              path: '/asset/building',
-              name: 'AssetBuilding',
-              component: () => import('@/views/asset/Building.vue'),
-              meta: {
-                title: '楼栋管理',
-                icon: 'Building'
-              }
-            },
-            {
               path: '/asset/unit',
               name: 'AssetUnit',
               component: () => import('@/views/asset/Unit.vue'),
               meta: {
                 title: '单元管理',
                 icon: 'Grid'
+              }
+            },
+            {
+              path: '/asset/merge-split',
+              name: 'AssetMergeSplit',
+              component: () => import('@/views/asset/MergeSplit.vue'),
+              meta: {
+                title: '合并拆分',
+                icon: 'Connection'
               }
             },
             {
