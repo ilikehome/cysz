@@ -4,21 +4,28 @@ import type { PageResult, PageQuery } from './types'
 // 租户相关接口
 export interface Tenant {
   id?: number
-  tenantCode: string
-  tenantName: string
-  tenantCategory?: string
-  projectId?: number
-  socialCreditCode?: string
-  certificateType?: string
-  taxpayerId?: string
-  businessLicense?: string
-  legalPerson?: string
-  registeredAddress?: string
-  contactPhone?: string
-  contactEmail?: string
-  status?: number
-  createTime?: string
-  updateTime?: string
+  tenantName: string                    // 租户名称
+  tenantNature: string                  // 租户性质：个人/公司/政府机构
+  enterpriseNature?: string             // 企业性质
+  socialCreditCode?: string             // 社会信用代码
+  taxpayerId?: string                   // 纳税人识别号
+  businessRegistrationNumber?: string   // 工商注册号
+  individualLicenseNumber?: string      // 个体户证件号
+  brand?: string                        // 品牌
+  brandQualification?: string           // 品牌资质：直营/加盟/联营
+  businessFormat?: string               // 业态
+  businessScope?: string                // 经营范围
+  legalPersonName?: string              // 法人姓名
+  legalPersonPhone?: string             // 法人手机号
+  legalPersonIdCard?: string            // 法人身份证
+  financeContact?: string               // 财务联系人
+  financePhone?: string                 // 财务电话
+  payerName?: string                    // 付款人名称
+  paymentAccount?: string               // 付款账号
+  remark?: string                       // 备注
+  status?: number                       // 状态：0-禁用，1-启用
+  createTime?: string                   // 创建时间
+  updateTime?: string                   // 更新时间
 }
 
 export const tenantApi = {
