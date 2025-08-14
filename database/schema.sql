@@ -1,257 +1,257 @@
--- 云联智管地产资管系统数据库设计
--- 数据库: cysz
--- 字符集: utf8mb4
+-- 创业园租赁管理系统数据库结构
+-- Database: cysz
+-- 从阿里云MySQL数据库导出的真实表结构
+-- 导出时间: 2025-08-14
 
-CREATE DATABASE IF NOT EXISTS cysz CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE cysz;
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS `cysz` /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
--- 用户管理表
-CREATE TABLE sys_user (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
-    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    password VARCHAR(100) NOT NULL COMMENT '密码',
-    real_name VARCHAR(50) COMMENT '真实姓名',
-    email VARCHAR(100) COMMENT '邮箱',
-    phone VARCHAR(20) COMMENT '手机号',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人'
-) COMMENT '用户表';
+USE `cysz`;
 
--- 角色表
-CREATE TABLE sys_role (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '角色ID',
-    role_name VARCHAR(50) NOT NULL COMMENT '角色名称',
-    role_code VARCHAR(50) NOT NULL UNIQUE COMMENT '角色编码',
-    description VARCHAR(200) COMMENT '角色描述',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) COMMENT '角色表';
+-- 1. 组织表 (organizations)
+CREATE TABLE `organizations` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `org_code` varchar(50) NOT NULL COMMENT '组织代码',
+  `org_name` varchar(100) NOT NULL COMMENT '组织名称',
+  `org_type` varchar(20) DEFAULT 'company' COMMENT '组织类型：company-公司，government-政府机构，institution-事业单位',
+  `contact_person` varchar(50) DEFAULT NULL COMMENT '联系人',
+  `contact_phone` varchar(20) DEFAULT NULL COMMENT '联系电话',
+  `contact_email` varchar(100) DEFAULT NULL COMMENT '联系邮箱',
+  `address` varchar(200) DEFAULT NULL COMMENT '地址',
+  `description` text COMMENT '组织描述',
+  `status` tinyint DEFAULT '1' COMMENT '状态：0-禁用，1-启用',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `org_code` (`org_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
 
--- 权限表
-CREATE TABLE sys_permission (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '权限ID',
-    permission_name VARCHAR(50) NOT NULL COMMENT '权限名称',
-    permission_code VARCHAR(100) NOT NULL UNIQUE COMMENT '权限编码',
-    parent_id BIGINT DEFAULT 0 COMMENT '父权限ID',
-    type TINYINT DEFAULT 1 COMMENT '类型(1:菜单,2:按钮)',
-    path VARCHAR(200) COMMENT '路由路径',
-    component VARCHAR(200) COMMENT '组件路径',
-    icon VARCHAR(50) COMMENT '图标',
-    sort_order INT DEFAULT 0 COMMENT '排序',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
-) COMMENT '权限表';
+-- 2. 用户表 (users)
+CREATE TABLE `users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `real_name` varchar(50) DEFAULT NULL,
+  `org_id` bigint DEFAULT NULL COMMENT '所属组织ID',
+  `role` varchar(20) DEFAULT 'user' COMMENT '角色：admin-管理员，user-普通用户',
+  `status` tinyint DEFAULT '1' COMMENT '状态：0-禁用，1-启用',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_username_org` (`username`, `org_id`),
+  KEY `org_id` (`org_id`),
+  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3;
 
--- 用户角色关联表
-CREATE TABLE sys_user_role (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
-    user_id BIGINT NOT NULL COMMENT '用户ID',
-    role_id BIGINT NOT NULL COMMENT '角色ID',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    UNIQUE KEY uk_user_role (user_id, role_id)
-) COMMENT '用户角色关联表';
+-- 3. 项目表 (project)
+CREATE TABLE `project` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `project_name` varchar(100) NOT NULL,
+  `project_type` enum('COMPLEX','COMMERCIAL_DISTRICT','HOTEL','APARTMENT','OFFICE') NOT NULL,
+  `management_org` varchar(100) NOT NULL,
+  `rent_bill_company` varchar(100) NOT NULL,
+  `rent_bill_bank_account` varchar(100) DEFAULT NULL,
+  `city` varchar(50) NOT NULL,
+  `address` varchar(200) NOT NULL,
+  `project_manager` varchar(50) DEFAULT NULL,
+  `contact_phone` varchar(20) NOT NULL,
+  `status` tinyint DEFAULT '1',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_project_name` (`project_name`),
+  KEY `idx_project_type` (`project_type`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 角色权限关联表
-CREATE TABLE sys_role_permission (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'ID',
-    role_id BIGINT NOT NULL COMMENT '角色ID',
-    permission_id BIGINT NOT NULL COMMENT '权限ID',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    UNIQUE KEY uk_role_permission (role_id, permission_id)
-) COMMENT '角色权限关联表';
+-- 4. 楼栋表 (building)
+CREATE TABLE `building` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `building_name` varchar(100) NOT NULL,
+  `building_code` varchar(50) NOT NULL,
+  `project_id` bigint NOT NULL,
+  `building_area` decimal(12,2) DEFAULT NULL,
+  `rent_area` decimal(12,2) DEFAULT NULL,
+  `property_area` decimal(12,2) DEFAULT NULL,
+  `usable_area` decimal(12,2) DEFAULT NULL,
+  `remark` text,
+  `status` tinyint DEFAULT '1',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_project_id` (`project_id`),
+  KEY `idx_building_name` (`building_name`),
+  KEY `idx_building_code` (`building_code`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `building_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 项目表
-CREATE TABLE asset_project (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '项目ID',
-    project_name VARCHAR(100) NOT NULL COMMENT '项目名称',
-    project_type ENUM('COMPLEX', 'APARTMENT', 'OFFICE', 'COMMERCIAL') NOT NULL COMMENT '项目类型(综合体,公寓,写字楼,商业)',
-    company_name VARCHAR(100) COMMENT '所属公司',
-    rent_bill_company VARCHAR(100) COMMENT '租金账单公司',
-    property_bill_company VARCHAR(100) COMMENT '物业账单公司',
-    property_right_company VARCHAR(100) COMMENT '产权公司',
-    building_area DECIMAL(12,2) COMMENT '建筑面积',
-    rent_area DECIMAL(12,2) COMMENT '计租面积',
-    property_area DECIMAL(12,2) COMMENT '产权面积',
-    city VARCHAR(50) COMMENT '城市',
-    address VARCHAR(200) COMMENT '地址',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人'
-) COMMENT '项目表';
+-- 5. 楼层表 (floor)
+CREATE TABLE `floor` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `floor_name` varchar(100) NOT NULL,
+  `floor_code` varchar(50) NOT NULL,
+  `building_id` bigint NOT NULL,
+  `remark` text,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_building_id` (`building_id`),
+  KEY `idx_floor_name` (`floor_name`),
+  KEY `idx_floor_code` (`floor_code`),
+  CONSTRAINT `floor_ibfk_1` FOREIGN KEY (`building_id`) REFERENCES `building` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 楼栋表
-CREATE TABLE asset_building (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '楼栋ID',
-    building_name VARCHAR(100) NOT NULL COMMENT '楼栋/楼层名',
-    building_code VARCHAR(50) NOT NULL COMMENT '楼栋/楼层编号',
-    project_id BIGINT NOT NULL COMMENT '所属项目ID',
-    building_area DECIMAL(12,2) COMMENT '建筑面积',
-    rent_area DECIMAL(12,2) COMMENT '计租面积',
-    property_area DECIMAL(12,2) COMMENT '产权面积',
-    usable_area DECIMAL(12,2) COMMENT '实用面积',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人',
-    FOREIGN KEY (project_id) REFERENCES asset_project(id)
-) COMMENT '楼栋表';
+-- 6. 单元表 (unit)
+CREATE TABLE `unit` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `unit_name` varchar(100) NOT NULL,
+  `unit_code` varchar(50) NOT NULL,
+  `floor_id` bigint NOT NULL,
+  `unit_status` enum('RENTABLE','SELF_USE','PUBLIC_USE','LEASE_BACK','DISABLED','SELF_RENTAL') DEFAULT 'RENTABLE',
+  `unit_purpose` varchar(100) DEFAULT NULL,
+  `building_area` decimal(10,2) DEFAULT NULL,
+  `rent_area` decimal(10,2) DEFAULT NULL,
+  `is_multi_tenant` tinyint(1) DEFAULT '0',
+  `remark` text,
+  `status` tinyint DEFAULT '1',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_unit_code` (`unit_code`),
+  KEY `idx_floor_id` (`floor_id`),
+  KEY `idx_unit_name` (`unit_name`),
+  KEY `idx_unit_code` (`unit_code`),
+  KEY `idx_unit_status` (`unit_status`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `unit_ibfk_1` FOREIGN KEY (`floor_id`) REFERENCES `floor` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 单元表
-CREATE TABLE asset_unit (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '单元ID',
-    unit_code VARCHAR(50) NOT NULL UNIQUE COMMENT '单元编码',
-    unit_description VARCHAR(200) COMMENT '单元说明',
-    project_id BIGINT NOT NULL COMMENT '所属项目ID',
-    building_id BIGINT NOT NULL COMMENT '所属楼栋ID',
-    unit_status ENUM('VACANT', 'OCCUPIED', 'MAINTENANCE', 'RESERVED') DEFAULT 'VACANT' COMMENT '单元状态(空置,已租,维修,预留)',
-    unit_purpose VARCHAR(100) COMMENT '单元用途',
-    building_area DECIMAL(12,2) COMMENT '建筑面积',
-    rent_area DECIMAL(12,2) COMMENT '计租面积',
-    property_area DECIMAL(12,2) COMMENT '产权面积',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人',
-    FOREIGN KEY (project_id) REFERENCES asset_project(id),
-    FOREIGN KEY (building_id) REFERENCES asset_building(id)
-) COMMENT '单元表';
+-- 7. 租户表 (tenant)
+CREATE TABLE `tenant` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Tenant ID',
+  `tenant_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tenant Name',
+  `tenant_nature` enum('individual','company','government') COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tenant Nature',
+  `enterprise_nature` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Enterprise Nature',
+  `social_credit_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Social Credit Code',
+  `taxpayer_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Taxpayer ID',
+  `business_registration_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Business Registration Number',
+  `individual_license_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Individual License Number',
+  `brand` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Brand',
+  `brand_qualification` enum('direct','franchise','joint') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Brand Qualification',
+  `business_format` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Business Format',
+  `business_scope` text COLLATE utf8mb4_unicode_ci COMMENT 'Business Scope',
+  `legal_person_name` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Legal Person Name',
+  `legal_person_phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Legal Person Phone',
+  `legal_person_id_card` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Legal Person ID Card',
+  `finance_contact` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Finance Contact',
+  `finance_phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Finance Phone',
+  `payer_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Payer Name',
+  `payment_account` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Payment Account',
+  `remark` text COLLATE utf8mb4_unicode_ci COMMENT 'Remark',
+  `status` tinyint DEFAULT '1' COMMENT 'Status: 0-Disabled, 1-Enabled',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Create Time',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update Time',
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_name` (`tenant_name`),
+  KEY `idx_social_credit_code` (`social_credit_code`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tenant Information Table';
 
--- 单元合并拆分记录表
-CREATE TABLE asset_unit_merge_split_log (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '记录ID',
-    operation_type ENUM('MERGE', 'SPLIT') NOT NULL COMMENT '操作类型(合并,拆分)',
-    source_unit_ids TEXT COMMENT '源单元ID列表(JSON格式)',
-    target_unit_ids TEXT COMMENT '目标单元ID列表(JSON格式)',
-    operation_reason VARCHAR(500) COMMENT '操作原因',
-    operation_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
-    operator VARCHAR(50) COMMENT '操作人'
-) COMMENT '单元合并拆分记录表';
+-- 8. 合同表 (contract)
+CREATE TABLE `contract` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_number` varchar(100) NOT NULL,
+  `project_id` bigint NOT NULL,
+  `unit_id` bigint NOT NULL,
+  `tenant_id` bigint NOT NULL,
+  `contract_type` varchar(20) DEFAULT 'RENT',
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `monthly_rent` decimal(10,2) DEFAULT NULL,
+  `deposit` decimal(10,2) DEFAULT NULL,
+  `total_amount` decimal(12,2) DEFAULT NULL,
+  `payment_method` varchar(50) DEFAULT NULL,
+  `payment_cycle` varchar(20) DEFAULT 'MONTHLY',
+  `status` varchar(20) DEFAULT 'ACTIVE',
+  `notes` text,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `contract_number` (`contract_number`),
+  KEY `idx_contract_number` (`contract_number`),
+  KEY `idx_project_id` (`project_id`),
+  KEY `idx_unit_id` (`unit_id`),
+  KEY `idx_tenant_id` (`tenant_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_start_date` (`start_date`),
+  KEY `idx_end_date` (`end_date`),
+  CONSTRAINT `contract_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `contract_ibfk_2` FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `contract_ibfk_3` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 租户表
-CREATE TABLE tenant_info (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '租户ID',
-    tenant_code VARCHAR(50) NOT NULL UNIQUE COMMENT '租户编码',
-    tenant_name VARCHAR(100) NOT NULL COMMENT '租户名称',
-    tenant_category VARCHAR(50) COMMENT '租户类别',
-    project_id BIGINT COMMENT '所属项目ID',
-    social_credit_code VARCHAR(50) COMMENT '社会信用代码',
-    certificate_type VARCHAR(50) COMMENT '证件类型',
-    taxpayer_id VARCHAR(50) COMMENT '纳税人识别号',
-    business_license VARCHAR(50) COMMENT '工商注册号',
-    legal_person VARCHAR(50) COMMENT '法人姓名',
-    registered_address VARCHAR(200) COMMENT '公司注册地',
-    contact_phone VARCHAR(20) COMMENT '联系电话',
-    contact_email VARCHAR(100) COMMENT '联系邮箱',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人',
-    FOREIGN KEY (project_id) REFERENCES asset_project(id)
-) COMMENT '租户表';
+-- 9. 应收账款表 (receivable_account)
+CREATE TABLE `receivable_account` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_id` bigint NOT NULL,
+  `tenant_id` bigint NOT NULL,
+  `bill_period` varchar(20) NOT NULL,
+  `bill_type` varchar(20) DEFAULT 'RENT',
+  `amount` decimal(10,2) NOT NULL,
+  `paid_amount` decimal(10,2) DEFAULT '0.00',
+  `outstanding_amount` decimal(10,2) NOT NULL,
+  `due_date` date NOT NULL,
+  `payment_date` date DEFAULT NULL,
+  `status` varchar(20) DEFAULT 'PENDING',
+  `late_fee` decimal(8,2) DEFAULT '0.00',
+  `notes` text,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_contract_period_type` (`contract_id`, `bill_period`, `bill_type`),
+  KEY `idx_contract_id` (`contract_id`),
+  KEY `idx_tenant_id` (`tenant_id`),
+  KEY `idx_bill_period` (`bill_period`),
+  KEY `idx_status` (`status`),
+  KEY `idx_due_date` (`due_date`),
+  CONSTRAINT `receivable_account_ibfk_1` FOREIGN KEY (`contract_id`) REFERENCES `contract` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `receivable_account_ibfk_2` FOREIGN KEY (`tenant_id`) REFERENCES `tenant` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 合同表
-CREATE TABLE contract_info (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '合同ID',
-    contract_no VARCHAR(50) NOT NULL UNIQUE COMMENT '合同编号',
-    contract_name VARCHAR(100) NOT NULL COMMENT '合同名称',
-    project_id BIGINT NOT NULL COMMENT '签约项目ID',
-    start_date DATE NOT NULL COMMENT '开始日期',
-    end_date DATE NOT NULL COMMENT '结束日期',
-    signatory VARCHAR(50) COMMENT '签订人',
-    contract_type VARCHAR(50) COMMENT '合同类型',
-    contract_status ENUM('DRAFT', 'ACTIVE', 'EXPIRED', 'TERMINATED') DEFAULT 'DRAFT' COMMENT '合同状态(草稿,生效,过期,终止)',
-    rent_bill_company VARCHAR(100) COMMENT '租金账单公司',
-    property_bill_company VARCHAR(100) COMMENT '物业账单公司',
-    lease_no VARCHAR(50) COMMENT '租赁号',
-    tenant_id BIGINT NOT NULL COMMENT '租户ID',
-    tenant_name VARCHAR(100) COMMENT '租户名称',
-    unit_id BIGINT NOT NULL COMMENT '单元ID',
-    unit_description VARCHAR(200) COMMENT '单元说明',
-    rent_mode VARCHAR(50) COMMENT '租金模式',
-    monthly_rent DECIMAL(12,2) COMMENT '月租金',
-    deposit DECIMAL(12,2) COMMENT '押金',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人',
-    FOREIGN KEY (project_id) REFERENCES asset_project(id),
-    FOREIGN KEY (tenant_id) REFERENCES tenant_info(id),
-    FOREIGN KEY (unit_id) REFERENCES asset_unit(id)
-) COMMENT '合同表';
+-- 10. 已收款表 (received)
+CREATE TABLE `received` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `batch_no` varchar(100) DEFAULT NULL COMMENT '批次号',
+  `line_no` varchar(50) DEFAULT NULL COMMENT '行号',
+  `company` varchar(255) DEFAULT NULL COMMENT '公司',
+  `amount` decimal(10,2) DEFAULT NULL COMMENT '金额',
+  `payment_method` varchar(50) DEFAULT NULL COMMENT '付款方式',
+  `payee_name` varchar(255) DEFAULT NULL COMMENT '收款人姓名',
+  `payee_account` varchar(100) DEFAULT NULL COMMENT '收款人账户',
+  `payee_bank` varchar(255) DEFAULT NULL COMMENT '收款人银行',
+  `payer_name` varchar(255) DEFAULT NULL COMMENT '付款人姓名',
+  `payer_account` varchar(100) DEFAULT NULL COMMENT '付款人账户',
+  `payer_bank` varchar(255) DEFAULT NULL COMMENT '付款人银行',
+  `transaction_time` datetime DEFAULT NULL COMMENT '交易时间',
+  `status` varchar(50) DEFAULT 'UNMATCHED' COMMENT '状态：UNMATCHED-未匹配，MATCHED-已匹配，PROCESSING-处理中',
+  `match_status` varchar(50) DEFAULT 'PENDING' COMMENT '匹配状态：PENDING-待匹配，MATCHED-已匹配，MANUAL-手动匹配',
+  `created_by` bigint DEFAULT NULL COMMENT '创建人',
+  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_by` bigint DEFAULT NULL COMMENT '更新人',
+  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` int DEFAULT '0' COMMENT '删除标记：0-未删除，1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_batch_no` (`batch_no`),
+  KEY `idx_status` (`status`),
+  KEY `idx_match_status` (`match_status`),
+  KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='已收款表';
 
--- 应收账款表
-CREATE TABLE receivable_account (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '应收账款ID',
-    batch_no VARCHAR(50) NOT NULL COMMENT '批次号',
-    line_no VARCHAR(50) NOT NULL COMMENT '行号',
-    process_status ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'REJECTED') DEFAULT 'PENDING' COMMENT '处理状态(待处理,处理中,已完成,已拒绝)',
-    company VARCHAR(100) COMMENT '公司',
-    project_id BIGINT COMMENT '项目ID',
-    payment_method VARCHAR(50) COMMENT '缴款方式',
-    payee_name VARCHAR(100) COMMENT '收款人名称',
-    payee_account VARCHAR(50) COMMENT '收款人账号',
-    payee_bank VARCHAR(100) COMMENT '收款人银行',
-    payee VARCHAR(50) COMMENT '收款人',
-    payer_name VARCHAR(100) COMMENT '付款人名称',
-    tenant_name VARCHAR(100) COMMENT '租户名称',
-    contract_no VARCHAR(50) COMMENT '合同编号',
-    payer_account VARCHAR(50) COMMENT '付款人账号',
-    payer VARCHAR(50) COMMENT '付款人',
-    payer_bank_code VARCHAR(50) COMMENT '付款人银行行号',
-    transaction_time DATETIME COMMENT '交易时间',
-    amount DECIMAL(12,2) COMMENT '金额',
-    pending_amount DECIMAL(12,2) COMMENT '待认领金额',
-    input_date DATE COMMENT '录入日期',
-    claimer VARCHAR(50) COMMENT '认领人',
-    claim_date DATE COMMENT '认领日期',
-    debit_credit_flag ENUM('DEBIT', 'CREDIT') COMMENT '借贷标记(借方,贷方)',
-    summary VARCHAR(200) COMMENT '摘要',
-    remark VARCHAR(500) COMMENT '备注',
-    status TINYINT DEFAULT 1 COMMENT '状态(0:禁用,1:启用)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人',
-    FOREIGN KEY (project_id) REFERENCES asset_project(id)
-) COMMENT '应收账款表';
-
--- 插入初始数据
--- 插入默认管理员用户
-INSERT INTO sys_user (username, password, real_name, email, phone, create_by) 
-VALUES ('admin', '$2a$10$7JB720yubVSOfvVWbGRCy.VRac8jKkGQsKt5rEcBLer9J3jhHOiDK', '管理员', 'admin@cysz.com', '13800138000', 'system');
-
--- 插入默认角色
-INSERT INTO sys_role (role_name, role_code, description) 
-VALUES ('超级管理员', 'SUPER_ADMIN', '系统超级管理员，拥有所有权限');
-
--- 插入菜单权限
-INSERT INTO sys_permission (permission_name, permission_code, parent_id, type, path, component, icon, sort_order) VALUES
-('系统管理', 'system', 0, 1, '/system', '', 'Setting', 1),
-('用户管理', 'system:user', 1, 1, '/system/user', 'system/user/index', 'User', 1),
-('角色管理', 'system:role', 1, 1, '/system/role', 'system/role/index', 'UserFilled', 2),
-('权限管理', 'system:permission', 1, 1, '/system/permission', 'system/permission/index', 'Lock', 3),
-('资产管理', 'asset', 0, 1, '/asset', '', 'OfficeBuilding', 2),
-('项目管理', 'asset:project', 4, 1, '/asset/project', 'asset/project/index', 'Postcard', 1),
-('楼栋管理', 'asset:building', 4, 1, '/asset/building', 'asset/building/index', 'House', 2),
-('单元管理', 'asset:unit', 4, 1, '/asset/unit', 'asset/unit/index', 'Grid', 3),
-('单元合并拆分', 'asset:merge-split', 4, 1, '/asset/merge-split', 'asset/merge-split/index', 'Connection', 4),
-('租户管理', 'tenant', 0, 1, '/tenant', 'tenant/index', 'Avatar', 3),
-('合同管理', 'contract', 0, 1, '/contract', 'contract/index', 'Document', 4),
-('应收账款管理', 'receivable', 0, 1, '/receivable', 'receivable/index', 'Money', 5);
-
--- 插入用户角色关联
-INSERT INTO sys_user_role (user_id, role_id) VALUES (1, 1);
-
--- 插入角色权限关联
-INSERT INTO sys_role_permission (role_id, permission_id) 
-SELECT 1, id FROM sys_permission;
+-- 创建索引优化查询性能
+CREATE INDEX `idx_tenant_nature` ON `tenant` (`tenant_nature`);
+CREATE INDEX `idx_contract_dates` ON `contract` (`start_date`, `end_date`);
+CREATE INDEX `idx_receivable_due_date` ON `receivable_account` (`due_date`);
+CREATE INDEX `idx_received_transaction_time` ON `received` (`transaction_time`);
