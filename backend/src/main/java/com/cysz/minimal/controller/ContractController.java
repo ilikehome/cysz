@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -36,51 +37,141 @@ public class ContractController {
             @RequestParam(required = false) String contractStatus,
             @RequestParam(required = false) Long projectId) {
         
-        // 模拟数据
-        ContractVO contract = new ContractVO();
-        contract.setId(1L);
-        contract.setContractNo("HT202501001");
-        contract.setContractName("测试商铺租赁合同");
-        contract.setContractType("商铺");
-        contract.setProjectId(1L);
-        contract.setProjectName("测试项目");
-        contract.setSignatory("张三");
-        contract.setSignatoryPhone("13800138000");
-        contract.setTenantId(1L);
-        contract.setTenantName("测试租户");
-        contract.setBusinessBrand("测试品牌");
-        contract.setShopSign("测试店招");
-        contract.setBusinessFormat("餐饮");
-        contract.setSignDate(LocalDate.now());
-        contract.setStartDate(LocalDate.now());
-        contract.setEndDate(LocalDate.now().plusYears(1));
-        contract.setBuildingArea(new BigDecimal("120.50"));
-        contract.setRentableArea(new BigDecimal("115.00"));
-        contract.setContractArea(new BigDecimal("115.00"));
-        contract.setDepositAmount(new BigDecimal("10000.00"));
-        contract.setDepositLatestDate(LocalDate.now().plusDays(30));
-        contract.setFeeCompany("测试费项公司");
-        contract.setRentMode("固定租金");
-        contract.setRentPeriodSetting("月末截止计租周期");
-        contract.setLateFeeRule("5‰/日");
-        contract.setPaymentAccount("1234567890");
-        contract.setPaymentFrequency("月");
-        contract.setLatestPaymentDay(5);
-        contract.setFirstPaymentLatestDate(LocalDate.now().plusDays(15));
-        contract.setFirstPeriodRent(new BigDecimal("8000.00"));
-        contract.setPeriodRent(new BigDecimal("8000.00"));
-        contract.setContractStatus("ACTIVE");
-        contract.setStatus(1);
-        contract.setCreateTime(LocalDateTime.now());
-        contract.setUpdateTime(LocalDateTime.now());
-
-        PageResult<ContractVO> pageResult = new PageResult<>();
-        pageResult.setRecords(List.of(contract));
-        pageResult.setTotal(1L);
-        pageResult.setCurrent(page);
-        pageResult.setSize(size);
-
-        return Result.success(pageResult);
+        try {
+            // 构建查询条件
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT c.*, p.project_name, t.tenant_name as actual_tenant_name FROM contract c ");
+            sqlBuilder.append("LEFT JOIN project p ON c.project_id = p.id ");
+            sqlBuilder.append("LEFT JOIN tenant t ON c.tenant_id = t.id ");
+            sqlBuilder.append("WHERE 1=1 ");
+            
+            List<Object> params = new ArrayList<>();
+            
+            if (contractNo != null && !contractNo.trim().isEmpty()) {
+                sqlBuilder.append("AND c.contract_no LIKE ? ");
+                params.add("%" + contractNo.trim() + "%");
+            }
+            
+            if (contractName != null && !contractName.trim().isEmpty()) {
+                sqlBuilder.append("AND c.contract_name LIKE ? ");
+                params.add("%" + contractName.trim() + "%");
+            }
+            
+            if (tenantName != null && !tenantName.trim().isEmpty()) {
+                sqlBuilder.append("AND (c.tenant_name LIKE ? OR t.tenant_name LIKE ?) ");
+                params.add("%" + tenantName.trim() + "%");
+                params.add("%" + tenantName.trim() + "%");
+            }
+            
+            if (contractStatus != null && !contractStatus.trim().isEmpty()) {
+                sqlBuilder.append("AND c.contract_status = ? ");
+                params.add(contractStatus.trim());
+            }
+            
+            if (projectId != null) {
+                sqlBuilder.append("AND c.project_id = ? ");
+                params.add(projectId);
+            }
+            
+            // 查询总数
+            String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ") as count_table";
+            Long total = jdbcTemplate.queryForObject(countSql, params.toArray(), Long.class);
+            
+            // 添加分页
+            sqlBuilder.append("ORDER BY c.create_time DESC ");
+            sqlBuilder.append("LIMIT ? OFFSET ? ");
+            params.add(size);
+            params.add((page - 1) * size);
+            
+            System.out.println("执行查询SQL: " + sqlBuilder.toString());
+            System.out.println("查询参数: " + params);
+            
+            // 执行查询
+            List<ContractVO> contracts = jdbcTemplate.query(sqlBuilder.toString(), params.toArray(), (rs, rowNum) -> {
+                ContractVO contract = new ContractVO();
+                contract.setId(rs.getLong("id"));
+                contract.setContractNo(rs.getString("contract_no"));
+                contract.setContractName(rs.getString("contract_name"));
+                contract.setContractType(rs.getString("contract_type"));
+                contract.setProjectId(rs.getLong("project_id"));
+                contract.setProjectName(rs.getString("project_name"));
+                contract.setSignatory(rs.getString("signatory"));
+                contract.setSignatoryPhone(rs.getString("signatory_phone"));
+                contract.setTenantId(rs.getLong("tenant_id"));
+                
+                // 优先使用关联查询的租户名称，其次使用合同表中的租户名称
+                String actualTenantName = rs.getString("actual_tenant_name");
+                if (actualTenantName != null && !actualTenantName.trim().isEmpty()) {
+                    contract.setTenantName(actualTenantName);
+                } else {
+                    contract.setTenantName(rs.getString("tenant_name"));
+                }
+                
+                contract.setBusinessBrand(rs.getString("business_brand"));
+                contract.setShopSign(rs.getString("shop_sign"));
+                contract.setBusinessFormat(rs.getString("business_format"));
+                
+                // 处理日期字段
+                if (rs.getDate("sign_date") != null) {
+                    contract.setSignDate(rs.getDate("sign_date").toLocalDate());
+                }
+                if (rs.getDate("start_date") != null) {
+                    contract.setStartDate(rs.getDate("start_date").toLocalDate());
+                }
+                if (rs.getDate("end_date") != null) {
+                    contract.setEndDate(rs.getDate("end_date").toLocalDate());
+                }
+                if (rs.getDate("deposit_latest_date") != null) {
+                    contract.setDepositLatestDate(rs.getDate("deposit_latest_date").toLocalDate());
+                }
+                if (rs.getDate("first_payment_latest_date") != null) {
+                    contract.setFirstPaymentLatestDate(rs.getDate("first_payment_latest_date").toLocalDate());
+                }
+                
+                // 处理数值字段
+                contract.setBuildingArea(rs.getBigDecimal("building_area"));
+                contract.setRentableArea(rs.getBigDecimal("rentable_area"));
+                contract.setContractArea(rs.getBigDecimal("contract_area"));
+                contract.setDepositAmount(rs.getBigDecimal("deposit_amount"));
+                contract.setFirstPeriodRent(rs.getBigDecimal("first_period_rent"));
+                contract.setPeriodRent(rs.getBigDecimal("period_rent"));
+                
+                contract.setFeeCompany(rs.getString("fee_company"));
+                contract.setRentMode(rs.getString("rent_mode"));
+                contract.setRentPeriodSetting(rs.getString("rent_period_setting"));
+                contract.setLateFeeRule(rs.getString("late_fee_rule"));
+                contract.setPaymentAccount(rs.getString("payment_account"));
+                contract.setPaymentFrequency(rs.getString("payment_frequency"));
+                contract.setLatestPaymentDay(rs.getInt("latest_payment_day"));
+                contract.setContractStatus(rs.getString("contract_status"));
+                contract.setStatus(rs.getInt("status"));
+                
+                // 处理时间戳字段
+                if (rs.getTimestamp("create_time") != null) {
+                    contract.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
+                }
+                if (rs.getTimestamp("update_time") != null) {
+                    contract.setUpdateTime(rs.getTimestamp("update_time").toLocalDateTime());
+                }
+                
+                return contract;
+            });
+            
+            PageResult<ContractVO> pageResult = new PageResult<>();
+            pageResult.setRecords(contracts);
+            pageResult.setTotal(total != null ? total : 0L);
+            pageResult.setCurrent(page);
+            pageResult.setSize(size);
+            
+            System.out.println("查询到 " + contracts.size() + " 条合同记录，总数: " + total);
+            
+            return Result.success(pageResult);
+            
+        } catch (Exception e) {
+            System.err.println("查询合同分页数据失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("查询合同数据失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -88,7 +179,7 @@ public class ContractController {
      */
     @PostMapping
     public Result<Long> createContract(@RequestBody ContractCreateDTO dto) {
-        System.out.println("创建合同: " + dto);
+        System.out.println("创建合同请求数据: " + dto);
         
         try {
             // 验证必填字段
@@ -101,55 +192,112 @@ public class ContractController {
             if (dto.getProjectId() == null) {
                 return Result.error("项目ID不能为空");
             }
-            if (dto.getUnitIds() == null || dto.getUnitIds().isEmpty()) {
-                return Result.error("单元ID不能为空");
+            
+            // 检查项目是否存在
+            try {
+                String checkProjectSql = "SELECT COUNT(*) FROM project WHERE id = ?";
+                Integer projectCount = jdbcTemplate.queryForObject(checkProjectSql, new Object[]{dto.getProjectId()}, Integer.class);
+                if (projectCount == null || projectCount == 0) {
+                    return Result.error("项目不存在，请选择有效的项目");
+                }
+            } catch (Exception e) {
+                System.err.println("检查项目存在性失败: " + e.getMessage());
+                // 如果项目表不存在，继续执行
             }
             
             // 检查合同编号是否已存在
-            String checkSql = "SELECT COUNT(*) FROM contract WHERE contract_number = ?";
-            Integer count = jdbcTemplate.queryForObject(checkSql, new Object[]{dto.getContractNo()}, Integer.class);
-            if (count != null && count > 0) {
-                return Result.error("合同编号已存在");
+            try {
+                String checkSql = "SELECT COUNT(*) FROM contract WHERE contract_number = ?";
+                Integer count = jdbcTemplate.queryForObject(checkSql, new Object[]{dto.getContractNo()}, Integer.class);
+                if (count != null && count > 0) {
+                    return Result.error("合同编号已存在");
+                }
+            } catch (Exception e) {
+                System.err.println("检查合同编号重复失败: " + e.getMessage());
+                // 继续执行
             }
             
-            // 获取第一个单元ID作为主单元（兼容现有表结构）
-            Long primaryUnitId = dto.getUnitIds().get(0);
-            
-            // 获取租户ID（如果没有提供，创建默认租户）
+            // 获取或创建租户ID
             Long tenantId = dto.getTenantId();
-            if (tenantId == null) {
-                // 创建默认租户
-                String insertTenantSql = "INSERT INTO tenant (tenant_name, tenant_nature, status, create_time) VALUES (?, 'individual', 1, NOW())";
-                jdbcTemplate.update(insertTenantSql, dto.getTenantName() != null ? dto.getTenantName() : "默认租户");
-                
-                // 获取新创建的租户ID
-                String getLastIdSql = "SELECT LAST_INSERT_ID()";
-                tenantId = jdbcTemplate.queryForObject(getLastIdSql, Long.class);
+            if (tenantId == null && dto.getTenantName() != null && !dto.getTenantName().trim().isEmpty()) {
+                try {
+                    // 创建新租户
+                    String insertTenantSql = "INSERT INTO tenant (tenant_name, tenant_nature, status, create_time) VALUES (?, ?, ?, NOW())";
+                    jdbcTemplate.update(insertTenantSql, 
+                        dto.getTenantName().trim(), 
+                        "individual", 
+                        1);
+                    
+                    // 获取新创建的租户ID
+                    String getLastIdSql = "SELECT LAST_INSERT_ID()";
+                    tenantId = jdbcTemplate.queryForObject(getLastIdSql, Long.class);
+                    System.out.println("创建新租户，ID: " + tenantId);
+                } catch (Exception e) {
+                    System.err.println("创建租户失败: " + e.getMessage());
+                    return Result.error("创建租户失败: " + e.getMessage());
+                }
             }
             
-            // 插入合同数据
-            String insertSql = "INSERT INTO contract (contract_number, project_id, unit_id, tenant_id, " +
-                              "contract_type, start_date, end_date, monthly_rent, deposit, " +
-                              "payment_method, payment_cycle, status, notes, create_time, update_time) " +
-                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            // 获取单元ID（优先使用unitIds，其次使用单个unitId）
+            Long unitId = null;
+            if (dto.getUnitIds() != null && !dto.getUnitIds().isEmpty()) {
+                unitId = dto.getUnitIds().get(0);
+            }
+            
+            // 使用实际数据库表结构的字段名
+            String insertSql = "INSERT INTO contract (contract_no, contract_name, contract_type, project_id, " +
+                              "signatory, signatory_phone, tenant_id, tenant_name, business_brand, shop_sign, " +
+                              "business_format, sign_date, start_date, end_date, unit_ids, building_area, " +
+                              "rentable_area, contract_area, deposit_amount, deposit_latest_date, fee_company, " +
+                              "rent_mode, rent_period_setting, late_fee_rule, payment_account, payment_frequency, " +
+                              "latest_payment_day, first_payment_latest_date, first_period_rent, period_rent, " +
+                              "contract_status, status, create_time, update_time) " +
+                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            
+            System.out.println("执行SQL: " + insertSql);
+            System.out.println("合同编号: " + dto.getContractNo());
+            System.out.println("项目ID: " + dto.getProjectId());
+            System.out.println("租户ID: " + tenantId);
+            
+            // 将单元ID列表转换为JSON字符串
+            String unitIdsJson = "[]";
+            if (dto.getUnitIds() != null && !dto.getUnitIds().isEmpty()) {
+                unitIdsJson = "[" + dto.getUnitIds().stream().map(String::valueOf).reduce((a, b) -> a + "," + b).orElse("") + "]";
+            }
             
             jdbcTemplate.update(insertSql,
-                dto.getContractNo(),
-                dto.getProjectId(),
-                primaryUnitId,
-                tenantId,
-                dto.getContractType() != null ? dto.getContractType() : "RENT",
-                dto.getStartDate(),
-                dto.getEndDate(),
-                dto.getFirstPeriodRent(),
-                dto.getDepositAmount(),
-                dto.getPaymentAccount(),
-                dto.getPaymentFrequency() != null ? dto.getPaymentFrequency() : "MONTHLY",
-                "DRAFT", // 默认状态为草稿
-                String.format("合同名称: %s, 签订人: %s, 业态: %s", 
-                    dto.getContractName(), 
-                    dto.getSignatory(), 
-                    dto.getBusinessFormat())
+                dto.getContractNo(),                                           // contract_no
+                dto.getContractName(),                                         // contract_name
+                dto.getContractType() != null ? dto.getContractType() : "RENT", // contract_type
+                dto.getProjectId(),                                            // project_id
+                dto.getSignatory(),                                            // signatory
+                dto.getSignatoryPhone(),                                       // signatory_phone
+                tenantId != null ? tenantId : 1L,                             // tenant_id
+                dto.getTenantName(),                                           // tenant_name
+                dto.getBusinessBrand(),                                        // business_brand
+                dto.getShopSign(),                                             // shop_sign
+                dto.getBusinessFormat(),                                       // business_format
+                dto.getSignDate(),                                             // sign_date
+                dto.getStartDate(),                                            // start_date
+                dto.getEndDate(),                                              // end_date
+                unitIdsJson,                                                   // unit_ids (JSON)
+                dto.getBuildingArea(),                                         // building_area
+                dto.getRentableArea(),                                         // rentable_area
+                dto.getContractArea(),                                         // contract_area
+                dto.getDepositAmount(),                                        // deposit_amount
+                dto.getDepositLatestDate(),                                    // deposit_latest_date
+                dto.getFeeCompany(),                                           // fee_company
+                dto.getRentMode() != null ? dto.getRentMode() : "固定租金",      // rent_mode
+                dto.getRentPeriodSetting(),                                    // rent_period_setting
+                dto.getLateFeeRule(),                                          // late_fee_rule
+                dto.getPaymentAccount(),                                       // payment_account
+                dto.getPaymentFrequency(),                                     // payment_frequency
+                dto.getLatestPaymentDay(),                                     // latest_payment_day
+                dto.getFirstPaymentLatestDate(),                               // first_payment_latest_date
+                dto.getFirstPeriodRent(),                                      // first_period_rent
+                dto.getPeriodRent(),                                           // period_rent
+                "DRAFT",                                                       // contract_status
+                1                                                              // status
             );
             
             // 获取新创建的合同ID
