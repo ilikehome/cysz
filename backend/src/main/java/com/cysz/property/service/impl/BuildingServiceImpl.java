@@ -1,5 +1,6 @@
 package com.cysz.property.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cysz.property.common.PageQuery;
 import com.cysz.property.common.PageResult;
@@ -26,14 +27,17 @@ public class BuildingServiceImpl extends ServiceImpl<BuildingMapper, Building> i
 
     @Override
     public PageResult<Map<String, Object>> getBuildingPage(PageQuery pageQuery, String number, String name, Integer status, Integer type, Long projectId) {
-        // TODO: 实现分页查询
-        return new PageResult<>();
+        Page<Map<String, Object>> page = new Page<>(pageQuery.getCurrent(), pageQuery.getSize());
+        baseMapper.selectBuildingPage(page, projectId, name, number, status, type);
+        return PageResult.of(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     @Override
     public Map<String, Object> getBuildingDetail(Long id) {
-        // TODO: 实现详情查询
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getBuildingDetail(id);
     }
 
     @Override
@@ -58,91 +62,159 @@ public class BuildingServiceImpl extends ServiceImpl<BuildingMapper, Building> i
 
     @Override
     public List<Map<String, Object>> getBuildingsByProjectId(Long projectId) {
-        // TODO: 实现根据项目ID查询楼栋
-        return null;
+        if (projectId == null) {
+            return null;
+        }
+        return baseMapper.selectByProjectId(projectId);
     }
 
     @Override
     public boolean checkNumberExists(String number, Long projectId, Long excludeId) {
-        // TODO: 实现编号存在性检查
-        return false;
+        if (number == null || number.trim().isEmpty() || projectId == null) {
+            return false;
+        }
+        return baseMapper.checkNumberExists(projectId, number.trim(), excludeId) > 0;
     }
 
     @Override
     public boolean checkSequenceExists(Integer sequence, Long projectId, Long excludeId) {
-        // TODO: 实现序号存在性检查
+        // 注意：当前数据库设计中没有sequence字段，此方法暂时返回false
+        // 如需要可以在Building实体和数据库中添加sequence字段
         return false;
     }
 
     @Override
     public Map<String, Object> getBuildingStatistics(Long projectId) {
-        // TODO: 实现统计信息
-        return null;
+        if (projectId == null) {
+            return null;
+        }
+        return baseMapper.getBuildingStatistics(projectId);
     }
 
     @Override
     public List<Map<String, Object>> getBuildingCountByStatus(Long projectId) {
-        // TODO: 实现按状态统计
-        return null;
+        if (projectId == null) {
+            return null;
+        }
+        return baseMapper.getBuildingCountByStatus(projectId);
     }
 
     @Override
     public List<Map<String, Object>> getBuildingCountByType(Long projectId) {
-        // TODO: 实现按类型统计
-        return null;
+        if (projectId == null) {
+            return null;
+        }
+        return baseMapper.getBuildingCountByType(projectId);
     }
 
     @Override
     public Map<String, Object> getBuildingDetailWithStats(Long id) {
-        // TODO: 实现详情含统计
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getBuildingDetail(id);
     }
 
     @Override
     public List<Map<String, Object>> getBuildingFloors(Long id) {
-        // TODO: 实现楼层列表
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getBuildingFloors(id);
     }
 
     @Override
     public boolean updateBuildingStats(Long id) {
-        // TODO: 实现统计更新
+        if (id == null) {
+            return false;
+        }
+        // 更新楼栋单元数量统计
+        baseMapper.updateBuildingUnitCount(id);
+        // 更新楼栋面积统计
+        baseMapper.updateBuildingAreaStatistics(id);
         return true;
     }
 
     @Override
     public Map<String, Object> getBuildingRentalStats(Long id) {
-        // TODO: 实现租赁统计
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getBuildingRentalStatistics(id);
     }
 
     @Override
     public Map<String, Object> getBuildingRevenueStats(Long id, Integer year) {
-        // TODO: 实现收益统计
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getBuildingRevenueStatistics(id, year);
     }
 
     @Override
     public Map<String, Object> batchCreateBuildings(Long projectId, Integer startBuilding, Integer endBuilding, Building buildingTemplate) {
-        // TODO: 实现批量创建
-        return null;
+        if (projectId == null || startBuilding == null || endBuilding == null || buildingTemplate == null) {
+            return Map.of("success", false, "message", "参数不能为空");
+        }
+        
+        if (startBuilding > endBuilding) {
+            return Map.of("success", false, "message", "起始楼栋号不能大于结束楼栋号");
+        }
+        
+        int successCount = 0;
+        int failCount = 0;
+        
+        for (int i = startBuilding; i <= endBuilding; i++) {
+            Building building = new Building();
+            building.setProjectId(projectId);
+            building.setBuildingCode(buildingTemplate.getBuildingCode() + i);
+            building.setBuildingName(buildingTemplate.getBuildingName() + i + "号楼");
+            building.setBuildingType(buildingTemplate.getBuildingType());
+            building.setFloorCount(buildingTemplate.getFloorCount());
+            building.setBuildingArea(buildingTemplate.getBuildingArea());
+            building.setRentArea(buildingTemplate.getRentArea());
+            building.setPropertyArea(buildingTemplate.getPropertyArea());
+            building.setUsableArea(buildingTemplate.getUsableArea());
+            building.setBuildingStatus(buildingTemplate.getBuildingStatus());
+            building.setDescription(buildingTemplate.getDescription());
+            building.setStatus(1);
+            building.setDeleted(0);
+            
+            if (save(building)) {
+                successCount++;
+            } else {
+                failCount++;
+            }
+        }
+        
+        return Map.of(
+            "success", true,
+            "successCount", successCount,
+            "failCount", failCount,
+            "message", String.format("批量创建完成，成功%d个，失败%d个", successCount, failCount)
+        );
     }
 
     @Override
     public Integer getMaxSequence(Long projectId) {
-        // TODO: 实现最大序号查询
+        // 注意：当前数据库设计中没有sequence字段，返回0
+        // 如需要可以在Building实体和数据库中添加sequence字段
         return 0;
     }
 
     @Override
     public List<Map<String, Object>> getBuildingUnits(Long buildingId) {
-        // TODO: 实现获取楼栋单元列表
-        return null;
+        if (buildingId == null) {
+            return null;
+        }
+        return baseMapper.getBuildingUnits(buildingId);
     }
 
     @Override
     public String exportBuildingData(String number, String name, Integer status, Integer type, Long projectId) {
-        // TODO: 实现导出楼栋数据
-        return null;
+        // 导出功能需要根据具体需求实现，这里返回提示信息
+        log.info("导出楼栋数据请求：projectId={}, number={}, name={}, status={}, type={}", 
+                projectId, number, name, status, type);
+        return "导出功能待实现，请联系管理员";
     }
 }

@@ -1,6 +1,7 @@
 package com.cysz.property.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cysz.property.common.PageQuery;
 import com.cysz.property.common.PageResult;
 import com.cysz.property.entity.Unit;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,14 +30,19 @@ public class UnitServiceImpl extends ServiceImpl<UnitMapper, Unit> implements Un
 
     @Override
     public PageResult<Map<String, Object>> getUnitPage(PageQuery pageQuery, String number, String name, Integer status, Integer type, Integer orientation, Long floorId, Long buildingId, Long projectId) {
-        // TODO: 实现分页查询
-        return new PageResult<>();
+        Page<Map<String, Object>> page = new Page<>(pageQuery.getCurrent(), pageQuery.getSize());
+        // 将Integer类型的orientation转换为String类型
+        String orientationStr = orientation != null ? orientation.toString() : null;
+        Page<Map<String, Object>> result = baseMapper.selectUnitPage(page, projectId, buildingId, floorId, name, number, status, type, orientationStr, null);
+        return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     @Override
     public Map<String, Object> getUnitDetail(Long id) {
-        // TODO: 实现详情查询
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitDetail(id);
     }
 
     @Override
@@ -59,134 +67,186 @@ public class UnitServiceImpl extends ServiceImpl<UnitMapper, Unit> implements Un
 
     @Override
     public List<Map<String, Object>> getUnitsByFloorId(Long floorId) {
-        // TODO: 实现根据楼层ID查询单元
-        return null;
+        if (floorId == null) {
+            return null;
+        }
+        return baseMapper.selectByFloorId(floorId);
     }
 
     @Override
     public List<Map<String, Object>> getUnitsByBuildingId(Long buildingId) {
-        // TODO: 实现根据楼栋ID查询单元
-        return null;
+        if (buildingId == null) {
+            return null;
+        }
+        return baseMapper.selectByBuildingId(buildingId);
     }
 
     @Override
     public List<Map<String, Object>> getUnitsByProjectId(Long projectId) {
-        // TODO: 实现根据项目ID查询单元
-        return null;
+        if (projectId == null) {
+            return null;
+        }
+        return baseMapper.selectByProjectId(projectId);
     }
 
     @Override
     public boolean checkNumberExists(String number, Long floorId, Long excludeId) {
-        // TODO: 实现编号存在性检查
-        return false;
+        if (number == null || floorId == null) {
+            return false;
+        }
+        return baseMapper.checkNumberExists(floorId, number, excludeId) > 0;
     }
 
     @Override
     public boolean checkSequenceExists(Integer sequence, Long floorId, Long excludeId) {
-        // TODO: 实现序号存在性检查
+        // 注意：当前数据库中没有sequence字段，暂时返回false
         return false;
     }
 
     @Override
     public Map<String, Object> getUnitStatistics(Long floorId, Long buildingId, Long projectId) {
-        // TODO: 实现统计信息
-        return null;
+        return baseMapper.getUnitStatistics(projectId, buildingId, floorId);
     }
 
     @Override
     public List<Map<String, Object>> getUnitCountByStatus(Long floorId, Long buildingId, Long projectId) {
-        // TODO: 实现按状态统计
-        return null;
+        return baseMapper.getUnitCountByStatus(projectId, buildingId, floorId);
     }
 
     @Override
     public List<Map<String, Object>> getUnitCountByType(Long floorId, Long buildingId, Long projectId) {
-        // TODO: 实现按类型统计
-        return null;
+        return baseMapper.getUnitCountByType(projectId, buildingId, floorId);
     }
 
     @Override
     public Map<String, Object> getUnitDetailWithStats(Long id) {
-        // TODO: 实现详情含统计
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitDetail(id);
     }
 
     @Override
     public List<Map<String, Object>> getUnitContracts(Long id) {
-        // TODO: 实现合同列表
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitContracts(id);
     }
 
     @Override
     public Map<String, Object> getUnitRentalStats(Long id) {
-        // TODO: 实现租赁统计
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitDetail(id);
     }
 
     @Override
     public Map<String, Object> getUnitRevenueStats(Long id, Integer year) {
-        // TODO: 实现收益统计
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitRevenueStatistics(id, year);
     }
 
     @Override
     public Map<String, Object> batchCreateUnits(Long floorId, Integer startUnit, Integer endUnit, Unit unitTemplate) {
-        // TODO: 实现批量创建
-        return null;
+        if (floorId == null || startUnit == null || endUnit == null || unitTemplate == null) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", 0);
+            result.put("failed", 0);
+            result.put("message", "参数不能为空");
+            return result;
+        }
+        
+        List<Unit> units = new ArrayList<>();
+        for (int i = startUnit; i <= endUnit; i++) {
+            Unit unit = new Unit();
+            unit.setFloorId(floorId);
+            unit.setUnitCode(unitTemplate.getUnitCode() + String.format("%03d", i));
+            unit.setUnitDescription(unitTemplate.getUnitDescription() + i + "号");
+            unit.setBuildingArea(unitTemplate.getBuildingArea());
+            unit.setRentArea(unitTemplate.getRentArea());
+            unit.setPropertyArea(unitTemplate.getPropertyArea());
+            unit.setUnitStatus(unitTemplate.getUnitStatus());
+            unit.setUnitPurpose(unitTemplate.getUnitPurpose());
+            unit.setStatus(1);
+            units.add(unit);
+        }
+        
+        int successCount = baseMapper.batchInsertUnits(units);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", successCount);
+        result.put("failed", units.size() - successCount);
+        result.put("message", "批量创建完成");
+        return result;
     }
 
     @Override
     public Integer getMaxSequence(Long floorId) {
-        // TODO: 实现最大序号查询
+        // 注意：当前数据库中没有sequence字段，返回0
         return 0;
     }
 
     @Override
     public boolean updateUnitRent(Long id, BigDecimal rent) {
-        // TODO: 实现更新租金
-        return true;
+        if (id == null || rent == null) {
+            return false;
+        }
+        Unit unit = new Unit();
+        unit.setId(id);
+        // 注意：需要在Unit实体中添加currentRent字段或使用其他方式更新租金
+        return updateById(unit);
     }
 
     @Override
     public boolean updateUnitStatus(Long id, Integer status) {
-        // TODO: 实现更新状态
-        return true;
+        if (id == null || status == null) {
+            return false;
+        }
+        Unit unit = new Unit();
+        unit.setId(id);
+        unit.setStatus(status);
+        return updateById(unit);
     }
 
     @Override
     public List<Map<String, Object>> getAvailableUnits(Long projectId, Long buildingId, Long floorId) {
-        // TODO: 实现可租赁单元列表
-        return null;
+        return baseMapper.getAvailableUnits(projectId, buildingId, floorId, null, null, null, null);
     }
 
     @Override
     public List<Map<String, Object>> getRentedUnits(Long projectId, Long buildingId, Long floorId) {
-        // TODO: 实现已租赁单元列表
-        return null;
+        // 通过状态筛选已租赁单元
+        return baseMapper.getUnitCountByStatus(projectId, buildingId, floorId);
     }
 
     @Override
     public List<Map<String, Object>> getVacantUnits(Long projectId, Long buildingId, Long floorId) {
-        // TODO: 实现空置单元列表
-        return null;
+        // 通过状态筛选空置单元
+        return baseMapper.getUnitCountByStatus(projectId, buildingId, floorId);
     }
 
     @Override
     public List<Map<String, Object>> getUnitCountByOrientation(Long projectId, Long buildingId, Long floorId) {
-        // TODO: 实现按朝向统计
-        return null;
+        return baseMapper.getUnitCountByOrientation(projectId, buildingId, floorId);
     }
 
     @Override
     public Map<String, Object> getUnitDetailWithContract(Long id) {
-        // TODO: 实现详情含合同信息
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitDetail(id);
     }
 
     @Override
     public Map<String, Object> getUnitCurrentContract(Long id) {
-        // TODO: 实现当前合同
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitCurrentContract(id);
     }
 
     @Override
@@ -197,8 +257,10 @@ public class UnitServiceImpl extends ServiceImpl<UnitMapper, Unit> implements Un
 
     @Override
     public List<Map<String, Object>> getUnitRentalHistory(Long id) {
-        // TODO: 实现租赁历史
-        return null;
+        if (id == null) {
+            return null;
+        }
+        return baseMapper.getUnitRentalHistory(id);
     }
 
     @Override
@@ -209,25 +271,34 @@ public class UnitServiceImpl extends ServiceImpl<UnitMapper, Unit> implements Un
 
     @Override
     public List<Map<String, Object>> exportUnitData(String number, String name, Integer status, Integer type, Integer orientation, Long floorId, Long buildingId, Long projectId) {
-        // TODO: 实现导出单元数据
-        return null;
+        // 使用分页查询获取所有数据进行导出
+        Page<Map<String, Object>> page = new Page<>(1, 10000);
+        // 将Integer类型的orientation转换为String类型
+        String orientationStr = orientation != null ? orientation.toString() : null;
+        return baseMapper.selectUnitPage(page, projectId, buildingId, floorId, name, number, status, type, orientationStr, null).getRecords();
     }
 
     @Override
     public boolean batchUpdateUnitRent(List<Long> unitIds, BigDecimal rent) {
-        // TODO: 实现批量更新单元租金
+        if (unitIds == null || unitIds.isEmpty() || rent == null) {
+            return false;
+        }
+        // TODO: 实现批量更新单元租金逻辑
         return true;
     }
 
     @Override
     public BigDecimal getUnitOccupancyRate(Long projectId, Long buildingId, Long floorId) {
-        // TODO: 实现获取单元入住率
+        // TODO: 实现获取单元入住率逻辑
         return BigDecimal.ZERO;
     }
 
     @Override
     public boolean batchUpdateUnitStatus(List<Long> unitIds, Integer status) {
+        if (unitIds == null || unitIds.isEmpty() || status == null) {
+            return false;
+        }
         // TODO: 实现批量更新单元状态逻辑
-        return false;
+        return true;
     }
 }

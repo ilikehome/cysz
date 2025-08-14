@@ -27,7 +27,7 @@
 
     <!-- 基础查询字段 -->
     <sql id="BaseColumns">
-        id, project_name, project_type, company_name, rent_bill_company, 
+        id, project_name, project_code, project_type, company_name, rent_bill_company, 
         property_bill_company, property_right_company, building_area, rent_area, 
         property_area, city, address, status, management_org, rent_bill_bank_account, 
         project_manager, contact_phone, create_time, update_time
@@ -133,14 +133,28 @@
         ORDER BY project_name ASC
     </select>
 
-    <!-- 根据名称查询项目 -->
-    <select id="selectByName" resultType="com.cysz.property.entity.Project">
-        SELECT * FROM project
+    <!-- 根据项目名称查询项目 -->
+    <select id="selectByName" resultMap="ProjectVOMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM project
         WHERE project_name = #{name}
         <if test="excludeId != null">
             AND id != #{excludeId}
         </if>
-        LIMIT 1
+        AND deleted = 0
+    </select>
+
+    <!-- 根据项目编码查询项目 -->
+    <select id="selectByCode" resultMap="ProjectVOMap">
+        SELECT
+        <include refid="BaseColumns"/>
+        FROM project
+        WHERE project_code = #{code}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+        AND deleted = 0
     </select>
 
     <!-- 统计项目数量 -->

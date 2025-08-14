@@ -624,13 +624,25 @@ const handleSubmit = async () => {
       submitLoading.value = true
       
       try {
+        // 转换字段名以匹配后端ProjectDTO
+        const submitData = {
+          id: formData.id,
+          name: formData.projectName,
+          code: formData.projectName ? formData.projectName.replace(/\s+/g, '_').toUpperCase() + '_' + Date.now() : '', // 生成唯一编码
+          type: formData.projectType,
+          status: formData.status === 1 ? 'ACTIVE' : 'INACTIVE', // 转换状态为字符串
+          address: formData.address,
+          contactPerson: formData.projectManager,
+          contactPhone: formData.contactPhone
+        }
+        
         if (formData.id) {
           // 更新项目
-          await projectApi.updateProject(formData.id, formData)
+          await projectApi.updateProject(formData.id, submitData)
           ElMessage.success('更新成功')
         } else {
           // 创建项目
-          await projectApi.createProject(formData)
+          await projectApi.createProject(submitData)
           ElMessage.success('创建成功')
         }
         

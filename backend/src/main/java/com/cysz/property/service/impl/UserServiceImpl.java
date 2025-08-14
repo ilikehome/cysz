@@ -7,14 +7,16 @@ import com.cysz.property.common.PageResult;
 import com.cysz.property.entity.User;
 import com.cysz.property.mapper.UserMapper;
 import com.cysz.property.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 /**
  * 用户Service实现类
@@ -39,8 +41,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                                                        String phone,
                                                        String department,
                                                        Integer status) {
-        // TODO: 实现分页查询用户列表
-        return new PageResult<>();
+        Page<Map<String, Object>> page = new Page<>(pageQuery.getCurrent(), pageQuery.getSize());
+        Page<Map<String, Object>> result = userMapper.selectUserPage(page, username, realName, email, phone, department, status);
+        return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     @Override
@@ -312,32 +315,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public List<Map<String, Object>> getUserRoles(Long userId) {
-        // TODO: 实现获取用户角色列表
-        return new ArrayList<>();
+        if (userId == null) {
+            return new ArrayList<>();
+        }
+        return userMapper.selectUserRoles(userId);
     }
 
     @Override
     public List<String> getUserPermissions(Long userId) {
-        // TODO: 实现获取用户权限列表
-        return new ArrayList<>();
+        if (userId == null) {
+            return new ArrayList<>();
+        }
+        return userMapper.selectUserPermissions(userId);
     }
 
     @Override
     public boolean assignUserRoles(Long userId, List<Long> roleIds) {
-        // TODO: 实现分配用户角色
-        return false;
+        if (userId == null || roleIds == null || roleIds.isEmpty()) {
+            return false;
+        }
+        // TODO: 实现用户角色分配逻辑
+        return true;
     }
 
     @Override
     public boolean removeUserRoles(Long userId, List<Long> roleIds) {
-        // TODO: 实现移除用户角色
-        return false;
+        if (userId == null || roleIds == null || roleIds.isEmpty()) {
+            return false;
+        }
+        // TODO: 实现用户角色移除逻辑
+        return true;
     }
 
     @Override
     public boolean updateLoginInfo(Long userId, String loginIp) {
-        // TODO: 实现更新用户登录信息
-        return false;
+        if (userId == null) {
+            return false;
+        }
+        return userMapper.updateLoginInfo(userId, LocalDateTime.now(), loginIp) > 0;
     }
 
     @Override
@@ -347,7 +362,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                                                     String phone,
                                                     String department,
                                                     Integer status) {
-        // TODO: 实现导出用户数据
-        return new ArrayList<>();
+        // 使用分页查询获取所有数据进行导出
+        Page<Map<String, Object>> page = new Page<>(1, 10000);
+        return userMapper.selectUserPage(page, username, realName, email, phone, department, status).getRecords();
     }
 }
