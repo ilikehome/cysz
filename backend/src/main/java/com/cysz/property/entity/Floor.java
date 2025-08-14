@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -31,31 +30,37 @@ public class Floor {
     private Long buildingId;
 
     /**
-     * 楼层编号
+     * 楼栋名称（关联查询字段，与前端保持一致）
      */
-    @TableField("number")
-    private String number;
+    @TableField(exist = false)
+    private String buildingName;
 
     /**
-     * 楼层名称
+     * 楼层名称（与前端字段名保持一致）
      */
     @TableField("name")
-    private String name;
+    private String floorName;
 
     /**
-     * 楼层序号
+     * 楼层编号（与前端字段名保持一致）
      */
-    @TableField("sequence")
-    private Integer sequence;
+    @TableField("code")
+    private String floorCode;
 
     /**
-     * 楼层类型：1-标准层，2-设备层，3-架空层，4-地下层
+     * 楼层号（数字）
+     */
+    @TableField("floor_number")
+    private Integer floorNumber;
+
+    /**
+     * 楼层类型：1-地下层，2-地面层，3-标准层，4-顶层
      */
     @TableField("type")
     private Integer type;
 
     /**
-     * 楼层状态：1-规划中，2-建设中，3-已完成，4-已交付
+     * 楼层状态：1-启用，0-禁用
      */
     @TableField("status")
     private Integer status;
@@ -67,22 +72,10 @@ public class Floor {
     private Integer unitCount;
 
     /**
-     * 总建筑面积（平方米）
+     * 备注（与前端字段名保持一致）
      */
-    @TableField("total_area")
-    private BigDecimal totalArea;
-
-    /**
-     * 可租赁面积（平方米）
-     */
-    @TableField("rentable_area")
-    private BigDecimal rentableArea;
-
-    /**
-     * 层高（米）
-     */
-    @TableField("height")
-    private BigDecimal height;
+    @TableField("remark")
+    private String remark;
 
     /**
      * 楼层描述
@@ -91,16 +84,22 @@ public class Floor {
     private String description;
 
     /**
+     * 创建时间（与前端字段名保持一致）
+     */
+    @TableField(value = "created_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间（与前端字段名保持一致）
+     */
+    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+
+    /**
      * 创建人
      */
     @TableField(value = "created_by", fill = FieldFill.INSERT)
     private Long createdBy;
-
-    /**
-     * 创建时间
-     */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
 
     /**
      * 更新人
@@ -109,24 +108,51 @@ public class Floor {
     private Long updatedBy;
 
     /**
-     * 更新时间
-     */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedTime;
-
-    /**
      * 删除标记：0-未删除，1-已删除
      */
     @TableField("deleted")
     @TableLogic
     private Integer deleted;
 
+    // 兼容旧字段名的getter/setter方法
+    public String getName() {
+        return floorName;
+    }
+
+    public void setName(String name) {
+        this.floorName = name;
+    }
+
+    public String getCode() {
+        return floorCode;
+    }
+
+    public void setCode(String code) {
+        this.floorCode = code;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createTime = createdTime;
+    }
+
+    public LocalDateTime getUpdatedTime() {
+        return updateTime;
+    }
+
+    public void setUpdatedTime(LocalDateTime updatedTime) {
+        this.updateTime = updatedTime;
+    }
+
     // 楼层类型枚举
     public enum Type {
-        STANDARD(1, "标准层"),
-        EQUIPMENT(2, "设备层"),
-        OVERHEAD(3, "架空层"),
-        BASEMENT(4, "地下层");
+        BASEMENT(1, "地下层"),
+        GROUND(2, "地面层"),
+        STANDARD(3, "标准层"),
+        TOP(4, "顶层");
 
         private final Integer code;
         private final String name;
@@ -147,10 +173,8 @@ public class Floor {
 
     // 楼层状态枚举
     public enum Status {
-        PLANNING(1, "规划中"),
-        CONSTRUCTION(2, "建设中"),
-        COMPLETED(3, "已完成"),
-        DELIVERED(4, "已交付");
+        DISABLED(0, "禁用"),
+        ENABLED(1, "启用");
 
         private final Integer code;
         private final String name;

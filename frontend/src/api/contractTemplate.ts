@@ -39,27 +39,27 @@ export interface PreviewRequest {
 export const contractTemplateApi = {
   // 分页查询合同（作为模板列表）
   getTemplatePage: (params: ContractTemplatePageParams) => {
-    return request.get('/contracts', { params })
+    return request.get('/api/contracts', { params })
   },
 
   // 根据ID查询合同详情（作为模板详情）
   getTemplateById: (id: number) => {
-    return request.get(`/contracts/${id}`)
+    return request.get(`/api/contracts/${id}`)
   },
 
   // 创建合同（作为创建模板）
   createTemplate: (data: ContractTemplate) => {
-    return request.post('/contracts', data)
+    return request.post('/api/contracts', data)
   },
 
   // 更新合同（作为更新模板）
   updateTemplate: (id: number, data: ContractTemplate) => {
-    return request.put(`/contracts/${id}`, data)
+    return request.put(`/api/contracts/${id}`, data)
   },
 
   // 删除合同（作为删除模板）
   deleteTemplate: (id: number) => {
-    return request.delete(`/contracts/${id}`)
+    return request.delete(`/api/contracts/${id}`)
   },
 
   // 切换模板状态（暂时返回成功）
@@ -74,7 +74,7 @@ export const contractTemplateApi = {
 
   // 获取合同列表（作为模板列表）
   getTemplateList: (status?: string) => {
-    return request.get('/contracts', { params: { status } })
+    return request.get('/api/contracts', { params: { status } })
   },
 
   // 预览模板内容（暂时返回成功）

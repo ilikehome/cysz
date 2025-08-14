@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 
 /**
  * 项目查询数据传输对象
@@ -25,11 +24,6 @@ public class ProjectQueryDTO extends PageRequest implements Serializable {
     private String name;
 
     /**
-     * 项目编码（模糊查询）
-     */
-    private String code;
-
-    /**
      * 项目类型
      */
     private String type;
@@ -37,7 +31,12 @@ public class ProjectQueryDTO extends PageRequest implements Serializable {
     /**
      * 项目状态
      */
-    private String status;
+    private Integer status;
+
+    /**
+     * 城市（模糊查询）
+     */
+    private String city;
 
     /**
      * 项目地址（模糊查询）
@@ -45,42 +44,34 @@ public class ProjectQueryDTO extends PageRequest implements Serializable {
     private String address;
 
     /**
-     * 开发商（模糊查询）
+     * 公司名称（模糊查询）
      */
-    private String developer;
+    private String companyName;
 
     /**
-     * 物业公司（模糊查询）
+     * 项目经理（模糊查询）
      */
-    private String propertyCompany;
+    private String projectManager;
 
     /**
-     * 开工日期开始
+     * 关键字搜索（模糊查询项目名称、城市、地址、公司名称、项目经理）
      */
-    private LocalDate startDateBegin;
+    private String keyword;
 
-    /**
-     * 开工日期结束
-     */
-    private LocalDate startDateEnd;
+    // 兼容前端字段名的getter/setter方法
+    public String getProjectName() {
+        return name;
+    }
 
-    /**
-     * 竣工日期开始
-     */
-    private LocalDate completionDateBegin;
+    public void setProjectName(String projectName) {
+        this.name = projectName;
+    }
 
-    /**
-     * 竣工日期结束
-     */
-    private LocalDate completionDateEnd;
+    public String getProjectType() {
+        return type;
+    }
 
-    /**
-     * 交付日期开始
-     */
-    private LocalDate deliveryDateBegin;
-
-    /**
-     * 交付日期结束
-     */
-    private LocalDate deliveryDateEnd;
+    public void setProjectType(String projectType) {
+        this.type = projectType;
+    }
 }

@@ -25,7 +25,7 @@ import java.util.Map;
 public class FloorServiceImpl extends ServiceImpl<FloorMapper, Floor> implements FloorService {
 
     @Override
-    public PageResult<Map<String, Object>> getFloorPage(PageQuery pageQuery, String number, String name, Integer status, Integer type, Long buildingId) {
+    public PageResult<Map<String, Object>> getFloorPage(PageQuery pageQuery, String floorName, String floorCode, Long buildingId, Long projectId) {
         // TODO: 实现分页查询
         return new PageResult<>();
     }
@@ -57,25 +57,13 @@ public class FloorServiceImpl extends ServiceImpl<FloorMapper, Floor> implements
     }
 
     @Override
-    public List<Map<String, Object>> getFloorsByBuildingId(Long buildingId) {
-        // TODO: 实现根据楼栋ID查询楼层
-        return null;
-    }
-
-    @Override
-    public boolean checkNumberExists(String number, Long buildingId, Long excludeId) {
+    public boolean checkCodeExists(String floorCode, Long buildingId, Long excludeId) {
         // TODO: 实现编号存在性检查
         return false;
     }
 
     @Override
-    public boolean checkSequenceExists(Integer sequence, Long buildingId, Long excludeId) {
-        // TODO: 实现序号存在性检查
-        return false;
-    }
-
-    @Override
-    public Map<String, Object> getFloorStatistics(Long buildingId) {
+    public Map<String, Object> getFloorStatistics(Long buildingId, Long projectId) {
         // TODO: 实现统计信息
         return null;
     }
@@ -123,7 +111,7 @@ public class FloorServiceImpl extends ServiceImpl<FloorMapper, Floor> implements
     }
 
     @Override
-    public Map<String, Object> batchCreateFloors(Long buildingId, Integer startFloor, Integer endFloor, Floor floorTemplate) {
+    public Map<String, Object> batchCreateFloors(Long buildingId, Integer count, Floor floorTemplate) {
         // TODO: 实现批量创建
         return null;
     }
@@ -132,6 +120,18 @@ public class FloorServiceImpl extends ServiceImpl<FloorMapper, Floor> implements
     public Integer getMaxSequence(Long buildingId) {
         // TODO: 实现最大序号查询
         return 0;
+    }
+
+    @Override
+    public Integer getMinSequence(Long buildingId) {
+        // TODO: 实现最小序号查询
+        return 0;
+    }
+
+    @Override
+    public List<Map<String, Object>> exportFloorData(String floorName, String floorCode, Long buildingId, Long projectId) {
+        // TODO: 实现导出楼层数据
+        return null;
     }
 
     @Override

@@ -4,42 +4,42 @@ import request from '@/utils/request'
 export const receivableAnalysisApi = {
   // 获取应收账款统计信息
   getReceivableStatistics: () => {
-    return request.get('/receivables/statistics')
+    return request.get('/api/receivables/statistics')
   },
 
   // 获取已收款统计信息
   getReceivedStatistics: () => {
-    return request.get('/received/statistics')
+    return request.get('/api/received/statistics')
   },
 
   // 获取应收账款分析数据
   getReceivableAnalysisData: (analysisType: string, startDate: string, endDate: string, projectId?: number) => {
     const params: any = { analysisType, startDate, endDate }
     if (projectId) params.projectId = projectId
-    return request.get('/receivables/analysis', { params })
+    return request.get('/api/receivables/analysis', { params })
   },
 
   // 获取已收款分析数据
   getReceivedAnalysisData: (analysisType: string, startDate: string, endDate: string) => {
     const params = { analysisType, startDate, endDate }
-    return request.get('/received/analysis', { params })
+    return request.get('/api/received/analysis', { params })
   },
 
   // 获取已收款趋势统计
   getReceivedTrendStatistics: (year?: number) => {
     const params: any = {}
     if (year) params.year = year
-    return request.get('/received/statistics/trend', { params })
+    return request.get('/api/received/statistics/trend', { params })
   },
 
   // 根据收款方式统计已收款
   getReceivedStatisticsByPaymentMethod: () => {
-    return request.get('/received/statistics/payment-method')
+    return request.get('/api/received/statistics/payment-method')
   },
 
   // 根据匹配状态统计已收款
   getReceivedStatisticsByMatchStatus: () => {
-    return request.get('/received/statistics/match-status')
+    return request.get('/api/received/statistics/match-status')
   },
 
   // 收款人统计
@@ -47,18 +47,18 @@ export const receivableAnalysisApi = {
     const params: any = {}
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
-    return request.get('/received/payer-statistics', { params })
+    return request.get('/api/received/payer-statistics', { params })
   },
 
   // 收款对账报表
   getReconciliationReport: (startDate: string, endDate: string, projectId?: number) => {
     const params: any = { startDate, endDate }
     if (projectId) params.projectId = projectId
-    return request.get('/received/reconciliation-report', { params })
+    return request.get('/api/received/reconciliation-report', { params })
   },
 
   // 获取项目列表
   getProjects: () => {
-    return request.get('/projects')
+    return request.get('/api/projects')
   }
 }

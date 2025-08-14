@@ -26,34 +26,71 @@ public class Project {
     private Long id;
 
     /**
-     * 项目名称
+     * 项目名称（与前端字段名保持一致）
      */
     @TableField("name")
-    private String name;
+    private String projectName;
 
     /**
-     * 项目编码
+     * 项目名称（与前端字段名保持一致）
      */
-    @TableField("code")
-    private String code;
+    @TableField("project_name")
+    private String projectName;
 
     /**
-     * 项目类型：1-住宅，2-商业，3-办公，4-综合
+     * 项目类型（与前端字段名保持一致）
+     * APARTMENT-公寓，COMMERCIAL_DISTRICT-商业街，OFFICE-写字楼，COMPLEX-综合体，HOTEL-酒店
      */
-    @TableField("type")
-    private Integer type;
+    @TableField("project_type")
+    private String projectType;
 
     /**
-     * 项目状态：1-规划中，2-建设中，3-已完成，4-已交付
+     * 管理机构（与前端字段名保持一致）
      */
-    @TableField("status")
-    private Integer status;
+    @TableField("management_org")
+    private String managementOrg;
 
     /**
-     * 项目地址
+     * 租金账单公司（与前端字段名保持一致）
+     */
+    @TableField("rent_bill_company")
+    private String rentBillCompany;
+
+    /**
+     * 租金账单银行账户（与前端字段名保持一致）
+     */
+    @TableField("rent_bill_bank_account")
+    private String rentBillBankAccount;
+
+    /**
+     * 城市（与前端字段名保持一致）
+     */
+    @TableField("city")
+    private String city;
+
+    /**
+     * 项目地址（与前端字段名保持一致）
      */
     @TableField("address")
     private String address;
+
+    /**
+     * 项目经理（与前端字段名保持一致）
+     */
+    @TableField("project_manager")
+    private String projectManager;
+
+    /**
+     * 联系电话（与前端字段名保持一致）
+     */
+    @TableField("contact_phone")
+    private String contactPhone;
+
+    /**
+     * 项目状态：1-启用，0-禁用
+     */
+    @TableField("status")
+    private Integer status;
 
     /**
      * 总建筑面积（平方米）
@@ -122,10 +159,16 @@ public class Project {
     private String contactPerson;
 
     /**
-     * 联系电话
+     * 创建时间（与前端字段名保持一致）
      */
-    @TableField("contact_phone")
-    private String contactPhone;
+    @TableField(value = "created_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间（与前端字段名保持一致）
+     */
+    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
 
     /**
      * 创建人
@@ -134,22 +177,10 @@ public class Project {
     private Long createdBy;
 
     /**
-     * 创建时间
-     */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-
-    /**
      * 更新人
      */
     @TableField(value = "updated_by", fill = FieldFill.INSERT_UPDATE)
     private Long updatedBy;
-
-    /**
-     * 更新时间
-     */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedTime;
 
     /**
      * 删除标记：0-未删除，1-已删除
@@ -158,22 +189,58 @@ public class Project {
     @TableLogic
     private Integer deleted;
 
-    // 项目类型枚举
-    public enum Type {
-        RESIDENTIAL(1, "住宅"),
-        COMMERCIAL(2, "商业"),
-        OFFICE(3, "办公"),
-        MIXED(4, "综合");
+    // 兼容旧字段名的getter/setter方法
+    public String getName() {
+        return projectName;
+    }
 
-        private final Integer code;
+    public void setName(String name) {
+        this.projectName = name;
+    }
+
+    public Integer getType() {
+        if (projectType == null) return null;
+        switch (projectType) {
+            case "COMPLEX": return 4;
+            case "COMMERCIAL_DISTRICT": return 2;
+            case "HOTEL": return 3;
+            case "APARTMENT": return 1;
+            case "OFFICE": return 3;
+            default: return 1;
+        }
+    }
+
+    public void setType(Integer type) {
+        if (type == null) {
+            this.projectType = null;
+            return;
+        }
+        switch (type) {
+            case 1: this.projectType = "APARTMENT"; break;
+            case 2: this.projectType = "COMMERCIAL_DISTRICT"; break;
+            case 3: this.projectType = "OFFICE"; break;
+            case 4: this.projectType = "COMPLEX"; break;
+            default: this.projectType = "APARTMENT";
+        }
+    }
+
+    // 项目类型枚举（与前端保持一致）
+    public enum ProjectType {
+        COMPLEX("COMPLEX", "综合体"),
+        COMMERCIAL_DISTRICT("COMMERCIAL_DISTRICT", "商业街"),
+        HOTEL("HOTEL", "酒店"),
+        APARTMENT("APARTMENT", "公寓"),
+        OFFICE("OFFICE", "写字楼");
+
+        private final String code;
         private final String name;
 
-        Type(Integer code, String name) {
+        ProjectType(String code, String name) {
             this.code = code;
             this.name = name;
         }
 
-        public Integer getCode() {
+        public String getCode() {
             return code;
         }
 
@@ -184,10 +251,8 @@ public class Project {
 
     // 项目状态枚举
     public enum Status {
-        PLANNING(1, "规划中"),
-        CONSTRUCTION(2, "建设中"),
-        COMPLETED(3, "已完成"),
-        DELIVERED(4, "已交付");
+        DISABLED(0, "禁用"),
+        ENABLED(1, "启用");
 
         private final Integer code;
         private final String name;

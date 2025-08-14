@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("tenants")
+@TableName("tenant")
 public class Tenant {
 
     /**
@@ -24,118 +24,88 @@ public class Tenant {
     private Long id;
 
     /**
-     * 租户名称
+     * 租户编号（与数据库字段名保持一致）
      */
-    @TableField("name")
-    private String name;
+    @TableField("tenant_code")
+    private String tenantCode;
 
     /**
-     * 租户编号
+     * 租户名称（与数据库字段名保持一致）
      */
-    @TableField("code")
-    private String code;
+    @TableField("tenant_name")
+    private String tenantName;
 
     /**
-     * 租户性质：1-个人，2-企业
+     * 租户类别（与数据库字段名保持一致）
      */
-    @TableField("type")
-    private Integer type;
+    @TableField("tenant_category")
+    private String tenantCategory;
 
     /**
-     * 业务形态：1-零售，2-餐饮，3-服务，4-办公，5-居住
+     * 法人代表（与数据库字段名保持一致）
      */
-    @TableField("business_type")
-    private Integer businessType;
+    @TableField("legal_person")
+    private String legalPerson;
 
     /**
-     * 联系人
-     */
-    @TableField("contact_person")
-    private String contactPerson;
-
-    /**
-     * 联系电话
+     * 联系电话（与数据库字段名保持一致）
      */
     @TableField("contact_phone")
     private String contactPhone;
 
     /**
-     * 邮箱
-     */
-    @TableField("email")
-    private String email;
-
-    /**
-     * 地址
-     */
-    @TableField("address")
-    private String address;
-
-    /**
-     * 身份证号
-     */
-    @TableField("id_card")
-    private String idCard;
-
-    /**
-     * 营业执照号
-     */
-    @TableField("business_license")
-    private String businessLicense;
-
-    /**
-     * 统一社会信用代码
+     * 统一社会信用代码（与数据库字段名保持一致）
      */
     @TableField("social_credit_code")
     private String socialCreditCode;
 
     /**
-     * 信用等级：1-优秀，2-良好，3-一般，4-较差，5-很差
+     * 联系地址（与数据库字段名保持一致）
      */
-    @TableField("credit_level")
-    private Integer creditLevel;
+    @TableField("contact_address")
+    private String contactAddress;
 
     /**
-     * 风险等级：1-低风险，2-中风险，3-高风险
+     * 联系邮箱（与数据库字段名保持一致）
      */
-    @TableField("risk_level")
-    private Integer riskLevel;
+    @TableField("email")
+    private String email;
 
     /**
-     * 状态：1-启用，2-禁用
+     * 证件类型（与数据库字段名保持一致）
+     */
+    @TableField("certificate_type")
+    private String certificateType;
+
+    /**
+     * 纳税人识别号（与数据库字段名保持一致）
+     */
+    @TableField("taxpayer_id")
+    private String taxpayerId;
+
+    /**
+     * 项目ID（与数据库字段名保持一致）
+     */
+    @TableField("project_id")
+    private Long projectId;
+
+    /**
+     * 状态：1-启用，0-禁用
      */
     @TableField("status")
     private Integer status;
 
     /**
-     * 备注
+     * 创建时间（与前端字段名保持一致）
      */
-    @TableField("description")
-    private String description;
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
 
     /**
-     * 创建人
+     * 更新时间（与前端字段名保持一致）
      */
-    @TableField(value = "created_by", fill = FieldFill.INSERT)
-    private Long createdBy;
-
-    /**
-     * 创建时间
-     */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-
-    /**
-     * 更新人
-     */
-    @TableField(value = "updated_by", fill = FieldFill.INSERT_UPDATE)
-    private Long updatedBy;
-
-    /**
-     * 更新时间
-     */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedTime;
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
 
     /**
      * 删除标记：0-未删除，1-已删除
@@ -144,105 +114,83 @@ public class Tenant {
     @TableLogic
     private Integer deleted;
 
-    // 租户性质枚举
-    public enum Type {
-        INDIVIDUAL(1, "个人"),
-        ENTERPRISE(2, "企业");
-
-        private final Integer code;
-        private final String name;
-
-        Type(Integer code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        public Integer getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
+    // 兼容前端字段名的getter/setter方法
+    public String getName() {
+        return tenantName;
     }
 
-    // 业务形态枚举
-    public enum BusinessType {
-        RETAIL(1, "零售"),
-        CATERING(2, "餐饮"),
-        SERVICE(3, "服务"),
-        OFFICE(4, "办公"),
-        RESIDENTIAL(5, "居住");
-
-        private final Integer code;
-        private final String name;
-
-        BusinessType(Integer code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        public Integer getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
+    public void setName(String name) {
+        this.tenantName = name;
     }
 
-    // 信用等级枚举
-    public enum CreditLevel {
-        EXCELLENT(1, "优秀"),
-        GOOD(2, "良好"),
-        AVERAGE(3, "一般"),
-        POOR(4, "较差"),
-        VERY_POOR(5, "很差");
-
-        private final Integer code;
-        private final String name;
-
-        CreditLevel(Integer code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        public Integer getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
+    public String getCode() {
+        return tenantCode;
     }
 
-    // 风险等级枚举
-    public enum RiskLevel {
-        LOW(1, "低风险"),
-        MEDIUM(2, "中风险"),
-        HIGH(3, "高风险");
+    public void setCode(String code) {
+        this.tenantCode = code;
+    }
 
-        private final Integer code;
-        private final String name;
+    public String getBusinessType() {
+        return tenantCategory;
+    }
 
-        RiskLevel(Integer code, String name) {
-            this.code = code;
-            this.name = name;
-        }
+    public void setBusinessType(String businessType) {
+        this.tenantCategory = businessType;
+    }
 
-        public Integer getCode() {
-            return code;
-        }
+    public String getContactPerson() {
+        return legalPerson;
+    }
 
-        public String getName() {
-            return name;
-        }
+    public void setContactPerson(String contactPerson) {
+        this.legalPerson = contactPerson;
+    }
+
+    public String getAddress() {
+        return contactAddress;
+    }
+
+    public void setAddress(String address) {
+        this.contactAddress = address;
+    }
+
+    public String getContactEmail() {
+        return email;
+    }
+
+    public void setContactEmail(String contactEmail) {
+        this.email = contactEmail;
+    }
+
+    public String getRegisteredAddress() {
+        return contactAddress;
+    }
+
+    public void setRegisteredAddress(String registeredAddress) {
+        this.contactAddress = registeredAddress;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createTime = createdTime;
+    }
+
+    public LocalDateTime getUpdatedTime() {
+        return updateTime;
+    }
+
+    public void setUpdatedTime(LocalDateTime updatedTime) {
+        this.updateTime = updatedTime;
     }
 
     // 状态枚举
     public enum Status {
-        ENABLED(1, "启用"),
-        DISABLED(2, "禁用");
+        DISABLED(0, "禁用"),
+        ENABLED(1, "启用");
 
         private final Integer code;
         private final String name;

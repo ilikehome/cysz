@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -29,11 +28,6 @@ public class ProjectVO implements Serializable {
     private String name;
 
     /**
-     * 项目编码
-     */
-    private String code;
-
-    /**
      * 项目类型
      */
     private String type;
@@ -44,74 +38,74 @@ public class ProjectVO implements Serializable {
     private String typeName;
 
     /**
-     * 项目状态
+     * 公司名称
      */
-    private String status;
+    private String companyName;
 
     /**
-     * 项目状态名称
+     * 租金账单公司
      */
-    private String statusName;
+    private String rentBillCompany;
 
     /**
-     * 项目地址
+     * 物业账单公司
+     */
+    private String propertyBillCompany;
+
+    /**
+     * 产权公司
+     */
+    private String propertyRightCompany;
+
+    /**
+     * 建筑面积
+     */
+    private BigDecimal buildingArea;
+
+    /**
+     * 租赁面积
+     */
+    private BigDecimal rentArea;
+
+    /**
+     * 物业面积
+     */
+    private BigDecimal propertyArea;
+
+    /**
+     * 城市
+     */
+    private String city;
+
+    /**
+     * 地址
      */
     private String address;
 
     /**
-     * 总建筑面积（平方米）
+     * 状态：1-启用，0-禁用
      */
-    private BigDecimal totalArea;
+    private Integer status;
 
     /**
-     * 可租赁面积（平方米）
+     * 状态名称
      */
-    private BigDecimal rentableArea;
+    private String statusName;
 
     /**
-     * 楼栋数量
+     * 管理机构
      */
-    private Integer buildingCount;
+    private String managementOrg;
 
     /**
-     * 单元数量
+     * 租金账单银行账户
      */
-    private Integer unitCount;
+    private String rentBillBankAccount;
 
     /**
-     * 项目描述
+     * 项目经理
      */
-    private String description;
-
-    /**
-     * 开工日期
-     */
-    private LocalDate startDate;
-
-    /**
-     * 竣工日期
-     */
-    private LocalDate completionDate;
-
-    /**
-     * 交付日期
-     */
-    private LocalDate deliveryDate;
-
-    /**
-     * 开发商
-     */
-    private String developer;
-
-    /**
-     * 物业公司
-     */
-    private String propertyCompany;
-
-    /**
-     * 联系人
-     */
-    private String contactPerson;
+    private String projectManager;
 
     /**
      * 联系电话
@@ -119,22 +113,45 @@ public class ProjectVO implements Serializable {
     private String contactPhone;
 
     /**
-     * 创建人
-     */
-    private String createBy;
-
-    /**
      * 创建时间
      */
     private LocalDateTime createTime;
 
     /**
-     * 更新人
-     */
-    private String updateBy;
-
-    /**
      * 更新时间
      */
     private LocalDateTime updateTime;
+
+    // 兼容前端字段名的getter/setter方法
+    public String getProjectName() {
+        return name;
+    }
+
+    public void setProjectName(String projectName) {
+        this.name = projectName;
+    }
+
+    public String getProjectType() {
+        return type;
+    }
+
+    public void setProjectType(String projectType) {
+        this.type = projectType;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createTime = createdTime;
+    }
+
+    public LocalDateTime getUpdatedTime() {
+        return updateTime;
+    }
+
+    public void setUpdatedTime(LocalDateTime updatedTime) {
+        this.updateTime = updatedTime;
+    }
 }

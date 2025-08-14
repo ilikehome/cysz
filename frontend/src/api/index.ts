@@ -44,55 +44,56 @@ export const userApi = {
   
   // 获取用户信息
   getUserInfo: () => {
-    return request.get('/auth/user-info')
+    return request.get('/api/auth/user-info')
   },
   
   // 获取组织列表
-  // 获取组织列表
   getOrganizations: () => {
-    return request.get('/auth/organizations')
+    return request.get('/api/auth/organizations')
   },
   
   // 更新用户信息
-  updateUserInfo: (data: {
+  updateUserInfo: (id: number, data: {
     realName?: string
     email?: string
     phone?: string
   }) => {
-    return request.put('/user/info', data)
+    return request.put(`/api/users/${id}`, data)
   },
   
   // 修改密码
-  changeUserPassword: (data: {
-    currentPassword: string
+  changeUserPassword: (id: number, data: {
+    oldPassword: string
     newPassword: string
   }) => {
-    return request.put('/user/password', data)
+    return request.post(`/api/users/${id}/change-password`, null, {
+      params: { oldPassword: data.oldPassword, newPassword: data.newPassword }
+    })
   },
   
-  // 获取用户登录记录
-  getUserLoginHistory: () => {
-    return request.get('/user/login-history')
+  // 获取用户统计信息
+  getUserStatistics: () => {
+    return request.get('/api/users/statistics')
   },
   
   // 用户分页查询
   getUserPage: (params: PageQuery) => {
-    return request.get<PageResult<User>>('/user/page', { params })
+    return request.get<PageResult<User>>('/api/users', { params })
   },
   
   // 创建用户
   createUser: (data: User) => {
-    return request.post('/user', data)
+    return request.post('/api/users', data)
   },
   
   // 更新用户
   updateUser: (id: number, data: User) => {
-    return request.put(`/user/${id}`, data)
+    return request.put(`/api/users/${id}`, data)
   },
   
   // 删除用户
   deleteUser: (id: number) => {
-    return request.delete(`/user/${id}`)
+    return request.delete(`/api/users/${id}`)
   }
 }
 
@@ -116,27 +117,27 @@ export interface Project {
 export const projectApi = {
   // 项目分页查询
   getProjectPage: (params: PageQuery) => {
-    return request.get<PageResult<Project>>('/projects/page', { params })
+    return request.get<PageResult<Project>>('/api/projects', { params })
   },
   
   // 获取所有项目列表
   getProjectList: () => {
-    return request.get<Project[]>('/projects/list')
+    return request.get<Project[]>('/api/projects/list')
   },
   
   // 创建项目
   createProject: (data: Project) => {
-    return request.post('/projects', data)
+    return request.post('/api/projects', data)
   },
   
   // 更新项目
   updateProject: (id: number, data: Project) => {
-    return request.put(`/projects/${id}`, data)
+    return request.put(`/api/projects/${id}`, data)
   },
   
   // 删除项目
   deleteProject: (id: number) => {
-    return request.delete(`/projects/${id}`)
+    return request.delete(`/api/projects/${id}`)
   }
 }
 
@@ -159,27 +160,27 @@ export interface Building {
 export const buildingApi = {
   // 楼栋分页查询
   getBuildingPage: (params: PageQuery) => {
-    return request.get<PageResult<Building>>('/buildings/page', { params })
+    return request.get<PageResult<Building>>('/api/buildings', { params })
   },
   
   // 根据项目ID获取楼栋列表
   getBuildingsByProject: (projectId: number) => {
-    return request.get<Building[]>(`/buildings/project/${projectId}`)
+    return request.get<Building[]>(`/api/buildings/by-project/${projectId}`)
   },
   
   // 创建楼栋
   createBuilding: (data: Building) => {
-    return request.post('/buildings', data)
+    return request.post('/api/buildings', data)
   },
   
   // 更新楼栋
   updateBuilding: (id: number, data: Building) => {
-    return request.put(`/buildings/${id}`, data)
+    return request.put(`/api/buildings/${id}`, data)
   },
   
   // 删除楼栋
   deleteBuilding: (id: number) => {
-    return request.delete(`/buildings/${id}`)
+    return request.delete(`/api/buildings/${id}`)
   }
 }
 
@@ -218,34 +219,34 @@ export interface Unit {
 export const floorApi = {
   // 楼层分页查询
   getFloorPage: (params: PageQuery) => {
-    return request.get<PageResult<Floor>>('/floors/page', { params })
+    return request.get<PageResult<Floor>>('/api/floors', { params })
   },
   
   // 根据楼栋ID获取楼层列表
   getFloorsByBuilding: (buildingId: number) => {
-    return request.get<Floor[]>(`/floors/building/${buildingId}`)
+    return request.get<Floor[]>(`/api/floors/building/${buildingId}`)
   },
   
   // 创建楼层
   createFloor: (data: Floor) => {
-    return request.post('/floors', data)
+    return request.post('/api/floors', data)
   },
   
   // 更新楼层
   updateFloor: (id: number, data: Floor) => {
-    return request.put(`/floors/${id}`, data)
+    return request.put(`/api/floors/${id}`, data)
   },
   
   // 删除楼层
   deleteFloor: (id: number) => {
-    return request.delete(`/floors/${id}`)
+    return request.delete(`/api/floors/${id}`)
   }
 }
 
 export const unitApi = {
   // 单元分页查询
   getUnitPage: (params: PageQuery) => {
-    return request.get<PageResult<Unit>>('/units/page', { params })
+    return request.get<PageResult<Unit>>('/api/units', { params })
   },
   
   // 获取单元列表
@@ -254,22 +255,22 @@ export const unitApi = {
     buildingId?: number
     unitStatus?: string
   }) => {
-    return request.get('/units/list', { params })
+    return request.get('/api/units/list', { params })
   },
   
   // 创建单元
   createUnit: (data: Unit) => {
-    return request.post('/units', data)
+    return request.post('/api/units', data)
   },
   
   // 更新单元
   updateUnit: (id: number, data: Unit) => {
-    return request.put(`/units/${id}`, data)
+    return request.put(`/api/units/${id}`, data)
   },
   
   // 删除单元
   deleteUnit: (id: number) => {
-    return request.delete(`/units/${id}`)
+    return request.delete(`/api/units/${id}`)
   },
   
   // 单元合并
@@ -279,7 +280,7 @@ export const unitApi = {
     targetUnitDescription: string
     operationReason: string
   }) => {
-    return request.post('/units/merge', data)
+    return request.post('/api/units/merge', data)
   },
   
   // 单元拆分
@@ -288,7 +289,7 @@ export const unitApi = {
     targetUnits: Array<{ unitCode: string; unitDescription: string }>
     operationReason: string
   }) => {
-    return request.post('/units/split', data)
+    return request.post('/api/units/split', data)
   }
 }
 
@@ -315,73 +316,66 @@ export interface Tenant {
 export const tenantApi = {
   // 租户信息管理
   getTenantPage: (params: PageQuery) => {
-    return request.get<PageResult<Tenant>>('/tenants/page', { params })
+    return request.get<PageResult<Tenant>>('/api/tenants', { params })
   },
   
   createTenant: (data: Tenant) => {
-    return request.post('/tenants', data)
+    return request.post('/api/tenants', data)
   },
   
   updateTenant: (id: number, data: Tenant) => {
-    return request.put(`/tenants/${id}`, data)
+    return request.put(`/api/tenants/${id}`, data)
   },
   
   deleteTenant: (id: number) => {
-    return request.delete(`/tenants/${id}`)
+    return request.delete(`/api/tenants/${id}`)
   },
   
   // 租户风险管控
   getRiskStats: () => {
-    return request.get('/tenants/risk/stats')
+    return request.get('/api/tenants/statistics')
   },
   
   getTenantRiskList: (params: PageQuery) => {
-    return request.get('/tenants/risk/list', { params })
+    return request.get('/api/tenants', { params })
   },
   
-  assessTenantRisk: (data: {
-    tenantId: number
-    creditScore: number
-    businessStatus: string
-    financialStatus: string
-    complianceStatus: string
-    riskNote?: string
-  }) => {
-    return request.post('/tenants/risk/assess', data)
+  assessTenantRisk: (id: number) => {
+    return request.get(`/api/tenants/${id}/risk-assessment`)
   },
   
   // 租户画像
   getTenantProfileList: (params: PageQuery) => {
-    return request.get('/tenants/profile/list', { params })
+    return request.get('/api/tenants', { params })
   },
   
   getTenantProfileDetail: (id: number) => {
-    return request.get(`/tenants/profile/${id}`)
+    return request.get(`/api/tenants/${id}/profile`)
   },
   
-  generateTenantProfile: (data: { tenantId: number }) => {
-    return request.post('/tenants/profile/generate', data)
+  generateTenantProfile: (id: number) => {
+    return request.get(`/api/tenants/${id}/profile`)
   },
   
   // 业态分析相关接口
   getBusinessOverview: () => {
-    return request.get('/tenants/business-analysis/overview')
+    return request.get('/api/tenants/statistics')
   },
   
   getBusinessDetails: (params?: { businessType?: string }) => {
-    return request.get('/tenants/business-analysis/details', { params })
+    return request.get('/api/tenants/statistics/business-format', { params })
   },
   
   getBusinessTrends: () => {
-    return request.get('/tenants/business-analysis/trends')
+    return request.get('/api/tenants/statistics/business-format')
   },
   
   getBusinessSuggestions: () => {
-    return request.get('/tenants/business-analysis/suggestions')
+    return request.get('/api/tenants/statistics')
   },
   
   exportBusinessReport: () => {
-    return request.get('/tenants/business-analysis/export')
+    return request.get('/api/tenants/export')
   }
 }
 
@@ -416,22 +410,22 @@ export interface Contract {
 export const contractApi = {
   // 合同分页查询
   getContractPage: (params: PageQuery) => {
-    return request.get<PageResult<Contract>>('/contracts/page', { params })
+    return request.get<PageResult<Contract>>('/api/contracts', { params })
   },
   
   // 创建合同
   createContract: (data: Contract) => {
-    return request.post('/contracts', data)
+    return request.post('/api/contracts', data)
   },
   
   // 更新合同
   updateContract: (id: number, data: Contract) => {
-    return request.put(`/contracts/${id}`, data)
+    return request.put(`/api/contracts/${id}`, data)
   },
   
   // 删除合同
   deleteContract: (id: number) => {
-    return request.delete(`/contracts/${id}`)
+    return request.delete(`/api/contracts/${id}`)
   }
 }
 
@@ -471,27 +465,27 @@ export interface ReceivableAccount {
 export const receivableApi = {
   // 应收账款分页查询
   getReceivablePage: (params: PageQuery) => {
-    return request.get<PageResult<ReceivableAccount>>('/receivable/page', { params })
+    return request.get<PageResult<ReceivableAccount>>('/api/receivables', { params })
   },
   
   // 创建应收账款
   createReceivable: (data: ReceivableAccount) => {
-    return request.post('/receivable', data)
+    return request.post('/api/receivables', data)
   },
   
   // 更新应收账款
   updateReceivable: (id: number, data: ReceivableAccount) => {
-    return request.put(`/receivable/${id}`, data)
+    return request.put(`/api/receivables/${id}`, data)
   },
   
   // 删除应收账款
   deleteReceivable: (id: number) => {
-    return request.delete(`/receivable/${id}`)
+    return request.delete(`/api/receivables/${id}`)
   },
   
   // 认领账款
   claimReceivable: (id: number, data: { claimer: string; claimDate: string }) => {
-    return request.post(`/receivable/${id}/claim`, data)
+    return request.post(`/api/receivables/${id}/claim`, data)
   }
 }
 

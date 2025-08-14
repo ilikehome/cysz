@@ -19,8 +19,8 @@ public interface FloorService extends IService<Floor> {
     /**
      * 分页查询楼层列表
      */
-    PageResult<Map<String, Object>> getFloorPage(PageQuery pageQuery, String number, String name, 
-                                                Integer status, Integer type, Long buildingId);
+    PageResult<Map<String, Object>> getFloorPage(PageQuery pageQuery, String floorName, String floorCode, 
+                                                Long buildingId, Long projectId);
 
     /**
      * 根据ID查询楼层详情
@@ -55,17 +55,12 @@ public interface FloorService extends IService<Floor> {
     /**
      * 验证楼层编号是否存在
      */
-    boolean checkNumberExists(String number, Long buildingId, Long excludeId);
-
-    /**
-     * 验证楼层序号是否存在
-     */
-    boolean checkSequenceExists(Integer sequence, Long buildingId, Long excludeId);
+    boolean checkCodeExists(String floorCode, Long buildingId, Long excludeId);
 
     /**
      * 获取楼层统计信息
      */
-    Map<String, Object> getFloorStatistics(Long buildingId);
+    Map<String, Object> getFloorStatistics(Long buildingId, Long projectId);
 
     /**
      * 根据状态统计楼层数量
@@ -105,7 +100,7 @@ public interface FloorService extends IService<Floor> {
     /**
      * 批量创建楼层
      */
-    Map<String, Object> batchCreateFloors(Long buildingId, Integer startFloor, Integer endFloor, Floor floorTemplate);
+    Map<String, Object> batchCreateFloors(Long buildingId, Integer count, Floor floorTemplate);
 
     /**
      * 获取楼层最大序号
@@ -120,5 +115,5 @@ public interface FloorService extends IService<Floor> {
     /**
      * 导出楼层数据
      */
-    List<Map<String, Object>> exportFloorData(String number, String name, Integer status, Integer type, Long buildingId);
+    List<Map<String, Object>> exportFloorData(String floorName, String floorCode, Long buildingId, Long projectId);
 }

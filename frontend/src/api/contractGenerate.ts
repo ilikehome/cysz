@@ -9,7 +9,7 @@ export function generateContractReceivables(contractId: number, generateType: nu
   const params: any = { generateType }
   if (periods) params.periods = periods
   return request({
-    url: `/contracts/${contractId}/generate-receivables`,
+    url: `/api/contracts/${contractId}/generate-receivables`,
     method: 'post',
     params
   })
@@ -20,7 +20,7 @@ export function generateContractReceivables(contractId: number, generateType: nu
  */
 export function getContractGenerationProgress(contractId: number) {
   return request({
-    url: `/contracts/${contractId}/generation-progress`,
+    url: `/api/contracts/${contractId}/generation-progress`,
     method: 'get'
   })
 }
@@ -30,7 +30,7 @@ export function getContractGenerationProgress(contractId: number) {
  */
 export function getContractDetail(contractId: number) {
   return request({
-    url: `/contracts/${contractId}`,
+    url: `/api/contracts/${contractId}`,
     method: 'get'
   })
 }
@@ -40,7 +40,7 @@ export function getContractDetail(contractId: number) {
  */
 export function getContractPage(params: any) {
   return request({
-    url: '/contracts',
+    url: '/api/contracts',
     method: 'get',
     params
   })
@@ -51,7 +51,7 @@ export function getContractPage(params: any) {
  */
 export function createContract(data: any) {
   return request({
-    url: '/contracts',
+    url: '/api/contracts',
     method: 'post',
     data
   })
@@ -62,7 +62,7 @@ export function createContract(data: any) {
  */
 export function updateContract(contractId: number, data: any) {
   return request({
-    url: `/contracts/${contractId}`,
+    url: `/api/contracts/${contractId}`,
     method: 'put',
     data
   })
@@ -73,7 +73,7 @@ export function updateContract(contractId: number, data: any) {
  */
 export function deleteContract(contractId: number) {
   return request({
-    url: `/contracts/${contractId}`,
+    url: `/api/contracts/${contractId}`,
     method: 'delete'
   })
 }
@@ -83,7 +83,7 @@ export function deleteContract(contractId: number) {
  */
 export function getContractStatistics() {
   return request({
-    url: '/contracts/statistics',
+    url: '/api/contracts/statistics',
     method: 'get'
   })
 }
@@ -93,7 +93,7 @@ export function getContractStatistics() {
  */
 export function getContractReceivables(contractId: number) {
   return request({
-    url: `/contracts/${contractId}/receivables`,
+    url: `/api/contracts/${contractId}/receivables`,
     method: 'get'
   })
 }
@@ -103,7 +103,7 @@ export function getContractReceivables(contractId: number) {
  */
 export function getContractReceived(contractId: number) {
   return request({
-    url: `/contracts/${contractId}/received`,
+    url: `/api/contracts/${contractId}/received`,
     method: 'get'
   })
 }
@@ -113,7 +113,7 @@ export function getContractReceived(contractId: number) {
  */
 export function exportContractData(params: any) {
   return request({
-    url: '/contracts/export',
+    url: '/api/contracts/export',
     method: 'get',
     params,
     responseType: 'blob'
@@ -127,7 +127,7 @@ export function generateContractReport(reportType: string, startDate: string, en
   const params: any = { reportType, startDate, endDate }
   if (projectId) params.projectId = projectId
   return request({
-    url: '/contracts/report',
+    url: '/api/contracts/report',
     method: 'get',
     params
   })

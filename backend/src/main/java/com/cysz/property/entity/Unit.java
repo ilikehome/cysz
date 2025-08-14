@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("units")
+@TableName("unit")
 public class Unit {
 
     /**
@@ -23,6 +23,18 @@ public class Unit {
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+
+    /**
+     * 单元编号（与数据库字段名保持一致）
+     */
+    @TableField("unit_code")
+    private String unitCode;
+
+    /**
+     * 单元描述（与数据库字段名保持一致）
+     */
+    @TableField("unit_description")
+    private String unitDescription;
 
     /**
      * 项目ID
@@ -43,106 +55,95 @@ public class Unit {
     private Long floorId;
 
     /**
-     * 单元编号
+     * 楼层名称（关联查询字段，与前端保持一致）
      */
-    @TableField("number")
-    private String number;
+    @TableField(exist = false)
+    private String floorName;
 
     /**
-     * 单元名称
+     * 楼栋名称（关联查询字段，与前端保持一致）
      */
-    @TableField("name")
-    private String name;
+    @TableField(exist = false)
+    private String buildingName;
 
     /**
-     * 单元类型：1-一居室，2-两居室，3-三居室，4-四居室，5-商铺，6-办公室，7-仓库
+     * 项目名称（关联查询字段，与前端保持一致）
      */
-    @TableField("type")
-    private Integer type;
+    @TableField(exist = false)
+    private String projectName;
 
     /**
-     * 单元状态：1-空置，2-已租，3-维修中，4-预定
+     * 单元状态（与数据库字段名保持一致）
+     * VACANT-空置，OCCUPIED-已租，MAINTENANCE-维护中，DISABLED-禁用
+     */
+    @TableField("unit_status")
+    private String unitStatus;
+
+    /**
+     * 单元用途（与数据库字段名保持一致）
+     */
+    @TableField("unit_purpose")
+    private String unitPurpose;
+
+    /**
+     * 建筑面积（与数据库字段名保持一致）
+     */
+    @TableField("building_area")
+    private BigDecimal buildingArea;
+
+    /**
+     * 租赁面积（与数据库字段名保持一致）
+     */
+    @TableField("rent_area")
+    private BigDecimal rentArea;
+
+    /**
+     * 物业面积（与数据库字段名保持一致）
+     */
+    @TableField("property_area")
+    private BigDecimal propertyArea;
+
+    /**
+     * 是否多租户（与数据库字段名保持一致）
+     */
+    @TableField("is_multi_tenant")
+    private Boolean isMultiTenant;
+
+    /**
+     * 用途（与数据库字段名保持一致）
+     */
+    @TableField("purpose")
+    private String purpose;
+
+    /**
+     * 备注（与数据库字段名保持一致）
+     */
+    @TableField("remark")
+    private String remark;
+
+    /**
+     * 状态标志（与数据库字段名保持一致）
+     */
+    @TableField("status_flag")
+    private Integer statusFlag;
+
+    /**
+     * 状态：1-启用，0-禁用
      */
     @TableField("status")
     private Integer status;
 
     /**
-     * 建筑面积（平方米）
+     * 创建时间（与前端字段名保持一致）
      */
-    @TableField("area")
-    private BigDecimal area;
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
 
     /**
-     * 可租赁面积（平方米）
+     * 更新时间（与前端字段名保持一致）
      */
-    @TableField("rentable_area")
-    private BigDecimal rentableArea;
-
-    /**
-     * 租金（元/月）
-     */
-    @TableField("rent")
-    private BigDecimal rent;
-
-    /**
-     * 朝向：1-东，2-南，3-西，4-北，5-东南，6-西南，7-东北，8-西北
-     */
-    @TableField("orientation")
-    private Integer orientation;
-
-    /**
-     * 装修状态：1-毛坯，2-简装，3-精装，4-豪装
-     */
-    @TableField("decoration")
-    private Integer decoration;
-
-    /**
-     * 房间数
-     */
-    @TableField("room_count")
-    private Integer roomCount;
-
-    /**
-     * 卫生间数
-     */
-    @TableField("bathroom_count")
-    private Integer bathroomCount;
-
-    /**
-     * 阳台数
-     */
-    @TableField("balcony_count")
-    private Integer balconyCount;
-
-    /**
-     * 单元描述
-     */
-    @TableField("description")
-    private String description;
-
-    /**
-     * 创建人
-     */
-    @TableField(value = "created_by", fill = FieldFill.INSERT)
-    private Long createdBy;
-
-    /**
-     * 创建时间
-     */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-
-    /**
-     * 更新人
-     */
-    @TableField(value = "updated_by", fill = FieldFill.INSERT_UPDATE)
-    private Long updatedBy;
-
-    /**
-     * 更新时间
-     */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedTime;
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
 
     /**
      * 删除标记：0-未删除，1-已删除
@@ -151,25 +152,93 @@ public class Unit {
     @TableLogic
     private Integer deleted;
 
-    // 单元类型枚举
-    public enum Type {
-        ONE_BEDROOM(1, "一居室"),
-        TWO_BEDROOM(2, "两居室"),
-        THREE_BEDROOM(3, "三居室"),
-        FOUR_BEDROOM(4, "四居室"),
-        SHOP(5, "商铺"),
-        OFFICE(6, "办公室"),
-        WAREHOUSE(7, "仓库");
+    // 兼容前端字段名的getter/setter方法
+    public String getUnitName() {
+        return unitDescription; // 单元名称使用描述字段
+    }
 
-        private final Integer code;
+    public void setUnitName(String unitName) {
+        this.unitDescription = unitName;
+    }
+
+    public String getName() {
+        return unitDescription;
+    }
+
+    public void setName(String name) {
+        this.unitDescription = name;
+    }
+
+    public String getNumber() {
+        return unitCode;
+    }
+
+    public void setNumber(String number) {
+        this.unitCode = number;
+    }
+
+    public String getCode() {
+        return unitCode;
+    }
+
+    public void setCode(String code) {
+        this.unitCode = code;
+    }
+
+    public BigDecimal getArea() {
+        return buildingArea;
+    }
+
+    public void setArea(BigDecimal area) {
+        this.buildingArea = area;
+    }
+
+    public BigDecimal getRentableArea() {
+        return rentArea;
+    }
+
+    public void setRentableArea(BigDecimal rentableArea) {
+        this.rentArea = rentableArea;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createTime = createdTime;
+    }
+
+    public LocalDateTime getUpdatedTime() {
+        return updateTime;
+    }
+
+    public void setUpdatedTime(LocalDateTime updatedTime) {
+        this.updateTime = updatedTime;
+    }
+
+    // 单元状态枚举（与数据库实际值保持一致）
+    public enum UnitStatus {
+        VACANT("VACANT", "空置"),
+        OCCUPIED("OCCUPIED", "已租"),
+        MAINTENANCE("MAINTENANCE", "维护中"),
+        DISABLED("DISABLED", "禁用"),
+        // 兼容前端可能使用的状态
+        RENTABLE("RENTABLE", "可租赁"),
+        SELF_USE("SELF_USE", "自用"),
+        PUBLIC_USE("PUBLIC_USE", "公用"),
+        LEASE_BACK("LEASE_BACK", "回租"),
+        SELF_RENTAL("SELF_RENTAL", "自营");
+
+        private final String code;
         private final String name;
 
-        Type(Integer code, String name) {
+        UnitStatus(String code, String name) {
             this.code = code;
             this.name = name;
         }
 
-        public Integer getCode() {
+        public String getCode() {
             return code;
         }
 
@@ -178,69 +247,15 @@ public class Unit {
         }
     }
 
-    // 单元状态枚举
+    // 状态枚举
     public enum Status {
-        VACANT(1, "空置"),
-        RENTED(2, "已租"),
-        MAINTENANCE(3, "维修中"),
-        RESERVED(4, "预定");
+        DISABLED(0, "禁用"),
+        ENABLED(1, "启用");
 
         private final Integer code;
         private final String name;
 
         Status(Integer code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        public Integer getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    // 朝向枚举
-    public enum Orientation {
-        EAST(1, "东"),
-        SOUTH(2, "南"),
-        WEST(3, "西"),
-        NORTH(4, "北"),
-        SOUTHEAST(5, "东南"),
-        SOUTHWEST(6, "西南"),
-        NORTHEAST(7, "东北"),
-        NORTHWEST(8, "西北");
-
-        private final Integer code;
-        private final String name;
-
-        Orientation(Integer code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        public Integer getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    // 装修状态枚举
-    public enum Decoration {
-        ROUGH(1, "毛坯"),
-        SIMPLE(2, "简装"),
-        FINE(3, "精装"),
-        LUXURY(4, "豪装");
-
-        private final Integer code;
-        private final String name;
-
-        Decoration(Integer code, String name) {
             this.code = code;
             this.name = name;
         }

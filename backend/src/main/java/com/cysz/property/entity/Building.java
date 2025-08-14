@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -16,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("buildings")
+@TableName("building")
 public class Building {
 
     /**
@@ -26,100 +25,95 @@ public class Building {
     private Long id;
 
     /**
+     * 楼栋编号（与数据库字段名保持一致）
+     */
+    @TableField("building_code")
+    private String buildingCode;
+
+    /**
+     * 楼栋名称（与数据库字段名保持一致）
+     */
+    @TableField("building_name")
+    private String buildingName;
+
+    /**
      * 项目ID
      */
     @TableField("project_id")
     private Long projectId;
 
     /**
-     * 楼栋编号
+     * 项目名称（关联查询字段，与前端保持一致）
      */
-    @TableField("number")
-    private String number;
+    @TableField(exist = false)
+    private String projectName;
 
     /**
-     * 楼栋名称
+     * 楼栋类型（与数据库字段名保持一致）
+     * RESIDENTIAL-住宅，COMMERCIAL-商业，OFFICE-办公，MIXED-混合
      */
-    @TableField("name")
-    private String name;
+    @TableField("building_type")
+    private String buildingType;
 
     /**
-     * 楼栋类型：1-住宅楼，2-商业楼，3-办公楼，4-综合楼
-     */
-    @TableField("type")
-    private Integer type;
-
-    /**
-     * 楼栋状态：1-规划中，2-建设中，3-已完成，4-已交付
-     */
-    @TableField("status")
-    private Integer status;
-
-    /**
-     * 楼层数量
+     * 楼层数
      */
     @TableField("floor_count")
     private Integer floorCount;
 
     /**
-     * 单元数量
+     * 建筑面积
      */
-    @TableField("unit_count")
-    private Integer unitCount;
+    @TableField("building_area")
+    private BigDecimal buildingArea;
 
     /**
-     * 总建筑面积（平方米）
+     * 租赁面积
      */
-    @TableField("total_area")
-    private BigDecimal totalArea;
+    @TableField("rent_area")
+    private BigDecimal rentArea;
 
     /**
-     * 可租赁面积（平方米）
+     * 物业面积
      */
-    @TableField("rentable_area")
-    private BigDecimal rentableArea;
+    @TableField("property_area")
+    private BigDecimal propertyArea;
 
     /**
-     * 楼栋描述
+     * 可用面积
+     */
+    @TableField("usable_area")
+    private BigDecimal usableArea;
+
+    /**
+     * 楼栋状态
+     */
+    @TableField("building_status")
+    private String buildingStatus;
+
+    /**
+     * 描述
      */
     @TableField("description")
     private String description;
 
     /**
-     * 竣工日期
+     * 状态：1-启用，0-禁用
      */
-    @TableField("completion_date")
-    private LocalDate completionDate;
+    @TableField("status")
+    private Integer status;
 
     /**
-     * 交付日期
+     * 创建时间（与前端字段名保持一致）
      */
-    @TableField("delivery_date")
-    private LocalDate deliveryDate;
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
 
     /**
-     * 创建人
+     * 更新时间（与前端字段名保持一致）
      */
-    @TableField(value = "created_by", fill = FieldFill.INSERT)
-    private Long createdBy;
-
-    /**
-     * 创建时间
-     */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
-
-    /**
-     * 更新人
-     */
-    @TableField(value = "updated_by", fill = FieldFill.INSERT_UPDATE)
-    private Long updatedBy;
-
-    /**
-     * 更新时间
-     */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedTime;
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
 
     /**
      * 删除标记：0-未删除，1-已删除
@@ -128,22 +122,63 @@ public class Building {
     @TableLogic
     private Integer deleted;
 
-    // 楼栋类型枚举
-    public enum Type {
-        RESIDENTIAL(1, "住宅楼"),
-        COMMERCIAL(2, "商业楼"),
-        OFFICE(3, "办公楼"),
-        MIXED(4, "综合楼");
+    // 兼容前端字段名的getter/setter方法
+    public String getName() {
+        return buildingName;
+    }
 
-        private final Integer code;
+    public void setName(String name) {
+        this.buildingName = name;
+    }
+
+    public String getCode() {
+        return buildingCode;
+    }
+
+    public void setCode(String code) {
+        this.buildingCode = code;
+    }
+
+    public String getType() {
+        return buildingType;
+    }
+
+    public void setType(String type) {
+        this.buildingType = type;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createTime = createdTime;
+    }
+
+    public LocalDateTime getUpdatedTime() {
+        return updateTime;
+    }
+
+    public void setUpdatedTime(LocalDateTime updatedTime) {
+        this.updateTime = updatedTime;
+    }
+
+    // 楼栋类型枚举
+    public enum BuildingType {
+        RESIDENTIAL("RESIDENTIAL", "住宅"),
+        COMMERCIAL("COMMERCIAL", "商业"),
+        OFFICE("OFFICE", "办公"),
+        MIXED("MIXED", "混合");
+
+        private final String code;
         private final String name;
 
-        Type(Integer code, String name) {
+        BuildingType(String code, String name) {
             this.code = code;
             this.name = name;
         }
 
-        public Integer getCode() {
+        public String getCode() {
             return code;
         }
 
@@ -153,11 +188,33 @@ public class Building {
     }
 
     // 楼栋状态枚举
+    public enum BuildingStatus {
+        NORMAL("NORMAL", "正常"),
+        MAINTENANCE("MAINTENANCE", "维护中"),
+        CONSTRUCTION("CONSTRUCTION", "建设中"),
+        DISABLED("DISABLED", "禁用");
+
+        private final String code;
+        private final String name;
+
+        BuildingStatus(String code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    // 状态枚举
     public enum Status {
-        PLANNING(1, "规划中"),
-        CONSTRUCTION(2, "建设中"),
-        COMPLETED(3, "已完成"),
-        DELIVERED(4, "已交付");
+        DISABLED(0, "禁用"),
+        ENABLED(1, "启用");
 
         private final Integer code;
         private final String name;
