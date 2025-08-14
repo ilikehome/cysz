@@ -135,14 +135,8 @@ public class FloorServiceImpl extends ServiceImpl<FloorMapper, Floor> implements
     }
 
     @Override
-    public Integer getMinSequence(Long buildingId) {
-        // TODO: 实现最小序号查询
-        return 0;
-    }
-
-    @Override
-    public List<Map<String, Object>> exportFloorData(String number, String name, Integer status, Integer type, Long buildingId) {
-        // TODO: 实现导出楼层数据
+    public List<Map<String, Object>> getFloorsByBuildingId(Long buildingId) {
+        // TODO: 实现根据楼栋ID查询楼层
         return null;
     }
 }

@@ -35,7 +35,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
     @Override
     public PageResult<ProjectVO> getProjectPage(ProjectQueryDTO query) {
-        query.validate();
         Page<ProjectVO> page = new Page<>(query.getCurrent(), query.getSize());
         projectMapper.selectProjectPage(page, query);
         return PageResult.of(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
@@ -72,16 +71,17 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
 
         Project project = new Project();
+        Project project = new Project();
         BeanUtils.copyProperties(projectDTO, project);
-        project.setCreatedTime(LocalDateTime.now());
-        project.setUpdatedTime(LocalDateTime.now());
+        project.setCreateTime(LocalDateTime.now());
+        project.setUpdateTime(LocalDateTime.now());
         project.setDeleted(0);
 
         if (!save(project)) {
             throw BusinessException.of(ResultCode.PROJECT_CREATE_FAILED);
         }
 
-        log.info("创建项目成功，项目ID: {}, 项目名称: {}", project.getId(), project.getName());
+        log.info("创建项目成功，项目ID: {}, 项目名称: {}", project.getId(), project.getProjectName());
         return project.getId();
     }
 
@@ -110,13 +110,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         Project project = new Project();
         BeanUtils.copyProperties(projectDTO, project);
         project.setId(id);
-        project.setUpdatedTime(LocalDateTime.now());
+        project.setUpdateTime(LocalDateTime.now());
 
         if (!updateById(project)) {
             throw BusinessException.of(ResultCode.PROJECT_UPDATE_FAILED);
         }
 
-        log.info("更新项目成功，项目ID: {}, 项目名称: {}", id, project.getName());
+        log.info("更新项目成功，项目ID: {}, 项目名称: {}", id, project.getProjectName());
         return true;
     }
 
@@ -135,13 +135,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         // TODO: 检查项目下是否有楼栋、单元等关联数据
 
         project.setDeleted(1);
-        project.setUpdatedTime(LocalDateTime.now());
+        project.setUpdateTime(LocalDateTime.now());
 
         if (!updateById(project)) {
             throw BusinessException.of(ResultCode.PROJECT_DELETE_FAILED);
         }
 
-        log.info("删除项目成功，项目ID: {}, 项目名称: {}", id, project.getName());
+        log.info("删除项目成功，项目ID: {}, 项目名称: {}", id, project.getProjectName());
         return true;
     }
 

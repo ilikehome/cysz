@@ -28,12 +28,6 @@ public class Project {
     /**
      * 项目名称（与前端字段名保持一致）
      */
-    @TableField("name")
-    private String projectName;
-
-    /**
-     * 项目名称（与前端字段名保持一致）
-     */
     @TableField("project_name")
     private String projectName;
 
