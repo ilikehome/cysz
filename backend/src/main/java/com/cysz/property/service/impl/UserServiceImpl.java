@@ -1,5 +1,6 @@
 package com.cysz.property.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cysz.property.common.PageQuery;
 import com.cysz.property.common.PageResult;
@@ -7,7 +8,9 @@ import com.cysz.property.entity.User;
 import com.cysz.property.mapper.UserMapper;
 import com.cysz.property.service.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -42,32 +45,98 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public Map<String, Object> getUserDetail(Long userId) {
-        // TODO: 实现获取用户详细信息
-        return new HashMap<>();
+        User user = getById(userId);
+        if (user == null) {
+            return new HashMap<>();
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("user", user);
+        result.put("roles", getUserRoles(userId));
+        result.put("permissions", getUserPermissions(userId));
+        
+        return result;
     }
 
     @Override
     public boolean createUser(User user) {
-        // TODO: 实现创建用户
-        return false;
+        if (user == null) {
+            return false;
+        }
+        
+        // 检查用户名是否已存在
+        if (checkUsernameExists(user.getUsername(), null)) {
+            return false;
+        }
+        
+        // 检查邮箱是否已存在
+        if (StringUtils.hasText(user.getEmail()) && checkEmailExists(user.getEmail(), null)) {
+            return false;
+        }
+        
+        // 检查手机号是否已存在
+        if (StringUtils.hasText(user.getPhone()) && checkPhoneExists(user.getPhone(), null)) {
+            return false;
+        }
+        
+        // 设置默认状态
+        if (user.getStatus() == null) {
+            user.setStatus(User.Status.ENABLED.getCode());
+        }
+        
+        return save(user);
     }
 
     @Override
     public boolean updateUser(User user) {
-        // TODO: 实现更新用户
-        return false;
+        if (user == null || user.getId() == null) {
+            return false;
+        }
+        
+        User existUser = getById(user.getId());
+        if (existUser == null) {
+            return false;
+        }
+        
+        // 检查用户名是否已存在
+        if (checkUsernameExists(user.getUsername(), user.getId())) {
+            return false;
+        }
+        
+        // 检查邮箱是否已存在
+        if (StringUtils.hasText(user.getEmail()) && checkEmailExists(user.getEmail(), user.getId())) {
+            return false;
+        }
+        
+        // 检查手机号是否已存在
+        if (StringUtils.hasText(user.getPhone()) && checkPhoneExists(user.getPhone(), user.getId())) {
+            return false;
+        }
+        
+        return updateById(user);
     }
 
     @Override
     public boolean deleteUser(Long userId) {
-        // TODO: 实现删除用户
-        return false;
+        if (userId == null) {
+            return false;
+        }
+        
+        User user = getById(userId);
+        if (user == null) {
+            return false;
+        }
+        
+        return removeById(userId);
     }
 
     @Override
     public boolean batchDeleteUsers(List<Long> userIds) {
-        // TODO: 实现批量删除用户
-        return false;
+        if (userIds == null || userIds.isEmpty()) {
+            return false;
+        }
+        
+        return removeByIds(userIds);
     }
 
     @Override
@@ -101,98 +170,144 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public boolean logout(String token) {
-        // TODO: 实现用户登出
-        return false;
+        // 简化实现，实际应该清除token缓存
+        return StringUtils.hasText(token);
     }
 
     @Override
     public boolean changePassword(Long userId, String oldPassword, String newPassword) {
-        // TODO: 实现修改密码
-        return false;
+        if (userId == null || !StringUtils.hasText(oldPassword) || !StringUtils.hasText(newPassword)) {
+            return false;
+        }
+        
+        User user = getById(userId);
+        if (user == null) {
+            return false;
+        }
+        
+        // 验证旧密码（简化处理）
+        if (!oldPassword.equals(user.getPassword())) {
+            return false;
+        }
+        
+        // 更新密码
+        user.setPassword(newPassword);
+        return updateById(user);
     }
 
     @Override
     public boolean resetPassword(Long userId, String newPassword) {
-        // TODO: 实现重置密码
-        return false;
+        if (userId == null || !StringUtils.hasText(newPassword)) {
+            return false;
+        }
+        
+        User user = getById(userId);
+        if (user == null) {
+            return false;
+        }
+        
+        user.setPassword(newPassword);
+        return updateById(user);
     }
 
     @Override
     public boolean enableUser(Long userId) {
-        // TODO: 实现启用用户
-        return false;
+        return updateUserStatus(userId, User.Status.ENABLED.getCode());
     }
 
     @Override
     public boolean disableUser(Long userId) {
-        // TODO: 实现禁用用户
-        return false;
+        return updateUserStatus(userId, User.Status.DISABLED.getCode());
     }
 
     @Override
     public boolean lockUser(Long userId) {
-        // TODO: 实现锁定用户
-        return false;
+        return updateUserStatus(userId, User.Status.LOCKED.getCode());
     }
 
     @Override
     public boolean unlockUser(Long userId) {
-        // TODO: 实现解锁用户
-        return false;
+        return updateUserStatus(userId, User.Status.ENABLED.getCode());
+    }
+    
+    private boolean updateUserStatus(Long userId, Integer status) {
+        if (userId == null || status == null) {
+            return false;
+        }
+        
+        User user = getById(userId);
+        if (user == null) {
+            return false;
+        }
+        
+        user.setStatus(status);
+        return updateById(user);
     }
 
     @Override
     public Map<String, Object> getUserStatistics() {
-        // TODO: 实现获取用户统计信息
-        return new HashMap<>();
+        return userMapper.getUserStatistics();
     }
 
     @Override
     public List<Map<String, Object>> getUserCountByDepartment() {
-        // TODO: 实现根据部门统计用户数量
-        return new ArrayList<>();
+        return userMapper.getUserCountByDepartment();
     }
 
     @Override
     public List<Map<String, Object>> getRecentLoginUsers(Integer limit) {
-        // TODO: 实现获取最近登录的用户
-        return new ArrayList<>();
+        if (limit == null || limit <= 0) {
+            limit = 10;
+        }
+        return userMapper.getRecentLoginUsers(limit);
     }
 
     @Override
     public boolean checkUsernameExists(String username, Long excludeId) {
-        // TODO: 实现验证用户名是否存在
-        return false;
+        if (!StringUtils.hasText(username)) {
+            return false;
+        }
+        return userMapper.checkUsernameExists(username, excludeId) > 0;
     }
 
     @Override
     public boolean checkEmailExists(String email, Long excludeId) {
-        // TODO: 实现验证邮箱是否存在
-        return false;
+        if (!StringUtils.hasText(email)) {
+            return false;
+        }
+        return userMapper.checkEmailExists(email, excludeId) > 0;
     }
 
     @Override
     public boolean checkPhoneExists(String phone, Long excludeId) {
-        // TODO: 实现验证手机号是否存在
-        return false;
+        if (!StringUtils.hasText(phone)) {
+            return false;
+        }
+        return userMapper.checkPhoneExists(phone, excludeId) > 0;
     }
 
     @Override
     public User getUserByUsername(String username) {
-        // TODO: 实现根据用户名查询用户
-        return null;
+        if (!StringUtils.hasText(username)) {
+            return null;
+        }
+        return userMapper.selectByUsername(username);
     }
 
     @Override
     public User getUserByEmail(String email) {
-        // TODO: 实现根据邮箱查询用户
-        return null;
+        if (!StringUtils.hasText(email)) {
+            return null;
+        }
+        return userMapper.selectByEmail(email);
     }
 
     @Override
     public User getUserByPhone(String phone) {
-        // TODO: 实现根据手机号查询用户
-        return null;
+        if (!StringUtils.hasText(phone)) {
+            return null;
+        }
+        return userMapper.selectByPhone(phone);
     }
 
     @Override

@@ -71,7 +71,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
 
         Project project = new Project();
-        Project project = new Project();
         BeanUtils.copyProperties(projectDTO, project);
         project.setCreateTime(LocalDateTime.now());
         project.setUpdateTime(LocalDateTime.now());
