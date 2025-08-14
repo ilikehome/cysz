@@ -1065,6 +1065,9 @@
       
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="success" @click="handleSave" :loading="saveLoading">
+          保存
+        </el-button>
         <el-button type="primary" @click="handlePreview" :loading="submitLoading">
           预览
         </el-button>
@@ -1555,6 +1558,67 @@ const handleReset = () => {
   searchForm.contractStatus = ''
   searchForm.contractType = ''
   handleSearch()
+}
+
+// 保存合同
+const handleSave = async () => {
+  try {
+    saveLoading.value = true
+    
+    // 验证表单
+    if (!formRef.value) return
+    await formRef.value.validate()
+    
+    // 构建合同数据
+    const contractData = {
+      contractNo: formData.contractNo,
+      contractName: formData.contractName,
+      contractType: formData.contractType,
+      projectId: formData.projectId,
+      tenantName: formData.tenantName,
+      signerName: formData.signerName,
+      signerPhone: formData.signerPhone,
+      businessBrand: formData.businessBrand,
+      storeName: formData.storeName,
+      businessType: formData.businessType,
+      signDate: formData.signDate,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      buildingIds: formData.buildingIds,
+      floorIds: formData.floorIds,
+      unitIds: formData.unitIds,
+      buildingArea: formData.buildingArea,
+      rentArea: formData.rentArea,
+      contractArea: formData.contractArea,
+      depositAmount: formData.depositAmount,
+      depositDueDate: formData.depositDueDate,
+      feeCompany: formData.feeCompany,
+      rentMode: formData.rentMode,
+      rentPeriodSetting: formData.rentPeriodSetting,
+      lateFeeRule: formData.lateFeeRule,
+      paymentAccount: formData.paymentAccount,
+      paymentFrequency: formData.paymentFrequency,
+      latestPaymentDay: formData.latestPaymentDay,
+      firstPaymentDueDate: formData.firstPaymentDueDate,
+      firstRentAmount: formData.firstRentAmount,
+      contractStatus: 'DRAFT' as const
+    }
+    
+    // 调用API保存合同
+    await contractApi.createContract(contractData)
+    
+    ElMessage.success('合同保存成功')
+    
+    // 关闭对话框并刷新列表
+    dialogVisible.value = false
+    await loadData()
+    
+  } catch (error: any) {
+    console.error('保存合同失败:', error)
+    ElMessage.error(error.message || '保存合同失败')
+  } finally {
+    saveLoading.value = false
+  }
 }
 
 // 预览合同
