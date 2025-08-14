@@ -157,7 +157,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { tenantApi } from '@/api'
+import { tenantApi } from '@/api/tenant'
 
 // 响应式数据
 const loading = ref(false)

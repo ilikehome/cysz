@@ -220,7 +220,7 @@ import { reactive, ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
-import { statisticsApi } from '@/api'
+import { statisticsApi } from '@/api/statistics'
 
 const router = useRouter()
 

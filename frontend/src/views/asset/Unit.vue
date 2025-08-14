@@ -1,4 +1,4 @@
-<template>
+文件有ts检查异常的地方，请先分析一下什么原因，需不需要修改。等我确定你的方案之后你再修改。<template>
   <div class="unit-management">
     <el-card>
       <template #header>
@@ -200,10 +200,30 @@
         :rules="floorFormRules"
         label-width="120px"
       >
-        <el-form-item label="所属楼栋" prop="buildingId">
-          <el-select v-model="floorFormData.buildingId" placeholder="请选择所属楼栋" style="width: 100%">
+        <el-form-item label="所属项目" prop="projectId">
+          <el-select 
+            v-model="floorFormData.projectId" 
+            placeholder="请选择所属项目" 
+            style="width: 100%"
+            @change="handleFloorProjectChange"
+          >
             <el-option
-              v-for="building in allBuildingList"
+              v-for="project in projectList"
+              :key="project.id"
+              :label="project.projectName"
+              :value="project.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="所属楼栋" prop="buildingId">
+          <el-select 
+            v-model="floorFormData.buildingId" 
+            placeholder="请选择所属楼栋" 
+            style="width: 100%"
+            :disabled="!floorFormData.projectId"
+          >
+            <el-option
+              v-for="building in floorBuildingOptions"
               :key="building.id"
               :label="`${building.buildingName} (${building.buildingCode})`"
               :value="building.id"
@@ -299,14 +319,48 @@
           </el-col>
         </el-row>
         
+        <el-form-item label="所属项目" prop="projectId">
+          <el-select
+            v-model="formData.projectId"
+            placeholder="请选择所属项目"
+            style="width: 100%"
+            @change="handleUnitProjectChange"
+          >
+            <el-option
+              v-for="project in projectList"
+              :key="project.id"
+              :label="project.projectName"
+              :value="project.id"
+            />
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="所属楼栋" prop="buildingId">
+          <el-select
+            v-model="formData.buildingId"
+            placeholder="请选择所属楼栋"
+            style="width: 100%"
+            :disabled="!formData.projectId"
+            @change="handleUnitBuildingChange"
+          >
+            <el-option
+              v-for="building in unitBuildingOptions"
+              :key="building.id"
+              :label="`${building.buildingName} (${building.buildingCode})`"
+              :value="building.id"
+            />
+          </el-select>
+        </el-form-item>
+        
         <el-form-item label="所属楼层" prop="floorId">
           <el-select
             v-model="formData.floorId"
             placeholder="请选择所属楼层"
             style="width: 100%"
+            :disabled="!formData.buildingId"
           >
             <el-option
-              v-for="floor in floorList"
+              v-for="floor in unitFloorList"
               :key="floor.id"
               :label="`${floor.floorName} (${floor.floorCode})`"
               :value="floor.id"
@@ -400,7 +454,8 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { unitApi, projectApi, buildingApi, floorApi, type Unit, type Project, type Building, type Floor } from '@/api'
+import { projectApi, type Project } from '@/api/project'
+import { unitApi, buildingApi, floorApi, type Unit, type Building, type Floor } from '@/api/unit'
 
 // 响应式数据
 const loading = ref(false)
@@ -433,9 +488,12 @@ const projectList = ref<Project[]>([])
 // 楼栋列表
 const buildingList = ref<Building[]>([])
 const allBuildingList = ref<Building[]>([])
+const floorBuildingOptions = ref<Building[]>([])
+const unitBuildingOptions = ref<Building[]>([])
 
 // 楼层列表
 const floorList = ref<any[]>([])
+const unitFloorList = ref<any[]>([])
 
 // 表格数据
 const tableData = ref<Unit[]>([])
@@ -463,6 +521,7 @@ const buildingFormData = reactive({
 
 // 楼层表单数据
 const floorFormData = reactive({
+  projectId: null,
   buildingId: null,
   floorName: '',
   floorCode: '',
@@ -474,6 +533,8 @@ const formData = reactive({
   id: null,
   unitName: '',
   unitCode: '',
+  projectId: null,
+  buildingId: null,
   floorId: null,
   unitStatus: 'RENTABLE',
   unitPurpose: '',
@@ -490,6 +551,12 @@ const formRules: FormRules = {
   ],
   unitCode: [
     { required: true, message: '请输入单元编码', trigger: 'blur' }
+  ],
+  projectId: [
+    { required: true, message: '请选择所属项目', trigger: 'change' }
+  ],
+  buildingId: [
+    { required: true, message: '请选择所属楼栋', trigger: 'change' }
   ],
   floorId: [
     { required: true, message: '请选择所属楼层', trigger: 'change' }
@@ -514,6 +581,9 @@ const buildingFormRules: FormRules = {
 
 // 楼层表单验证规则
 const floorFormRules: FormRules = {
+  projectId: [
+    { required: true, message: '请选择所属项目', trigger: 'change' }
+  ],
   buildingId: [
     { required: true, message: '请选择所属楼栋', trigger: 'change' }
   ],
@@ -571,6 +641,59 @@ const handleProjectChange = async (projectId: number) => {
   }
 }
 
+// 楼层项目变化处理
+const handleFloorProjectChange = async (projectId: number) => {
+  // 重置楼栋选择
+  floorFormData.buildingId = null
+  // 根据项目ID加载对应的楼栋列表
+  if (projectId) {
+    try {
+      const response = await buildingApi.getBuildingsByProject(projectId)
+      floorBuildingOptions.value = response.data
+    } catch (error: any) {
+      ElMessage.error(error.message || '加载楼栋列表失败')
+    }
+  } else {
+    floorBuildingOptions.value = []
+  }
+}
+
+// 单元项目变化处理
+const handleUnitProjectChange = async (projectId: number) => {
+  // 重置楼栋和楼层选择
+  formData.buildingId = null
+  formData.floorId = null
+  // 根据项目ID加载对应的楼栋列表
+  if (projectId) {
+    try {
+      const response = await buildingApi.getBuildingsByProject(projectId)
+      unitBuildingOptions.value = response.data
+    } catch (error: any) {
+      ElMessage.error(error.message || '加载楼栋列表失败')
+    }
+  } else {
+    unitBuildingOptions.value = []
+  }
+  unitFloorList.value = []
+}
+
+// 单元楼栋变化处理
+const handleUnitBuildingChange = async (buildingId: number) => {
+  // 重置楼层选择
+  formData.floorId = null
+  // 根据楼栋ID加载对应的楼层列表
+  if (buildingId) {
+    try {
+      const response = await floorApi.getFloorsByBuilding(buildingId)
+      unitFloorList.value = response.data
+    } catch (error: any) {
+      ElMessage.error(error.message || '加载楼层列表失败')
+    }
+  } else {
+    unitFloorList.value = []
+  }
+}
+
 // 搜索
 const handleSearch = () => {
   pagination.current = 1
@@ -594,7 +717,6 @@ const handleAddBuilding = () => {
 // 新建楼层
 const handleAddFloor = () => {
   resetFloorForm()
-  loadAllBuildingList()
   floorDialogVisible.value = true
 }
 
@@ -633,6 +755,8 @@ const handleEdit = (row: Unit) => {
     id: row.id,
     unitName: row.unitName,
     unitCode: row.unitCode,
+    projectId: row.projectId,
+    buildingId: row.buildingId,
     floorId: row.floorId,
     unitStatus: row.unitStatus,
     unitPurpose: row.unitPurpose,
@@ -641,8 +765,16 @@ const handleEdit = (row: Unit) => {
     isMultiTenant: row.isMultiTenant,
     remark: row.remark
   })
-  // 加载楼层列表
-  loadFloorList()
+  // 根据项目加载楼栋列表
+  if (row.projectId) {
+    handleUnitProjectChange(row.projectId)
+  }
+  // 根据楼栋加载楼层列表
+  if (row.buildingId) {
+    setTimeout(() => {
+      handleUnitBuildingChange(row.buildingId!)
+    }, 100)
+  }
   dialogVisible.value = true
 }
 
@@ -698,7 +830,7 @@ const handleSubmit = async () => {
       unitName: formData.unitName,
       unitCode: formData.unitCode,
       floorId: formData.floorId!,
-      unitStatus: formData.unitStatus as 'VACANT' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED',
+      unitStatus: formData.unitStatus as Unit['unitStatus'],
       unitPurpose: formData.unitPurpose || undefined,
       buildingArea: formData.buildingArea || undefined,
       rentArea: formData.rentArea || undefined,
@@ -729,6 +861,8 @@ const resetForm = () => {
     id: null,
     unitCode: '',
     unitName: '',
+    projectId: null,
+    buildingId: null,
     floorId: null,
     unitStatus: 'RENTABLE',
     unitPurpose: '',
@@ -737,7 +871,8 @@ const resetForm = () => {
     isMultiTenant: false,
     remark: ''
   })
-  floorList.value = []
+  unitBuildingOptions.value = []
+  unitFloorList.value = []
   formRef.value?.resetFields()
 }
 
@@ -755,11 +890,13 @@ const resetBuildingForm = () => {
 // 重置楼层表单
 const resetFloorForm = () => {
   Object.assign(floorFormData, {
+    projectId: null,
     buildingId: null,
     floorName: '',
     floorCode: '',
     remark: ''
   })
+  floorBuildingOptions.value = []
   floorFormRef.value?.resetFields()
 }
 
@@ -781,8 +918,8 @@ const handleBuildingSubmit = async () => {
     await buildingFormRef.value.validate()
     submitLoading.value = true
     
-    const buildingData = {
-      projectId: buildingFormData.projectId,
+    const buildingData: Building = {
+      projectId: buildingFormData.projectId!,
       buildingName: buildingFormData.buildingName,
       buildingCode: buildingFormData.buildingCode,
       remark: buildingFormData.remark
@@ -807,8 +944,8 @@ const handleFloorSubmit = async () => {
     await floorFormRef.value.validate()
     submitLoading.value = true
     
-    const floorData = {
-      buildingId: floorFormData.buildingId,
+    const floorData: Floor = {
+      buildingId: floorFormData.buildingId!,
       floorName: floorFormData.floorName,
       floorCode: floorFormData.floorCode,
       remark: floorFormData.remark

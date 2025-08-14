@@ -190,7 +190,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { tenantApi } from '@/api'
+import { tenantApi } from '@/api/tenant'
 import * as echarts from 'echarts'
 
 // 响应式数据

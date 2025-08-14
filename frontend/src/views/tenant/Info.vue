@@ -534,7 +534,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { tenantApi, type Tenant } from '@/api'
+import { tenantApi, type Tenant } from '@/api/tenant'
 
 // 响应式数据
 const loading = ref(false)

@@ -262,7 +262,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { projectApi, type Project } from '@/api'
+import { projectApi, type Project } from '@/api/project'
 
 // 响应式数据
 const loading = ref(false)
@@ -289,7 +289,20 @@ const pagination = reactive({
 const tableData = ref<Project[]>([])
 
 // 表单数据
-const formData = reactive({
+const formData = reactive<{
+  id: number | null
+  projectName: string
+  projectType: string
+  managementOrg: string
+  rentBillCompany: string
+  rentBillBankAccount: string
+  city: string
+  cityValue: any[]
+  address: string
+  projectManager: string
+  contactPhone: string
+  status: number
+}>({
   id: null,
   projectName: '',
   projectType: '',
@@ -357,7 +370,7 @@ const formRules: FormRules = {
 const dialogTitle = ref('新建项目')
 
 // 选中的行
-const selectedRows = ref([])
+const selectedRows = ref<Project[]>([])
 
 // 获取项目类型标签颜色
 const getProjectTypeTag = (type: string) => {
@@ -626,11 +639,11 @@ const handleSubmit = async () => {
       try {
         if (formData.id) {
           // 更新项目
-          await projectApi.updateProject(formData.id, formData)
+          await projectApi.updateProject(formData.id, formData as Project)
           ElMessage.success('更新成功')
         } else {
           // 创建项目
-          await projectApi.createProject(formData)
+          await projectApi.createProject(formData as Project)
           ElMessage.success('创建成功')
         }
         

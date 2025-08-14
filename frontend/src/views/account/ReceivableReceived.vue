@@ -262,7 +262,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageContainer from '@/components/PageContainer.vue'
-import { accountApi } from '@/api'
+import { accountApi } from '@/api/account'
 
 // 响应式数据
 const loading = ref(false)

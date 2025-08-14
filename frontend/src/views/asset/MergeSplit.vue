@@ -333,7 +333,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { unitApi } from '@/api'
+import { unitApi } from '@/api/unit'
 
 // 操作类型
 const operationType = ref<'merge' | 'split' | 'history'>('merge')

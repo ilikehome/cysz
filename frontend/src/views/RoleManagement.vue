@@ -12,7 +12,7 @@
           <el-card class="stat-card super-admin">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon><Crown /></el-icon>
+                <el-icon><Management /></el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-number">{{ statistics.superAdminCount }}</div>
@@ -51,7 +51,7 @@
           <el-card class="stat-card total">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon><Users /></el-icon>
+                <el-icon><Avatar /></el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-number">{{ statistics.totalUsers }}</div>
@@ -164,8 +164,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { 
-  Crown, UserFilled, User, Users, View, Check
+import {
+  UserFilled, User, View, Check, Avatar, Management
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
@@ -198,7 +198,7 @@ const getRoleTagType = (roleCode: string) => {
 // 获取角色图标
 const getRoleIcon = (roleCode: string) => {
   switch (roleCode) {
-    case 'SUPER_ADMIN': return Crown
+    case 'SUPER_ADMIN': return Management
     case 'TENANT_ADMIN': return UserFilled
     case 'USER': return User
     default: return User

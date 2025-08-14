@@ -138,7 +138,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Check, Close, Lock, RefreshRight } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { userApi } from '@/api'
+import { userApi } from '@/api/user'
 
 const userStore = useUserStore()
 
