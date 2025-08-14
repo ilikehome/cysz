@@ -119,9 +119,20 @@ export const unitApi = {
   getUnitList: (params?: {
     projectId?: number
     buildingId?: number
+    floorId?: number
     unitStatus?: string
   }) => {
     return request.get('/unit/list', { params })
+  },
+  
+  // 根据楼层ID获取单元列表（用于级联选择）
+  getUnitsByFloor: (floorId: number) => {
+    return request.get(`/unit/by-floor/${floorId}`)
+  },
+  
+  // 根据项目ID获取可用单元列表
+  getAvailableUnits: (projectId: number) => {
+    return request.get(`/unit/available/${projectId}`)
   },
   
   // 创建单元

@@ -1,0 +1,319 @@
+package com.cysz.minimal.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.*;
+
+/**
+ * 单元管理控制器 - 使用数据库
+ */
+@RestController
+@RequestMapping("/unit")
+@CrossOrigin
+public class UnitController {
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+    
+    /**
+     * 获取单元列表
+     */
+    @GetMapping("/list")
+    public Map<String, Object> getUnitList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String unitName,
+            @RequestParam(required = false) Integer floorId,
+            @RequestParam(required = false) Integer buildingId,
+            @RequestParam(required = false) Integer projectId) {
+        
+        try {
+            StringBuilder sql = new StringBuilder("SELECT u.*, f.floor_name, b.building_name, p.project_name FROM unit u " +
+                "LEFT JOIN floor f ON u.floor_id = f.id " +
+                "LEFT JOIN building b ON f.building_id = b.id " +
+                "LEFT JOIN project p ON b.project_id = p.id WHERE 1=1");
+            List<Object> params = new ArrayList<>();
+            
+            if (unitName != null && !unitName.trim().isEmpty()) {
+                sql.append(" AND u.unit_name LIKE ?");
+                params.add("%" + unitName + "%");
+            }
+            
+            if (floorId != null) {
+                sql.append(" AND u.floor_id = ?");
+                params.add(floorId);
+            }
+            
+            if (buildingId != null) {
+                sql.append(" AND f.building_id = ?");
+                params.add(buildingId);
+            }
+            
+            if (projectId != null) {
+                sql.append(" AND b.project_id = ?");
+                params.add(projectId);
+            }
+            
+            // 获取总数
+            String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") t";
+            int total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+            
+            // 分页查询
+            sql.append(" ORDER BY u.id DESC LIMIT ? OFFSET ?");
+            params.add(size);
+            params.add((page - 1) * size);
+            
+            List<Map<String, Object>> units = jdbcTemplate.query(sql.toString(), params.toArray(), new RowMapper<Map<String, Object>>() {
+                @Override
+                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Map<String, Object> unit = new HashMap<>();
+                    unit.put("id", rs.getInt("id"));
+                    unit.put("unitName", rs.getString("unit_name"));
+                    unit.put("unitCode", rs.getString("unit_code"));
+                    unit.put("floorId", rs.getInt("floor_id"));
+                    unit.put("floorName", rs.getString("floor_name"));
+                    unit.put("buildingName", rs.getString("building_name"));
+                    unit.put("projectName", rs.getString("project_name"));
+                    unit.put("area", rs.getBigDecimal("area"));
+                    unit.put("unitType", rs.getString("unit_type"));
+                    unit.put("rentStatus", rs.getInt("rent_status"));
+                    unit.put("remark", rs.getString("remark"));
+                    unit.put("status", rs.getInt("status"));
+                    unit.put("createTime", rs.getTimestamp("create_time"));
+                    return unit;
+                }
+            });
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "获取成功");
+            result.put("data", units);
+            result.put("total", total);
+            result.put("page", page);
+            result.put("size", size);
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "获取单元列表失败: " + e.getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * 根据楼层号获取单元列表（用于级联选择）
+     */
+    @GetMapping("/by-floor/{floorNumber}")
+    public Map<String, Object> getUnitsByFloorNumber(@PathVariable Integer floorNumber) {
+        try {
+            String sql = "SELECT id, unit_number as unitName, unit_number as unitCode, area, unit_type as unitType " +
+                        "FROM unit WHERE floor_number = ? AND status != 'DELETED' ORDER BY unit_number";
+            
+            List<Map<String, Object>> units = jdbcTemplate.query(sql, new Object[]{floorNumber}, new RowMapper<Map<String, Object>>() {
+                @Override
+                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Map<String, Object> unit = new HashMap<>();
+                    unit.put("id", rs.getInt("id"));
+                    unit.put("unitName", rs.getString("unitName"));
+                    unit.put("unitCode", rs.getString("unitCode"));
+                    unit.put("area", rs.getBigDecimal("area"));
+                    unit.put("unitType", rs.getString("unitType"));
+                    return unit;
+                }
+            });
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "获取成功");
+            result.put("data", units);
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "获取单元列表失败: " + e.getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * 根据项目ID获取可用单元列表（用于合同选择）
+     */
+    @GetMapping("/available/{projectId}")
+    public Map<String, Object> getAvailableUnitsByProjectId(@PathVariable Integer projectId) {
+        try {
+            String sql = "SELECT u.id, u.unit_name, u.unit_code, u.area, u.unit_type, " +
+                "f.floor_name, b.building_name FROM unit u " +
+                "LEFT JOIN floor f ON u.floor_id = f.id " +
+                "LEFT JOIN building b ON f.building_id = b.id " +
+                "WHERE b.project_id = ? AND u.rent_status = 0 AND u.status = 1 " +
+                "ORDER BY b.building_name, f.floor_name, u.unit_name";
+            
+            List<Map<String, Object>> units = jdbcTemplate.query(sql, new Object[]{projectId}, new RowMapper<Map<String, Object>>() {
+                @Override
+                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Map<String, Object> unit = new HashMap<>();
+                    unit.put("id", rs.getInt("id"));
+                    unit.put("unitName", rs.getString("unit_name"));
+                    unit.put("unitCode", rs.getString("unit_code"));
+                    unit.put("area", rs.getBigDecimal("area"));
+                    unit.put("unitType", rs.getString("unit_type"));
+                    unit.put("floorName", rs.getString("floor_name"));
+                    unit.put("buildingName", rs.getString("building_name"));
+                    return unit;
+                }
+            });
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "获取成功");
+            result.put("data", units);
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "获取可用单元列表失败: " + e.getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * 根据ID获取单元详情
+     */
+    @GetMapping("/{id}")
+    public Map<String, Object> getUnitById(@PathVariable Integer id) {
+        try {
+            String sql = "SELECT u.*, f.floor_name, b.building_name, p.project_name FROM unit u " +
+                "LEFT JOIN floor f ON u.floor_id = f.id " +
+                "LEFT JOIN building b ON f.building_id = b.id " +
+                "LEFT JOIN project p ON b.project_id = p.id WHERE u.id = ?";
+            
+            Map<String, Object> unit = jdbcTemplate.queryForObject(sql, new Object[]{id}, new RowMapper<Map<String, Object>>() {
+                @Override
+                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Map<String, Object> unit = new HashMap<>();
+                    unit.put("id", rs.getInt("id"));
+                    unit.put("unitName", rs.getString("unit_name"));
+                    unit.put("unitCode", rs.getString("unit_code"));
+                    unit.put("floorId", rs.getInt("floor_id"));
+                    unit.put("floorName", rs.getString("floor_name"));
+                    unit.put("buildingName", rs.getString("building_name"));
+                    unit.put("projectName", rs.getString("project_name"));
+                    unit.put("area", rs.getBigDecimal("area"));
+                    unit.put("unitType", rs.getString("unit_type"));
+                    unit.put("rentStatus", rs.getInt("rent_status"));
+                    unit.put("remark", rs.getString("remark"));
+                    unit.put("status", rs.getInt("status"));
+                    unit.put("createTime", rs.getTimestamp("create_time"));
+                    return unit;
+                }
+            });
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "获取成功");
+            result.put("data", unit);
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "获取单元详情失败: " + e.getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * 新增单元
+     */
+    @PostMapping
+    public Map<String, Object> addUnit(@RequestBody Map<String, Object> unit) {
+        try {
+            String sql = "INSERT INTO unit (unit_name, unit_code, floor_id, area, unit_type, rent_status, remark, status, create_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            jdbcTemplate.update(sql, 
+                unit.get("unitName"),
+                unit.get("unitCode"),
+                unit.get("floorId"),
+                unit.get("area"),
+                unit.get("unitType"),
+                unit.getOrDefault("rentStatus", 0),
+                unit.get("remark"),
+                unit.getOrDefault("status", 1),
+                LocalDateTime.now()
+            );
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "新增成功");
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "新增单元失败: " + e.getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * 更新单元
+     */
+    @PutMapping("/{id}")
+    public Map<String, Object> updateUnit(@PathVariable Integer id, @RequestBody Map<String, Object> unit) {
+        try {
+            String sql = "UPDATE unit SET unit_name = ?, unit_code = ?, floor_id = ?, area = ?, unit_type = ?, rent_status = ?, remark = ?, status = ? WHERE id = ?";
+            jdbcTemplate.update(sql,
+                unit.get("unitName"),
+                unit.get("unitCode"),
+                unit.get("floorId"),
+                unit.get("area"),
+                unit.get("unitType"),
+                unit.get("rentStatus"),
+                unit.get("remark"),
+                unit.get("status"),
+                id
+            );
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "更新成功");
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "更新单元失败: " + e.getMessage());
+            return result;
+        }
+    }
+    
+    /**
+     * 删除单元
+     */
+    @DeleteMapping("/{id}")
+    public Map<String, Object> deleteUnit(@PathVariable Integer id) {
+        try {
+            String sql = "DELETE FROM unit WHERE id = ?";
+            jdbcTemplate.update(sql, id);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 200);
+            result.put("message", "删除成功");
+            
+            return result;
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("code", 500);
+            result.put("message", "删除单元失败: " + e.getMessage());
+            return result;
+        }
+    }
+}

@@ -1376,7 +1376,7 @@ const handleBuildingChange = (buildingIds: number[]) => {
   formData.unitIds = []
   floorOptions.value = []
   unitOptions.value = []
-  
+
   // 加载对应的楼层数据
   if (buildingIds.length > 0) {
     loadFloorsByBuildings(buildingIds)
@@ -1388,9 +1388,11 @@ const handleFloorChange = (floorIds: number[]) => {
   // 清空单元选择
   formData.unitIds = []
   unitOptions.value = []
-  
-  // 楼层变化时不需要重新加载单元，因为单元已经按楼栋加载了
-  // 这里可以添加楼层相关的逻辑处理
+
+  // 加载对应的单元数据
+  if (floorIds.length > 0) {
+    loadUnitsByFloors(floorIds)
+  }
 }
 
 // 处理单元变化

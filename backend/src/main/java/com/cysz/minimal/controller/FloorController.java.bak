@@ -8,10 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * 楼层管理控制器
+ * 楼层管理控制器 - 基于单元表的楼层信息
  */
 @RestController
 @RequestMapping("/floor")
@@ -22,7 +23,7 @@ public class FloorController {
     private JdbcTemplate jdbcTemplate;
     
     /**
-     * 楼层分页查询
+     * 分页查询楼层
      */
     @GetMapping("/page")
     public Map<String, Object> getFloorPage(
@@ -69,8 +70,8 @@ public class FloorController {
                     floor.put("buildingId", rs.getInt("building_id"));
                     floor.put("buildingName", rs.getString("building_name"));
                     floor.put("remark", rs.getString("remark"));
+                    floor.put("status", rs.getInt("status"));
                     floor.put("createTime", rs.getTimestamp("create_time"));
-                    floor.put("updateTime", rs.getTimestamp("update_time"));
                     return floor;
                 }
             });
@@ -96,7 +97,7 @@ public class FloorController {
     }
     
     /**
-     * 根据楼栋ID获取楼层列表
+     * 根据楼栋ID获取楼层列表（用于级联选择）
      */
     @GetMapping("/building/{buildingId}")
     public Map<String, Object> getFloorsByBuilding(@PathVariable Integer buildingId) {
@@ -105,14 +106,18 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "SELECT id, floor_name, floor_code FROM floor WHERE building_id = ? ORDER BY floor_name";
+            // 从单元表中获取不同的楼层号
+            String sql = "SELECT DISTINCT floor_number as id, CONCAT(floor_number, '层') as floorName, CONCAT('F', LPAD(floor_number, 3, '0')) as floorCode " +
+                        "FROM unit WHERE building_id = ? AND floor_number IS NOT NULL AND status != 'DELETED' " +
+                        "ORDER BY floor_number";
+            
             List<Map<String, Object>> floors = jdbcTemplate.query(sql, new Object[]{buildingId}, new RowMapper<Map<String, Object>>() {
                 @Override
                 public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
                     Map<String, Object> floor = new HashMap<>();
                     floor.put("id", rs.getInt("id"));
-                    floor.put("floorName", rs.getString("floor_name"));
-                    floor.put("floorCode", rs.getString("floor_code"));
+                    floor.put("floorName", rs.getString("floorName"));
+                    floor.put("floorCode", rs.getString("floorCode"));
                     return floor;
                 }
             });
@@ -141,14 +146,13 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "INSERT INTO floor (floor_name, floor_code, building_id, remark, create_time) " +
-                        "VALUES (?, ?, ?, ?, ?)";
-            
-            jdbcTemplate.update(sql,
+            String sql = "INSERT INTO floor (floor_name, floor_code, building_id, remark, status, create_time) VALUES (?, ?, ?, ?, ?, ?)";
+            jdbcTemplate.update(sql, 
                 floorData.get("floorName"),
                 floorData.get("floorCode"),
                 floorData.get("buildingId"),
                 floorData.get("remark"),
+                floorData.getOrDefault("status", 1),
                 LocalDateTime.now()
             );
             
@@ -161,6 +165,7 @@ public class FloorController {
             System.err.println("创建楼层失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "创建失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
@@ -176,15 +181,13 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "UPDATE floor SET floor_name = ?, floor_code = ?, building_id = ?, " +
-                        "remark = ?, update_time = ? WHERE id = ?";
-            
+            String sql = "UPDATE floor SET floor_name = ?, floor_code = ?, building_id = ?, remark = ?, status = ? WHERE id = ?";
             jdbcTemplate.update(sql,
                 floorData.get("floorName"),
                 floorData.get("floorCode"),
                 floorData.get("buildingId"),
                 floorData.get("remark"),
-                LocalDateTime.now(),
+                floorData.get("status"),
                 id
             );
             
@@ -195,6 +198,7 @@ public class FloorController {
             System.err.println("更新楼层失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "更新失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
@@ -210,13 +214,11 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 检查楼层下是否有单元
-            String checkSql = "SELECT COUNT(*) FROM unit WHERE floor_id = ?";
-            Integer unitCount = jdbcTemplate.queryForObject(checkSql, new Object[]{id}, Integer.class);
-            
-            if (unitCount != null && unitCount > 0) {
+            // 检查楼层是否存在单元
+            if (hasUnitsInFloor(id)) {
                 response.put("code", 400);
                 response.put("message", "该楼层下存在单元，无法删除");
+                response.put("data", null);
                 return response;
             }
             
@@ -225,13 +227,28 @@ public class FloorController {
             
             response.put("code", 200);
             response.put("message", "删除成功");
+            response.put("data", null);
             
         } catch (Exception e) {
             System.err.println("删除楼层失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "删除失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
+    }
+    
+    /**
+     * 检查楼层下是否有单元
+     */
+    private boolean hasUnitsInFloor(Integer floorId) {
+        try {
+            String sql = "SELECT COUNT(*) FROM unit WHERE floor_id = ?";
+            Integer count = jdbcTemplate.queryForObject(sql, new Object[]{floorId}, Integer.class);
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
