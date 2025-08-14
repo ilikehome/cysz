@@ -2,6 +2,8 @@ package com.cysz.minimal.controller;
 
 import com.cysz.minimal.common.PageResult;
 import com.cysz.minimal.common.Result;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -17,6 +19,9 @@ import java.util.List;
 @RequestMapping("/contract")
 @CrossOrigin(origins = "*")
 public class ContractController {
+    
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     /**
      * 合同分页查询
@@ -82,9 +87,84 @@ public class ContractController {
      * 创建合同
      */
     @PostMapping
-    public Result<Void> createContract(@RequestBody ContractCreateDTO dto) {
-        // TODO: 实现合同创建逻辑
-        return Result.success();
+    public Result<Long> createContract(@RequestBody ContractCreateDTO dto) {
+        System.out.println("创建合同: " + dto);
+        
+        try {
+            // 验证必填字段
+            if (dto.getContractNo() == null || dto.getContractNo().trim().isEmpty()) {
+                return Result.error("合同编号不能为空");
+            }
+            if (dto.getContractName() == null || dto.getContractName().trim().isEmpty()) {
+                return Result.error("合同名称不能为空");
+            }
+            if (dto.getProjectId() == null) {
+                return Result.error("项目ID不能为空");
+            }
+            if (dto.getUnitIds() == null || dto.getUnitIds().isEmpty()) {
+                return Result.error("单元ID不能为空");
+            }
+            
+            // 检查合同编号是否已存在
+            String checkSql = "SELECT COUNT(*) FROM contract WHERE contract_number = ?";
+            Integer count = jdbcTemplate.queryForObject(checkSql, new Object[]{dto.getContractNo()}, Integer.class);
+            if (count != null && count > 0) {
+                return Result.error("合同编号已存在");
+            }
+            
+            // 获取第一个单元ID作为主单元（兼容现有表结构）
+            Long primaryUnitId = dto.getUnitIds().get(0);
+            
+            // 获取租户ID（如果没有提供，创建默认租户）
+            Long tenantId = dto.getTenantId();
+            if (tenantId == null) {
+                // 创建默认租户
+                String insertTenantSql = "INSERT INTO tenant (tenant_name, tenant_nature, status, create_time) VALUES (?, 'individual', 1, NOW())";
+                jdbcTemplate.update(insertTenantSql, dto.getTenantName() != null ? dto.getTenantName() : "默认租户");
+                
+                // 获取新创建的租户ID
+                String getLastIdSql = "SELECT LAST_INSERT_ID()";
+                tenantId = jdbcTemplate.queryForObject(getLastIdSql, Long.class);
+            }
+            
+            // 插入合同数据
+            String insertSql = "INSERT INTO contract (contract_number, project_id, unit_id, tenant_id, " +
+                              "contract_type, start_date, end_date, monthly_rent, deposit, " +
+                              "payment_method, payment_cycle, status, notes, create_time, update_time) " +
+                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            
+            jdbcTemplate.update(insertSql,
+                dto.getContractNo(),
+                dto.getProjectId(),
+                primaryUnitId,
+                tenantId,
+                dto.getContractType() != null ? dto.getContractType() : "RENT",
+                dto.getStartDate(),
+                dto.getEndDate(),
+                dto.getFirstPeriodRent(),
+                dto.getDepositAmount(),
+                dto.getPaymentAccount(),
+                dto.getPaymentFrequency() != null ? dto.getPaymentFrequency() : "MONTHLY",
+                "DRAFT", // 默认状态为草稿
+                String.format("合同名称: %s, 签订人: %s, 业态: %s", 
+                    dto.getContractName(), 
+                    dto.getSignatory(), 
+                    dto.getBusinessFormat())
+            );
+            
+            // 获取新创建的合同ID
+            String getContractIdSql = "SELECT LAST_INSERT_ID()";
+            Long contractId = jdbcTemplate.queryForObject(getContractIdSql, Long.class);
+            
+            System.out.println("合同创建成功，ID: " + contractId);
+            
+            return Result.success(contractId);
+            
+        } catch (Exception e) {
+            System.err.println("创建合同失败: " + e.getMessage());
+            e.printStackTrace();
+            return Result.error("创建合同失败: " + e.getMessage());
+        }
     }
 
     /**
