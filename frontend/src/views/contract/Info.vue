@@ -1395,6 +1395,45 @@ const handleFloorChange = (floorIds: number[]) => {
   }
 }
 
+// 根据楼层加载单元
+const loadUnitsByFloors = async (floorIds: number[]) => {
+  try {
+    if (floorIds.length === 0) {
+      unitOptions.value = []
+      return
+    }
+
+    console.log('开始加载单元数据，楼层IDs:', floorIds)
+
+    // 为每个楼层获取单元，然后合并结果
+    const allUnits: any[] = []
+    for (const floorId of floorIds) {
+      const response = await unitApi.getUnitsByFloor(floorId)
+      console.log(`楼层 ${floorId} 的单元数据:`, response)
+      
+      if (response.data && Array.isArray(response.data)) {
+        allUnits.push(...response.data)
+      }
+    }
+
+    // 去重（基于单元ID）
+    const uniqueUnits = allUnits.filter((unit, index, self) => 
+      index === self.findIndex(u => u.id === unit.id)
+    )
+
+    unitOptions.value = uniqueUnits
+    console.log('加载单元成功:', uniqueUnits.length, '个单元')
+    
+    if (uniqueUnits.length === 0) {
+      ElMessage.warning('所选楼层下暂无可用单元')
+    }
+  } catch (error) {
+    console.error('加载单元选项失败:', error)
+    ElMessage.error('加载单元选项失败')
+    unitOptions.value = []
+  }
+}
+
 // 处理单元变化
 const handleUnitChange = (unitIds: number[]) => {
   // 自动计算面积
