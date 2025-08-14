@@ -302,23 +302,6 @@
         :rules="formRules"
         label-width="120px"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="单元名称" prop="unitName">
-              <el-input v-model="formData.unitName" placeholder="请输入单元名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="单元编码" prop="unitCode">
-              <el-input
-                v-model="formData.unitCode"
-                placeholder="请输入单元编码"
-                :disabled="!!formData.id"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
         <el-form-item label="所属项目" prop="projectId">
           <el-select
             v-model="formData.projectId"
@@ -367,6 +350,23 @@
             />
           </el-select>
         </el-form-item>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="单元名称" prop="unitName">
+              <el-input v-model="formData.unitName" placeholder="请输入单元名称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="单元编码" prop="unitCode">
+              <el-input
+                v-model="formData.unitCode"
+                placeholder="请输入单元编码"
+                :disabled="!!formData.id"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         
         <el-row :gutter="20">
           <el-col :span="12">
