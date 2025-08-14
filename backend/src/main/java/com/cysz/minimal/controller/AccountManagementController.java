@@ -1,4 +1,4 @@
-package com.cysz.minimal;
+package com.cysz.minimal.controller;
 
 import org.springframework.web.bind.annotation.*;
 import java.util.*;

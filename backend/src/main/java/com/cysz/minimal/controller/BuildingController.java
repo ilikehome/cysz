@@ -1,4 +1,4 @@
-package com.cysz.minimal;
+package com.cysz.minimal.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;

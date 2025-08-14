@@ -1,4 +1,4 @@
-package com.cysz.minimal;
+package com.cysz.minimal.controller;
 
 import com.cysz.minimal.common.Result;
 import com.cysz.minimal.entity.ContractTemplate;
