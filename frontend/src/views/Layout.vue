@@ -117,14 +117,6 @@
               <el-icon><Setting /></el-icon>
               <span>合同模板</span>
             </el-menu-item>
-            <el-menu-item index="/contract/generate">
-              <el-icon><DocumentAdd /></el-icon>
-              <span>合同生成</span>
-            </el-menu-item>
-            <el-menu-item index="/contract/auto">
-              <el-icon><MagicStick /></el-icon>
-              <span>自动合同</span>
-            </el-menu-item>
           </el-sub-menu>
           
           <!-- 账款管理 -->
@@ -196,8 +188,6 @@ import {
   Document, 
   TrendCharts, 
   Setting, 
-  DocumentAdd, 
-  MagicStick,
   Money, 
   Wallet, 
   CreditCard, 

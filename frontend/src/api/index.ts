@@ -4,6 +4,9 @@
 // 导出通用类型
 export * from './types'
 
+// 导入需要的类型
+import type { PageQuery } from './types'
+
 // 导出各业务模块的API
 export * from './user'
 export * from './project'
@@ -15,7 +18,6 @@ export * from './statistics'
 // 导出其他现有的API模块
 export * from './contractTemplate'
 export * from './account'
-export * from './contractGenerate'
 export * from './receivableAnalysis'
 export * from './collectionReminder'
 

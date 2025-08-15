@@ -86,15 +86,6 @@ const router = createRouter({
                 icon: 'Connection'
               }
             },
-            {
-              path: '/contract/auto',
-              name: 'ContractAuto',
-              component: () => import('@/views/contract/Auto.vue'),
-              meta: {
-                title: '自动合同',
-                icon: 'MagicStick'
-              }
-            }
           ]
         },
         // 租户管理
@@ -173,15 +164,6 @@ const router = createRouter({
                 icon: 'Setting'
               }
             },
-            {
-              path: '/contract/generate',
-              name: 'ContractGenerate',
-              component: () => import('@/views/contract/Generate.vue'),
-              meta: {
-                title: '合同生成',
-                icon: 'DocumentAdd'
-              }
-            }
           ]
         },
         // 账款管理

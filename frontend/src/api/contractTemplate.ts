@@ -83,7 +83,7 @@ export const contractTemplateApi = {
   }
 }
 
-// 为了兼容Generate.vue中的使用方式，添加单独的导出函数
+// 获取活跃的合同模板列表
 export const getContractTemplates = () => {
   return contractTemplateApi.getTemplateList('ACTIVE')
 }
