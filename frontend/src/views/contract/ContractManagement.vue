@@ -1174,7 +1174,7 @@ const formData = reactive({
     { minAmount: null, maxAmount: null, commissionRate: null }
   ] as CommissionRule[],
   
-  contractStatus: 'UNSIGNED_EFFECTIVE'
+  contractStatus: 'unsigned_effective'
 })
 
 // 上传表单数据
@@ -1567,7 +1567,7 @@ const handleSave = async () => {
       latestPaymentDay: formData.latestPaymentDay,
       firstPaymentDueDate: formData.firstPaymentDueDate,
       firstRentAmount: formData.firstRentAmount,
-      contractStatus: 'DRAFT' as const
+      contractStatus: 'unsigned_effective' as const
     }
     
     // 调用API保存合同
@@ -1706,7 +1706,7 @@ const saveContract = async () => {
       ...formData,
       templateId: selectedTemplate.value?.id,
       contractContent: mergedContractContent.value,
-      contractStatus: 'UNSIGNED_EFFECTIVE', // 未盖章生效
+      contractStatus: 'unsigned_effective', // 未盖章生效
       // 处理日期格式
       signDate: formData.signDate || undefined,
       startDate: formData.startDate || undefined,
@@ -2038,7 +2038,7 @@ const loadUnsignedContracts = async () => {
     const response = await contractApi.getContractPage({
       current: 1,
       size: 1000,
-      contractStatus: 'UNSIGNED_EFFECTIVE'
+      contractStatus: 'unsigned_effective'
     })
     unsignedContracts.value = response.data.records
   } catch (error: any) {
@@ -2063,7 +2063,7 @@ const handleUploadSubmit = async () => {
       // 关联已有合同，更新合同状态为已盖章生效
       // 只更新合同状态，使用 Partial 类型
       await contractApi.updateContract(uploadFormData.existingContractId!, {
-        contractStatus: 'SIGNED_EFFECTIVE'
+        contractStatus: 'signed_effective'
       } as any)
       
       // TODO: 上传文件到服务器并关联到合同
@@ -2170,7 +2170,7 @@ const resetForm = () => {
       { minAmount: null, maxAmount: null, commissionRate: null }
     ],
     
-    contractStatus: 'UNSIGNED_EFFECTIVE'
+    contractStatus: 'unsigned_effective'
   })
   formRef.value?.resetFields()
 }
