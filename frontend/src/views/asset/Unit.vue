@@ -106,7 +106,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="unitPurpose" label="用途" width="120" />
+        <el-table-column prop="unitPurpose" label="用途" width="120">
+          <template #default="{ row }">
+            {{ getUnitPurposeName(row.unitPurpose) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="buildingArea" label="建筑面积(㎡)" width="120" />
         <el-table-column prop="rentArea" label="计租面积(㎡)" width="120" />
         <el-table-column prop="isMultiTenant" label="一位多租" width="100">
@@ -271,7 +275,7 @@
             {{ getUnitStatusName(viewData.unitStatus) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="用途">{{ viewData.unitPurpose || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="用途">{{ getUnitPurposeName(viewData.unitPurpose) }}</el-descriptions-item>
         <el-descriptions-item label="建筑面积">{{ viewData.buildingArea ? viewData.buildingArea + '㎡' : '-' }}</el-descriptions-item>
         <el-descriptions-item label="计租面积">{{ viewData.rentArea ? viewData.rentArea + '㎡' : '-' }}</el-descriptions-item>
         <el-descriptions-item label="一位多租">
@@ -384,17 +388,12 @@
           <el-col :span="12">
             <el-form-item label="用途">
               <el-select v-model="formData.unitPurpose" placeholder="请选择单元用途" style="width: 100%">
-                <el-option label="办公" value="OFFICE" />
-                <el-option label="仓库" value="WAREHOUSE" />
-                <el-option label="货运" value="FREIGHT" />
-                <el-option label="商业" value="COMMERCIAL" />
-                <el-option label="会议室" value="MEETING_ROOM" />
-                <el-option label="营业房" value="BUSINESS_ROOM" />
-                <el-option label="停车位" value="PARKING" />
-                <el-option label="广告位" value="ADVERTISING" />
-                <el-option label="公寓" value="APARTMENT" />
-                <el-option label="多经点位" value="MULTI_BUSINESS" />
-                <el-option label="推广场地" value="PROMOTION_VENUE" />
+                <el-option 
+                  v-for="option in UNIT_PURPOSE_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -462,6 +461,10 @@ import {
   getUnitStatusName, 
   getUnitStatusTagColor 
 } from '@/constants/unitStatus'
+import { 
+  UNIT_PURPOSE_OPTIONS, 
+  getUnitPurposeName 
+} from '@/constants/unitPurpose'
 
 // 响应式数据
 const loading = ref(false)

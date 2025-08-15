@@ -1,6 +1,7 @@
 package com.cysz.minimal.controller;
 
 import com.cysz.minimal.enums.UnitStatus;
+import com.cysz.minimal.enums.UnitPurpose;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -160,6 +161,14 @@ public class StatisticsController {
             // 按用途统计
             List<Map<String, Object>> purposeStats = jdbcTemplate.queryForList(
                 "SELECT unit_purpose as name, COUNT(*) as value FROM unit WHERE status = 1 GROUP BY unit_purpose");
+            
+            // 将用途代码转换为显示名称
+            for (Map<String, Object> stat : purposeStats) {
+                String purposeCode = (String) stat.get("name");
+                if (purposeCode != null) {
+                    stat.put("displayName", UnitPurpose.getDisplayNameByCode(purposeCode));
+                }
+            }
             
             result.put("statusStats", statusStats);
             result.put("buildingUnitStats", buildingUnitStats);

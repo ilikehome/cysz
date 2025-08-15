@@ -1,6 +1,7 @@
 package com.cysz.minimal.controller;
 
 import com.cysz.minimal.enums.UnitStatus;
+import com.cysz.minimal.enums.UnitPurpose;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -309,6 +310,14 @@ public class UnitController {
                 return response;
             }
             
+            // 验证单元用途
+            String unitPurpose = (String) unitData.get("unitPurpose");
+            if (unitPurpose != null && !unitPurpose.trim().isEmpty() && !UnitPurpose.isValidCode(unitPurpose)) {
+                response.put("code", 400);
+                response.put("message", "无效的单元用途: " + unitPurpose);
+                return response;
+            }
+            
             String sql = "INSERT INTO unit (unit_name, unit_code, floor_id, unit_status, unit_purpose, " +
                         "building_area, rent_area, is_multi_tenant, remark, status, create_time) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -356,6 +365,14 @@ public class UnitController {
             if (unitStatus != null && !UnitStatus.isValidCode(unitStatus)) {
                 response.put("code", 400);
                 response.put("message", "无效的单元状态: " + unitStatus);
+                return response;
+            }
+            
+            // 验证单元用途
+            String unitPurpose = (String) unitData.get("unitPurpose");
+            if (unitPurpose != null && !unitPurpose.trim().isEmpty() && !UnitPurpose.isValidCode(unitPurpose)) {
+                response.put("code", 400);
+                response.put("message", "无效的单元用途: " + unitPurpose);
                 return response;
             }
             
