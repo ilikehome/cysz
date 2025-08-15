@@ -4,6 +4,7 @@ import com.cysz.minimal.common.PageResult;
 import com.cysz.minimal.common.Result;
 import com.cysz.minimal.entity.Tenant;
 import com.cysz.minimal.service.TenantService;
+import com.cysz.minimal.enums.BusinessFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -57,6 +58,13 @@ public class TenantController {
     @PostMapping
     public Result<Tenant> createTenant(@RequestBody Tenant tenant) {
         try {
+            // 验证业态
+            if (tenant.getBusinessFormat() != null && !tenant.getBusinessFormat().trim().isEmpty()) {
+                if (!BusinessFormat.isValidCode(tenant.getBusinessFormat())) {
+                    return Result.error("无效的业态代码: " + tenant.getBusinessFormat());
+                }
+            }
+            
             Tenant createdTenant = tenantService.createTenant(tenant);
             return Result.success(createdTenant);
         } catch (Exception e) {
@@ -70,6 +78,13 @@ public class TenantController {
     @PutMapping("/{id}")
     public Result<Tenant> updateTenant(@PathVariable Long id, @RequestBody Tenant tenant) {
         try {
+            // 验证业态
+            if (tenant.getBusinessFormat() != null && !tenant.getBusinessFormat().trim().isEmpty()) {
+                if (!BusinessFormat.isValidCode(tenant.getBusinessFormat())) {
+                    return Result.error("无效的业态代码: " + tenant.getBusinessFormat());
+                }
+            }
+            
             Tenant updatedTenant = tenantService.updateTenant(id, tenant);
             return Result.success(updatedTenant);
         } catch (Exception e) {

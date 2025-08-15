@@ -41,78 +41,17 @@
               clearable
               style="width: 150px"
             >
-              <!-- 零售业态 -->
-              <el-option-group label="零售业态">
-                <el-option label="百货商场" value="百货商场" />
-                <el-option label="购物中心" value="购物中心" />
-                <el-option label="超市" value="超市" />
-                <el-option label="便利店" value="便利店" />
-                <el-option label="专卖店" value="专卖店" />
-                <el-option label="品牌店" value="品牌店" />
-                <el-option label="折扣店" value="折扣店" />
-                <el-option label="免税店" value="免税店" />
-              </el-option-group>
-              
-              <!-- 餐饮业态 -->
-              <el-option-group label="餐饮业态">
-                <el-option label="正餐" value="正餐" />
-                <el-option label="快餐" value="快餐" />
-                <el-option label="休闲餐饮" value="休闲餐饮" />
-                <el-option label="咖啡厅" value="咖啡厅" />
-                <el-option label="茶饮店" value="茶饮店" />
-                <el-option label="酒吧" value="酒吧" />
-                <el-option label="烘焙店" value="烘焙店" />
-                <el-option label="甜品店" value="甜品店" />
-              </el-option-group>
-              
-              <!-- 娱乐业态 -->
-              <el-option-group label="娱乐业态">
-                <el-option label="电影院" value="电影院" />
-                <el-option label="KTV" value="KTV" />
-                <el-option label="游戏厅" value="游戏厅" />
-                <el-option label="健身房" value="健身房" />
-                <el-option label="美容美发" value="美容美发" />
-                <el-option label="SPA" value="SPA" />
-                <el-option label="儿童乐园" value="儿童乐园" />
-                <el-option label="密室逃脱" value="密室逃脱" />
-              </el-option-group>
-              
-              <!-- 服务业态 -->
-              <el-option-group label="服务业态">
-                <el-option label="银行" value="银行" />
-                <el-option label="保险" value="保险" />
-                <el-option label="通讯营业厅" value="通讯营业厅" />
-                <el-option label="快递服务" value="快递服务" />
-                <el-option label="洗衣店" value="洗衣店" />
-                <el-option label="维修服务" value="维修服务" />
-                <el-option label="教育培训" value="教育培训" />
-                <el-option label="医疗诊所" value="医疗诊所" />
-              </el-option-group>
-              
-              <!-- 办公业态 -->
-              <el-option-group label="办公业态">
-                <el-option label="写字楼" value="写字楼" />
-                <el-option label="联合办公" value="联合办公" />
-                <el-option label="创业孵化器" value="创业孵化器" />
-                <el-option label="会议中心" value="会议中心" />
-                <el-option label="展示厅" value="展示厅" />
-              </el-option-group>
-              
-              <!-- 住宿业态 -->
-              <el-option-group label="住宿业态">
-                <el-option label="酒店" value="酒店" />
-                <el-option label="民宿" value="民宿" />
-                <el-option label="青年旅社" value="青年旅社" />
-                <el-option label="公寓式酒店" value="公寓式酒店" />
-              </el-option-group>
-              
-              <!-- 其他业态 -->
-              <el-option-group label="其他业态">
-                <el-option label="仓储物流" value="仓储物流" />
-                <el-option label="汽车服务" value="汽车服务" />
-                <el-option label="宠物服务" value="宠物服务" />
-                <el-option label="文化艺术" value="文化艺术" />
-                <el-option label="其他" value="其他" />
+              <el-option-group 
+                v-for="group in BUSINESS_FORMAT_OPTIONS" 
+                :key="group.label" 
+                :label="group.label"
+              >
+                <el-option 
+                  v-for="option in group.options" 
+                  :key="option.value"
+                  :label="option.label" 
+                  :value="option.value" 
+                />
               </el-option-group>
             </el-select>
           </el-form-item>
@@ -156,7 +95,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="businessFormat" label="业态" width="120" />
+        <el-table-column prop="businessFormat" label="业态" width="120">
+          <template #default="{ row }">
+            {{ getBusinessFormatLabel(row.businessFormat) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="businessScope" label="经营范围" width="200" show-overflow-tooltip />
         <el-table-column prop="legalPersonName" label="法人姓名" width="120" />
         <el-table-column prop="legalPersonPhone" label="法人手机号" width="130" />
@@ -213,7 +156,7 @@
             </el-tag>
             <span v-else>-</span>
           </el-descriptions-item>
-          <el-descriptions-item label="业态">{{ viewData.businessFormat || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="业态">{{ getBusinessFormatLabel(viewData.businessFormat) || '-' }}</el-descriptions-item>
           <el-descriptions-item label="企业性质">{{ viewData.enterpriseNature || '-' }}</el-descriptions-item>
         </el-descriptions>
 
@@ -317,78 +260,17 @@
           <el-col :span="8">
             <el-form-item label="业态">
               <el-select v-model="formData.businessFormat" placeholder="请选择业态" style="width: 100%">
-                <!-- 零售业态 -->
-                <el-option-group label="零售业态">
-                  <el-option label="百货商场" value="百货商场" />
-                  <el-option label="购物中心" value="购物中心" />
-                  <el-option label="超市" value="超市" />
-                  <el-option label="便利店" value="便利店" />
-                  <el-option label="专卖店" value="专卖店" />
-                  <el-option label="品牌店" value="品牌店" />
-                  <el-option label="折扣店" value="折扣店" />
-                  <el-option label="免税店" value="免税店" />
-                </el-option-group>
-                
-                <!-- 餐饮业态 -->
-                <el-option-group label="餐饮业态">
-                  <el-option label="正餐" value="正餐" />
-                  <el-option label="快餐" value="快餐" />
-                  <el-option label="休闲餐饮" value="休闲餐饮" />
-                  <el-option label="咖啡厅" value="咖啡厅" />
-                  <el-option label="茶饮店" value="茶饮店" />
-                  <el-option label="酒吧" value="酒吧" />
-                  <el-option label="烘焙店" value="烘焙店" />
-                  <el-option label="甜品店" value="甜品店" />
-                </el-option-group>
-                
-                <!-- 娱乐业态 -->
-                <el-option-group label="娱乐业态">
-                  <el-option label="电影院" value="电影院" />
-                  <el-option label="KTV" value="KTV" />
-                  <el-option label="游戏厅" value="游戏厅" />
-                  <el-option label="健身房" value="健身房" />
-                  <el-option label="美容美发" value="美容美发" />
-                  <el-option label="SPA" value="SPA" />
-                  <el-option label="儿童乐园" value="儿童乐园" />
-                  <el-option label="密室逃脱" value="密室逃脱" />
-                </el-option-group>
-                
-                <!-- 服务业态 -->
-                <el-option-group label="服务业态">
-                  <el-option label="银行" value="银行" />
-                  <el-option label="保险" value="保险" />
-                  <el-option label="通讯营业厅" value="通讯营业厅" />
-                  <el-option label="快递服务" value="快递服务" />
-                  <el-option label="洗衣店" value="洗衣店" />
-                  <el-option label="维修服务" value="维修服务" />
-                  <el-option label="教育培训" value="教育培训" />
-                  <el-option label="医疗诊所" value="医疗诊所" />
-                </el-option-group>
-                
-                <!-- 办公业态 -->
-                <el-option-group label="办公业态">
-                  <el-option label="写字楼" value="写字楼" />
-                  <el-option label="联合办公" value="联合办公" />
-                  <el-option label="创业孵化器" value="创业孵化器" />
-                  <el-option label="会议中心" value="会议中心" />
-                  <el-option label="展示厅" value="展示厅" />
-                </el-option-group>
-                
-                <!-- 住宿业态 -->
-                <el-option-group label="住宿业态">
-                  <el-option label="酒店" value="酒店" />
-                  <el-option label="民宿" value="民宿" />
-                  <el-option label="青年旅社" value="青年旅社" />
-                  <el-option label="公寓式酒店" value="公寓式酒店" />
-                </el-option-group>
-                
-                <!-- 其他业态 -->
-                <el-option-group label="其他业态">
-                  <el-option label="仓储物流" value="仓储物流" />
-                  <el-option label="汽车服务" value="汽车服务" />
-                  <el-option label="宠物服务" value="宠物服务" />
-                  <el-option label="文化艺术" value="文化艺术" />
-                  <el-option label="其他" value="其他" />
+                <el-option-group 
+                  v-for="group in BUSINESS_FORMAT_OPTIONS" 
+                  :key="group.label" 
+                  :label="group.label"
+                >
+                  <el-option 
+                    v-for="option in group.options" 
+                    :key="option.value"
+                    :label="option.label" 
+                    :value="option.value" 
+                  />
                 </el-option-group>
               </el-select>
             </el-form-item>
@@ -543,6 +425,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { tenantApi, type Tenant } from '@/api/tenant'
 import { TENANT_NATURE_OPTIONS, getTenantNatureTagColor } from '@/constants/tenantNature'
 import { BRAND_QUALIFICATION_OPTIONS, getBrandQualificationTagColor } from '@/constants/brandQualification'
+import { BUSINESS_FORMAT_OPTIONS, getBusinessFormatLabel } from '@/constants/businessFormat'
 
 // 响应式数据
 const loading = ref(false)

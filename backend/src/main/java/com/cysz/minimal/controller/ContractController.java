@@ -6,6 +6,7 @@ import com.cysz.minimal.enums.ContractType;
 import com.cysz.minimal.enums.PaymentFrequency;
 import com.cysz.minimal.enums.RentPeriodSetting;
 import com.cysz.minimal.enums.RentMode;
+import com.cysz.minimal.enums.BusinessFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -215,6 +216,13 @@ public class ContractController {
             if (dto.getRentMode() != null && !dto.getRentMode().trim().isEmpty()) {
                 if (!RentMode.isValidCode(dto.getRentMode())) {
                     return Result.error("无效的租金模式代码: " + dto.getRentMode());
+                }
+            }
+            
+            // 验证业态
+            if (dto.getBusinessFormat() != null && !dto.getBusinessFormat().trim().isEmpty()) {
+                if (!BusinessFormat.isValidCode(dto.getBusinessFormat())) {
+                    return Result.error("无效的业态代码: " + dto.getBusinessFormat());
                 }
             }
             
