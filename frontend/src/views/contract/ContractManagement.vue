@@ -269,8 +269,8 @@
         <el-descriptions :column="3" border>
           <el-descriptions-item label="费项公司">{{ viewData.feeCompany || '-' }}</el-descriptions-item>
           <el-descriptions-item label="租金模式">
-            <el-tag :type="viewData.rentMode === '固定租金' ? 'success' : 'warning'">
-              {{ viewData.rentMode || '-' }}
+            <el-tag :type="viewData.rentMode === RENT_MODE.FIXED ? 'success' : 'warning'">
+              {{ getRentModeLabel(viewData.rentMode) || '-' }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="租金期间设定">{{ getRentPeriodSettingName(viewData.rentPeriodSetting) || '-' }}</el-descriptions-item>
@@ -297,7 +297,7 @@
         </div>
 
         <!-- 提成租金模式 -->
-        <div v-if="viewData.rentMode === '提成租金'">
+        <div v-if="viewData.rentMode === RENT_MODE.COMMISSION">
           <el-divider content-position="left">提成租金</el-divider>
           <el-descriptions :column="1" border>
             <el-descriptions-item label="提成规则">
@@ -934,8 +934,12 @@
           <el-col :span="8">
             <el-form-item label="租金模式" prop="rentMode">
               <el-select v-model="formData.rentMode" placeholder="请选择租金模式" style="width: 100%" @change="handleRentModeChange">
-                <el-option label="固定租金" value="固定租金" />
-                <el-option label="提成租金" value="提成租金" />
+                <el-option 
+                  v-for="option in RENT_MODE_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -1032,7 +1036,7 @@
         </div>
 
         <!-- 提成租金模式 -->
-        <div v-if="formData.rentMode === '提成租金'">
+        <div v-if="formData.rentMode === RENT_MODE.COMMISSION">
           <el-form-item label="提成规则">
             <div class="commission-rules">
               <div
@@ -1113,6 +1117,7 @@ import { contractApi, type Contract } from '@/api/contract'
 import { CONTRACT_TYPE_OPTIONS, getContractTypeName } from '@/constants/contractType'
 import { PAYMENT_FREQUENCY_OPTIONS, getPaymentFrequencyName } from '@/constants/paymentFrequency'
 import { RENT_PERIOD_SETTING_OPTIONS, getRentPeriodSettingName } from '@/constants/rentPeriodSetting'
+import { RENT_MODE_OPTIONS, getRentModeLabel, RENT_MODE } from '@/constants/rentMode'
 import { projectApi } from '@/api/project'
 import { buildingApi, floorApi, unitApi } from '@/api/unit'
 
@@ -1477,7 +1482,7 @@ const handleUnitChange = (unitIds: number[]) => {
 
 // 处理租金模式变化
 const handleRentModeChange = (mode: string) => {
-  if (mode === '提成租金') {
+  if (mode === RENT_MODE.COMMISSION) {
     // 初始化提成规则
     if (formData.commissionRules.length === 0) {
       formData.commissionRules = [
@@ -1718,7 +1723,7 @@ const mergeContractContent = () => {
     '{{月租金}}': formData.periodRent?.toString() || '',
     '{{首期租金}}': formData.firstPeriodRent?.toString() || '',
     '{{保证金}}': formData.depositAmount?.toString() || '',
-    '{{租金模式}}': formData.rentMode || '',
+    '{{租金模式}}': getRentModeLabel(formData.rentMode) || '',
     '{{付款频率}}': formData.paymentFrequency || '',
     '{{业态}}': formData.businessFormat || '',
     '{{经营品牌}}': formData.businessBrand || ''

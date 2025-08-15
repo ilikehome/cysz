@@ -5,6 +5,7 @@ import com.cysz.minimal.common.Result;
 import com.cysz.minimal.enums.ContractType;
 import com.cysz.minimal.enums.PaymentFrequency;
 import com.cysz.minimal.enums.RentPeriodSetting;
+import com.cysz.minimal.enums.RentMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -210,6 +211,13 @@ public class ContractController {
                 }
             }
             
+            // 验证租金模式
+            if (dto.getRentMode() != null && !dto.getRentMode().trim().isEmpty()) {
+                if (!RentMode.isValidCode(dto.getRentMode())) {
+                    return Result.error("无效的租金模式代码: " + dto.getRentMode());
+                }
+            }
+            
             // 检查项目是否存在
             try {
                 String checkProjectSql = "SELECT COUNT(*) FROM project WHERE id = ?";
@@ -304,7 +312,7 @@ public class ContractController {
                 dto.getDepositAmount(),                                        // deposit_amount
                 dto.getDepositLatestDate(),                                    // deposit_latest_date
                 dto.getFeeCompany(),                                           // fee_company
-                dto.getRentMode() != null ? dto.getRentMode() : "固定租金",      // rent_mode
+                dto.getRentMode() != null ? dto.getRentMode() : RentMode.FIXED.getCode(),      // rent_mode
                 dto.getRentPeriodSetting(),                                    // rent_period_setting
                 dto.getLateFeeRule(),                                          // late_fee_rule
                 dto.getPaymentAccount(),                                       // payment_account
