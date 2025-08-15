@@ -136,10 +136,18 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="rentPeriodSetting" label="租金期间设定" width="150" />
+        <el-table-column prop="rentPeriodSetting" label="租金期间设定" width="150">
+          <template #default="{ row }">
+            {{ getRentPeriodSettingName(row.rentPeriodSetting) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="lateFeeRule" label="滞纳金规则" width="120" />
         <el-table-column prop="paymentAccount" label="付款账户" width="150" show-overflow-tooltip />
-        <el-table-column prop="paymentFrequency" label="付款频率" width="100" />
+        <el-table-column prop="paymentFrequency" label="付款频率" width="100">
+          <template #default="{ row }">
+            {{ getPaymentFrequencyName(row.paymentFrequency) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="latestPaymentDay" label="最晚缴款日" width="120">
           <template #default="{ row }">
             {{ row.latestPaymentDay ? `${row.latestPaymentDay}日` : '-' }}
@@ -265,10 +273,10 @@
               {{ viewData.rentMode || '-' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="租金期间设定">{{ viewData.rentPeriodSetting || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="租金期间设定">{{ getRentPeriodSettingName(viewData.rentPeriodSetting) || '-' }}</el-descriptions-item>
           <el-descriptions-item label="滞纳金规则">{{ viewData.lateFeeRule || '-' }}</el-descriptions-item>
           <el-descriptions-item label="付款账户">{{ viewData.paymentAccount || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="付款频率">{{ viewData.paymentFrequency || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="付款频率">{{ getPaymentFrequencyName(viewData.paymentFrequency) || '-' }}</el-descriptions-item>
           <el-descriptions-item label="最晚缴款日">
             {{ viewData.latestPaymentDay ? `${viewData.latestPaymentDay}日` : '-' }}
           </el-descriptions-item>
@@ -934,9 +942,12 @@
           <el-col :span="8">
             <el-form-item label="租金期间设定" prop="rentPeriodSetting">
               <el-select v-model="formData.rentPeriodSetting" placeholder="请选择租金期间设定" style="width: 100%">
-                <el-option label="月末截止计租周期" value="月末截止计租周期" />
-                <el-option label="起租日滚动周期" value="起租日滚动周期" />
-                <el-option label="指定日期滚动周期" value="指定日期滚动周期" />
+                <el-option 
+                  v-for="option in RENT_PERIOD_SETTING_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -956,10 +967,12 @@
           <el-col :span="8">
             <el-form-item label="付款频率" prop="paymentFrequency">
               <el-select v-model="formData.paymentFrequency" placeholder="请选择付款频率" style="width: 100%">
-                <el-option label="月" value="月" />
-                <el-option label="双月" value="双月" />
-                <el-option label="季度" value="季度" />
-                <el-option label="半年" value="半年" />
+                <el-option 
+                  v-for="option in PAYMENT_FREQUENCY_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
                 <el-option label="年" value="年" />
               </el-select>
             </el-form-item>
@@ -1098,6 +1111,8 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type Upload
 import { Plus, Search, Refresh, Upload, UploadFilled, Document, Download, DocumentAdd, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { contractApi, type Contract } from '@/api/contract'
 import { CONTRACT_TYPE_OPTIONS, getContractTypeName } from '@/constants/contractType'
+import { PAYMENT_FREQUENCY_OPTIONS, getPaymentFrequencyName } from '@/constants/paymentFrequency'
+import { RENT_PERIOD_SETTING_OPTIONS, getRentPeriodSettingName } from '@/constants/rentPeriodSetting'
 import { projectApi } from '@/api/project'
 import { buildingApi, floorApi, unitApi } from '@/api/unit'
 

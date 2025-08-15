@@ -3,6 +3,8 @@ package com.cysz.minimal.controller;
 import com.cysz.minimal.common.PageResult;
 import com.cysz.minimal.common.Result;
 import com.cysz.minimal.enums.ContractType;
+import com.cysz.minimal.enums.PaymentFrequency;
+import com.cysz.minimal.enums.RentPeriodSetting;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -192,6 +194,20 @@ public class ContractController {
             }
             if (dto.getProjectId() == null) {
                 return Result.error("项目ID不能为空");
+            }
+            
+            // 验证付款频率
+            if (dto.getPaymentFrequency() != null && !dto.getPaymentFrequency().trim().isEmpty()) {
+                if (!PaymentFrequency.isValidCode(dto.getPaymentFrequency())) {
+                    return Result.error("无效的付款频率代码: " + dto.getPaymentFrequency());
+                }
+            }
+            
+            // 验证租金期间设定
+            if (dto.getRentPeriodSetting() != null && !dto.getRentPeriodSetting().trim().isEmpty()) {
+                if (!RentPeriodSetting.isValidCode(dto.getRentPeriodSetting())) {
+                    return Result.error("无效的租金期间设定代码: " + dto.getRentPeriodSetting());
+                }
             }
             
             // 检查项目是否存在
