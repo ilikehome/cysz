@@ -1,5 +1,6 @@
 package com.cysz.minimal.controller;
 
+import com.cysz.minimal.enums.ProjectType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,6 +47,13 @@ public class ProjectController {
             }
             
             if (projectType != null && !projectType.trim().isEmpty()) {
+                // 验证项目类型是否有效
+                if (!ProjectType.isValidCode(projectType)) {
+                    response.put("code", 400);
+                    response.put("message", "无效的项目类型: " + projectType);
+                    response.put("data", null);
+                    return response;
+                }
                 sql.append(" AND project_type = ?");
                 params.add(projectType);
             }
@@ -143,6 +151,14 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            // 验证项目类型
+            String projectType = (String) projectData.get("projectType");
+            if (projectType == null || !ProjectType.isValidCode(projectType)) {
+                response.put("code", 400);
+                response.put("message", "无效的项目类型: " + projectType);
+                return response;
+            }
+            
             String sql = "INSERT INTO project (project_name, project_type, management_org, rent_bill_company, " +
                         "rent_bill_bank_account, city, address, project_manager, contact_phone, status, create_time) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -185,6 +201,14 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            // 验证项目类型
+            String projectType = (String) projectData.get("projectType");
+            if (projectType == null || !ProjectType.isValidCode(projectType)) {
+                response.put("code", 400);
+                response.put("message", "无效的项目类型: " + projectType);
+                return response;
+            }
+            
             String sql = "UPDATE project SET project_name = ?, project_type = ?, management_org = ?, " +
                         "rent_bill_company = ?, rent_bill_bank_account = ?, city = ?, address = ?, " +
                         "project_manager = ?, contact_phone = ?, status = ?, update_time = ? WHERE id = ?";

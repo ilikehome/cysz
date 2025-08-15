@@ -1,11 +1,12 @@
 import request from '@/utils/request'
 import type { PageResult, PageQuery, ApiResponse } from './types'
+import type { ProjectTypeCode } from '@/constants/projectType'
 
 // 项目相关接口
 export interface Project {
   id?: number
   projectName: string
-  projectType: 'COMPLEX' | 'COMMERCIAL_DISTRICT' | 'HOTEL' | 'APARTMENT' | 'OFFICE'
+  projectType: ProjectTypeCode
   managementOrg: string
   rentBillCompany: string
   rentBillBankAccount?: string

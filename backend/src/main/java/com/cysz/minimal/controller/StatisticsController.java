@@ -83,6 +83,12 @@ public class StatisticsController {
             List<Map<String, Object>> projectTypeStats = jdbcTemplate.queryForList(
                 "SELECT project_type as name, COUNT(*) as value FROM project WHERE status = 1 GROUP BY project_type");
             
+            // 将项目类型代码转换为显示名称
+            for (Map<String, Object> stat : projectTypeStats) {
+                String typeCode = (String) stat.get("name");
+                stat.put("displayName", com.cysz.minimal.enums.ProjectType.getDisplayNameByCode(typeCode));
+            }
+            
             // 按城市统计项目数量
             List<Map<String, Object>> cityStats = jdbcTemplate.queryForList(
                 "SELECT city as name, COUNT(*) as value FROM project WHERE status = 1 GROUP BY city");

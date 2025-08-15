@@ -29,11 +29,12 @@
               clearable
               style="width: 150px"
             >
-              <el-option label="综合体" value="COMPLEX" />
-              <el-option label="商业街区" value="COMMERCIAL_DISTRICT" />
-              <el-option label="酒店" value="HOTEL" />
-              <el-option label="公寓" value="APARTMENT" />
-              <el-option label="写字楼" value="OFFICE" />
+              <el-option 
+                v-for="option in PROJECT_TYPE_OPTIONS" 
+                :key="option.value" 
+                :label="option.label" 
+                :value="option.value" 
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="状态">
@@ -171,11 +172,12 @@
           <el-col :span="12">
             <el-form-item label="类型" prop="projectType">
               <el-select v-model="formData.projectType" placeholder="请选择项目类型" style="width: 100%">
-                <el-option label="综合体" value="COMPLEX" />
-                <el-option label="商业街区" value="COMMERCIAL_DISTRICT" />
-                <el-option label="酒店" value="HOTEL" />
-                <el-option label="公寓" value="APARTMENT" />
-                <el-option label="写字楼" value="OFFICE" />
+                <el-option 
+                  v-for="option in PROJECT_TYPE_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -263,6 +265,11 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { projectApi, type Project } from '@/api/project'
+import { 
+  PROJECT_TYPE_OPTIONS, 
+  getProjectTypeName, 
+  getProjectTypeTag 
+} from '@/constants/projectType'
 
 // 响应式数据
 const loading = ref(false)
@@ -372,28 +379,6 @@ const dialogTitle = ref('新建项目')
 // 选中的行
 const selectedRows = ref<Project[]>([])
 
-// 获取项目类型标签颜色
-const getProjectTypeTag = (type: string) => {
-  const tagMap: Record<string, string> = {
-    'COMPLEX': 'primary',
-    'APARTMENT': 'success',
-    'OFFICE': 'warning',
-    'COMMERCIAL': 'info'
-  }
-  return tagMap[type] || 'info'
-}
-
-// 获取项目类型名称
-const getProjectTypeName = (type: string) => {
-  const nameMap: Record<string, string> = {
-    'COMPLEX': '综合体',
-    'COMMERCIAL_DISTRICT': '商业街区',
-    'HOTEL': '酒店',
-    'APARTMENT': '公寓',
-    'OFFICE': '写字楼'
-  }
-  return nameMap[type] || type
-}
 
 // 城市选项数据
 const cityOptions = ref([
