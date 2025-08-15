@@ -45,7 +45,7 @@ export interface Contract {
   firstPeriodRent?: number
   periodRent?: number
   commissionRules?: CommissionRule[]
-  contractStatus?: 'DRAFT' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED' | 'UNSIGNED_EFFECTIVE' | 'SIGNED_EFFECTIVE'
+  contractStatus?: 'unsigned_effective' | 'signed_effective' | 'terminated' | 'expired'
   status?: number
   createTime?: string
   updateTime?: string

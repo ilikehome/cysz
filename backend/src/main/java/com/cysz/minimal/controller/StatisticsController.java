@@ -41,11 +41,11 @@ public class StatisticsController {
             
             // 活跃合同数
             Integer activeContracts = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM contract WHERE status = 1 AND contract_status = 'ACTIVE'", Integer.class);
+                "SELECT COUNT(*) FROM contract WHERE status = 1 AND contract_status = 'signed_effective'", Integer.class);
             
             // 本月租金收入
             BigDecimal monthlyRent = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(monthly_rent), 0) FROM contract WHERE status = 1 AND contract_status = 'ACTIVE'", 
+                "SELECT COALESCE(SUM(monthly_rent), 0) FROM contract WHERE status = 1 AND contract_status = 'signed_effective'",
                 BigDecimal.class);
             
             // 待处理应收账款
@@ -219,7 +219,7 @@ public class StatisticsController {
                 "  WHEN monthly_rent < 50000 THEN '2-5万' " +
                 "  ELSE '5万以上' " +
                 "END as name, COUNT(*) as value " +
-                "FROM contract WHERE status = 1 AND contract_status = 'ACTIVE' GROUP BY " +
+                "FROM contract WHERE status = 1 AND contract_status = 'signed_effective' GROUP BY " +
                 "CASE " +
                 "  WHEN monthly_rent < 10000 THEN '1万以下' " +
                 "  WHEN monthly_rent < 20000 THEN '1-2万' " +
@@ -230,7 +230,7 @@ public class StatisticsController {
             // 即将到期合同（30天内）
             List<Map<String, Object>> expiringContracts = jdbcTemplate.queryForList(
                 "SELECT contract_name as name, end_date as value FROM contract " +
-                "WHERE status = 1 AND contract_status = 'ACTIVE' " +
+                "WHERE status = 1 AND contract_status = 'signed_effective' " +
                 "AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) " +
                 "ORDER BY end_date");
             
@@ -271,7 +271,7 @@ public class StatisticsController {
             
             // 总租金收入
             BigDecimal totalRentIncome = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(monthly_rent), 0) FROM contract WHERE status = 1 AND contract_status = 'ACTIVE'", 
+                "SELECT COALESCE(SUM(monthly_rent), 0) FROM contract WHERE status = 1 AND contract_status = 'signed_effective'",
                 BigDecimal.class);
             
             // 待收金额
@@ -313,7 +313,7 @@ public class StatisticsController {
             // 平均租金水平（按项目）
             List<Map<String, Object>> avgRentByProject = jdbcTemplate.queryForList(
                 "SELECT p.project_name as name, COALESCE(AVG(c.monthly_rent), 0) as value " +
-                "FROM project p LEFT JOIN contract c ON p.id = c.project_id AND c.status = 1 AND c.contract_status = 'ACTIVE' " +
+                "FROM project p LEFT JOIN contract c ON p.id = c.project_id AND c.status = 1 AND c.contract_status = 'signed_effective' " +
                 "WHERE p.status = 1 GROUP BY p.id, p.project_name");
             
             // 空置单元分析

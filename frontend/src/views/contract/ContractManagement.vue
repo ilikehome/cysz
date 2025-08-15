@@ -35,9 +35,12 @@
               clearable
               style="width: 150px"
             >
-              <el-option label="未盖章生效" value="UNSIGNED_EFFECTIVE" />
-              <el-option label="已盖章生效" value="SIGNED_EFFECTIVE" />
-              <el-option label="终止" value="TERMINATED" />
+              <el-option
+                v-for="option in CONTRACT_STATUS_OPTIONS"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="合同类型">
@@ -190,8 +193,8 @@
         <!-- 状态和操作 -->
         <el-table-column prop="contractStatus" label="合同状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getContractStatusTag(row.contractStatus)">
-              {{ getContractStatusName(row.contractStatus) }}
+            <el-tag :type="getContractStatusTagColor(row.contractStatus)">
+              {{ getContractStatusLabel(row.contractStatus) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -325,8 +328,8 @@
         <el-divider content-position="left">其他信息</el-divider>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="合同状态">
-            <el-tag :type="getContractStatusTag(viewData.contractStatus)">
-              {{ getContractStatusName(viewData.contractStatus) }}
+            <el-tag :type="getContractStatusTagColor(viewData.contractStatus)">
+              {{ getContractStatusLabel(viewData.contractStatus) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ viewData.createTime || '-' }}</el-descriptions-item>
@@ -1062,6 +1065,7 @@ import { PAYMENT_FREQUENCY_OPTIONS, getPaymentFrequencyName } from '@/constants/
 import { RENT_PERIOD_SETTING_OPTIONS, getRentPeriodSettingName } from '@/constants/rentPeriodSetting'
 import { RENT_MODE_OPTIONS, getRentModeLabel, RENT_MODE } from '@/constants/rentMode'
 import { BUSINESS_FORMAT_OPTIONS, getBusinessFormatLabel } from '@/constants/businessFormat'
+import { CONTRACT_STATUS_OPTIONS, getContractStatusLabel, getContractStatusTagColor } from '@/constants/contractStatus'
 import { projectApi } from '@/api/project'
 import { buildingApi, floorApi, unitApi } from '@/api/unit'
 
@@ -1333,25 +1337,6 @@ const uploadFormRules: FormRules = {
 // 对话框标题
 const dialogTitle = ref('新建合同')
 
-// 获取合同状态标签颜色
-const getContractStatusTag = (status: string) => {
-  const tagMap: Record<string, string> = {
-    'UNSIGNED_EFFECTIVE': 'warning',
-    'SIGNED_EFFECTIVE': 'success',
-    'TERMINATED': 'danger'
-  }
-  return tagMap[status] || 'info'
-}
-
-// 获取合同状态名称
-const getContractStatusName = (status: string) => {
-  const nameMap: Record<string, string> = {
-    'UNSIGNED_EFFECTIVE': '未盖章生效',
-    'SIGNED_EFFECTIVE': '已盖章生效',
-    'TERMINATED': '终止'
-  }
-  return nameMap[status] || status
-}
 
 // 处理楼栋变化
 const handleBuildingChange = (buildingIds: number[]) => {
@@ -1909,7 +1894,7 @@ const handleDownloadPDF = async (row: Contract) => {
 签订日期：${row.signDate}
 开始时间：${row.startDate}
 结束时间：${row.endDate}
-合同状态：${getContractStatusName(row.contractStatus)}
+合同状态：${getContractStatusLabel(row.contractStatus)}
 
 这是一个模拟的合同内容，实际应该从后端获取完整的合同PDF文件。`
     

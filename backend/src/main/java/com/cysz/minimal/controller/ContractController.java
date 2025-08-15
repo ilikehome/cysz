@@ -7,6 +7,7 @@ import com.cysz.minimal.enums.PaymentFrequency;
 import com.cysz.minimal.enums.RentPeriodSetting;
 import com.cysz.minimal.enums.RentMode;
 import com.cysz.minimal.enums.BusinessFormat;
+import com.cysz.minimal.enums.ContractStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -223,6 +224,13 @@ public class ContractController {
             if (dto.getBusinessFormat() != null && !dto.getBusinessFormat().trim().isEmpty()) {
                 if (!BusinessFormat.isValidCode(dto.getBusinessFormat())) {
                     return Result.error("无效的业态代码: " + dto.getBusinessFormat());
+                }
+            }
+            
+            // 验证合同状态
+            if (dto.getContractStatus() != null && !dto.getContractStatus().trim().isEmpty()) {
+                if (!ContractStatus.isValidCode(dto.getContractStatus())) {
+                    return Result.error("无效的合同状态代码: " + dto.getContractStatus());
                 }
             }
             
