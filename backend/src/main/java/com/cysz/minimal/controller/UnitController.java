@@ -1,5 +1,6 @@
 package com.cysz.minimal.controller;
 
+import com.cysz.minimal.enums.UnitStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -161,8 +162,13 @@ public class UnitController {
             }
             
             if (unitStatus != null && !unitStatus.trim().isEmpty()) {
-                sql.append(" AND u.unit_status = ?");
-                params.add(unitStatus);
+                // 验证单元状态是否有效
+                if (UnitStatus.isValidCode(unitStatus)) {
+                    sql.append(" AND u.unit_status = ?");
+                    params.add(unitStatus);
+                } else {
+                    System.err.println("无效的单元状态代码: " + unitStatus);
+                }
             }
             
             sql.append(" ORDER BY u.unit_name");
@@ -253,10 +259,10 @@ public class UnitController {
                         "f.floor_name, b.building_name FROM unit u " +
                         "LEFT JOIN floor f ON u.floor_id = f.id " +
                         "LEFT JOIN building b ON f.building_id = b.id " +
-                        "WHERE b.project_id = ? AND u.unit_status = 'RENTABLE' AND u.status = 1 " +
+                        "WHERE b.project_id = ? AND u.unit_status = ? AND u.status = 1 " +
                         "ORDER BY b.building_name, f.floor_name, u.unit_name";
             
-            List<Map<String, Object>> units = jdbcTemplate.query(sql, new Object[]{projectId}, new RowMapper<Map<String, Object>>() {
+            List<Map<String, Object>> units = jdbcTemplate.query(sql, new Object[]{projectId, UnitStatus.RENTABLE.getCode()}, new RowMapper<Map<String, Object>>() {
                 @Override
                 public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
                     Map<String, Object> unit = new HashMap<>();
@@ -295,6 +301,14 @@ public class UnitController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            // 验证单元状态
+            String unitStatus = (String) unitData.getOrDefault("unitStatus", UnitStatus.RENTABLE.getCode());
+            if (!UnitStatus.isValidCode(unitStatus)) {
+                response.put("code", 400);
+                response.put("message", "无效的单元状态: " + unitStatus);
+                return response;
+            }
+            
             String sql = "INSERT INTO unit (unit_name, unit_code, floor_id, unit_status, unit_purpose, " +
                         "building_area, rent_area, is_multi_tenant, remark, status, create_time) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -303,7 +317,7 @@ public class UnitController {
                 unitData.get("unitName"),
                 unitData.get("unitCode"),
                 unitData.get("floorId"),
-                unitData.getOrDefault("unitStatus", "RENTABLE"),
+                unitStatus,
                 unitData.get("unitPurpose"),
                 unitData.get("buildingArea"),
                 unitData.get("rentArea"),
@@ -337,6 +351,14 @@ public class UnitController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            // 验证单元状态
+            String unitStatus = (String) unitData.get("unitStatus");
+            if (unitStatus != null && !UnitStatus.isValidCode(unitStatus)) {
+                response.put("code", 400);
+                response.put("message", "无效的单元状态: " + unitStatus);
+                return response;
+            }
+            
             String sql = "UPDATE unit SET unit_name = ?, unit_code = ?, floor_id = ?, unit_status = ?, " +
                         "unit_purpose = ?, building_area = ?, rent_area = ?, is_multi_tenant = ?, " +
                         "remark = ?, status = ?, update_time = ? WHERE id = ?";
@@ -345,7 +367,7 @@ public class UnitController {
                 unitData.get("unitName"),
                 unitData.get("unitCode"),
                 unitData.get("floorId"),
-                unitData.get("unitStatus"),
+                unitStatus,
                 unitData.get("unitPurpose"),
                 unitData.get("buildingArea"),
                 unitData.get("rentArea"),

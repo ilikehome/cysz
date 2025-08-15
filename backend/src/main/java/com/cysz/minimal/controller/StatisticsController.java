@@ -1,5 +1,6 @@
 package com.cysz.minimal.controller;
 
+import com.cysz.minimal.enums.UnitStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +36,7 @@ public class StatisticsController {
             Integer totalUnits = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM unit WHERE status = 1", Integer.class);
             Integer occupiedUnits = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM unit WHERE status = 1 AND unit_status = 'OCCUPIED'", Integer.class);
+                "SELECT COUNT(*) FROM unit WHERE status = 1 AND unit_status = ?", Integer.class, UnitStatus.RENTABLE.getCode());
             
             // 活跃合同数
             Integer activeContracts = jdbcTemplate.queryForObject(
@@ -282,10 +283,11 @@ public class StatisticsController {
             // 出租率趋势分析（按项目）
             List<Map<String, Object>> occupancyByProject = jdbcTemplate.queryForList(
                 "SELECT p.project_name as name, " +
-                "ROUND(COUNT(CASE WHEN u.unit_status = 'OCCUPIED' THEN 1 END) * 100.0 / COUNT(u.id), 2) as value " +
+                "ROUND(COUNT(CASE WHEN u.unit_status = ? THEN 1 END) * 100.0 / COUNT(u.id), 2) as value " +
                 "FROM project p LEFT JOIN building b ON p.id = b.project_id " +
                 "LEFT JOIN unit u ON b.id = u.building_id AND u.status = 1 " +
-                "WHERE p.status = 1 GROUP BY p.id, p.project_name");
+                "WHERE p.status = 1 GROUP BY p.id, p.project_name", 
+                new Object[]{UnitStatus.RENTABLE.getCode()});
             
             // 平均租金水平（按项目）
             List<Map<String, Object>> avgRentByProject = jdbcTemplate.queryForList(
@@ -299,8 +301,9 @@ public class StatisticsController {
                 "DATEDIFF(CURDATE(), u.update_time) as value " +
                 "FROM unit u JOIN building b ON u.building_id = b.id " +
                 "JOIN project p ON b.project_id = p.id " +
-                "WHERE u.status = 1 AND u.unit_status = 'VACANT' " +
-                "ORDER BY value DESC LIMIT 10");
+                "WHERE u.status = 1 AND u.unit_status = ? " +
+                "ORDER BY value DESC LIMIT 10", 
+                new Object[]{UnitStatus.DISABLED.getCode()});
             
             result.put("occupancyByProject", occupancyByProject);
             result.put("avgRentByProject", avgRentByProject);

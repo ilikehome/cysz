@@ -101,7 +101,7 @@
         <el-table-column prop="floorName" label="所属楼层" width="120" />
         <el-table-column prop="unitStatus" label="资产状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getUnitStatusTag(row.unitStatus)">
+            <el-tag :type="getUnitStatusTagColor(row.unitStatus)">
               {{ getUnitStatusName(row.unitStatus) }}
             </el-tag>
           </template>
@@ -267,7 +267,7 @@
         <el-descriptions-item label="所属楼栋">{{ viewData.buildingName }}</el-descriptions-item>
         <el-descriptions-item label="所属楼层">{{ viewData.floorName }}</el-descriptions-item>
         <el-descriptions-item label="资产状态">
-          <el-tag :type="getUnitStatusTag(viewData.unitStatus)">
+          <el-tag :type="getUnitStatusTagColor(viewData.unitStatus)">
             {{ getUnitStatusName(viewData.unitStatus) }}
           </el-tag>
         </el-descriptions-item>
@@ -372,12 +372,12 @@
           <el-col :span="12">
             <el-form-item label="资产状态" prop="unitStatus">
               <el-select v-model="formData.unitStatus" placeholder="请选择资产状态" style="width: 100%">
-                <el-option label="可租" value="RENTABLE" />
-                <el-option label="自用" value="SELF_USE" />
-                <el-option label="公用" value="PUBLIC_USE" />
-                <el-option label="返租" value="LEASE_BACK" />
-                <el-option label="停用" value="DISABLED" />
-                <el-option label="自持出租" value="SELF_RENTAL" />
+                <el-option 
+                  v-for="option in UNIT_STATUS_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -456,6 +456,12 @@ import { reactive, ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { projectApi, type Project } from '@/api/project'
 import { unitApi, buildingApi, floorApi, type Unit, type Building, type Floor } from '@/api/unit'
+import { 
+  UnitStatus, 
+  UNIT_STATUS_OPTIONS, 
+  getUnitStatusName, 
+  getUnitStatusTagColor 
+} from '@/constants/unitStatus'
 
 // 响应式数据
 const loading = ref(false)
@@ -536,7 +542,7 @@ const formData = reactive({
   projectId: null,
   buildingId: null,
   floorId: null,
-  unitStatus: 'RENTABLE',
+  unitStatus: UnitStatus.RENTABLE,
   unitPurpose: '',
   buildingArea: null,
   rentArea: null,
@@ -598,31 +604,7 @@ const floorFormRules: FormRules = {
 // 对话框标题
 const dialogTitle = ref('新建单元')
 
-// 获取单元状态标签颜色
-const getUnitStatusTag = (status: string) => {
-  const tagMap: Record<string, string> = {
-    'RENTABLE': 'success',
-    'SELF_USE': 'primary',
-    'PUBLIC_USE': 'info',
-    'LEASE_BACK': 'warning',
-    'DISABLED': 'danger',
-    'SELF_RENTAL': 'success'
-  }
-  return tagMap[status] || 'info'
-}
-
-// 获取单元状态名称
-const getUnitStatusName = (status: string) => {
-  const nameMap: Record<string, string> = {
-    'RENTABLE': '可租',
-    'SELF_USE': '自用',
-    'PUBLIC_USE': '公用',
-    'LEASE_BACK': '返租',
-    'DISABLED': '停用',
-    'SELF_RENTAL': '自持出租'
-  }
-  return nameMap[status] || status
-}
+// 注意：getUnitStatusName 和 getUnitStatusTagColor 函数现在从 @/constants/unitStatus 导入
 
 // 项目变化处理
 const handleProjectChange = async (projectId: number) => {
@@ -1009,7 +991,7 @@ const loadData = async () => {
 const loadProjectList = async () => {
   try {
     const response = await projectApi.getProjectList()
-    projectList.value = response.data
+    projectList.value = response.data || []
   } catch (error: any) {
     ElMessage.error(error.message || '加载项目列表失败')
   }
