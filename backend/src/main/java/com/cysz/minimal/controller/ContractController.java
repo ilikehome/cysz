@@ -2,6 +2,7 @@ package com.cysz.minimal.controller;
 
 import com.cysz.minimal.common.PageResult;
 import com.cysz.minimal.common.Result;
+import com.cysz.minimal.enums.ContractType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -268,7 +269,7 @@ public class ContractController {
             jdbcTemplate.update(insertSql,
                 dto.getContractNo(),                                           // contract_no
                 dto.getContractName(),                                         // contract_name
-                dto.getContractType() != null ? dto.getContractType() : "RENT", // contract_type
+                dto.getContractType() != null ? dto.getContractType() : ContractType.RENT.getCode(), // contract_type
                 dto.getProjectId(),                                            // project_id
                 dto.getSignatory(),                                            // signatory
                 dto.getSignatoryPhone(),                                       // signatory_phone

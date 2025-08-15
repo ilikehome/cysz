@@ -198,6 +198,18 @@ public class StatisticsController {
             List<Map<String, Object>> typeStats = jdbcTemplate.queryForList(
                 "SELECT contract_type as name, COUNT(*) as value FROM contract WHERE status = 1 GROUP BY contract_type");
             
+            // 转换合同类型显示名称
+            for (Map<String, Object> stat : typeStats) {
+                String contractType = (String) stat.get("name");
+                if (contractType != null) {
+                    try {
+                        stat.put("name", com.cysz.minimal.enums.ContractType.getDisplayNameByCode(contractType));
+                    } catch (Exception e) {
+                        // 如果转换失败，保持原值
+                    }
+                }
+            }
+            
             // 月租金分布
             List<Map<String, Object>> rentDistribution = jdbcTemplate.queryForList(
                 "SELECT " +

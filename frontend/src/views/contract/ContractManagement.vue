@@ -47,8 +47,12 @@
               clearable
               style="width: 150px"
             >
-              <el-option label="商铺" value="商铺" />
-              <el-option label="办公" value="办公" />
+                  <el-option 
+                    v-for="option in CONTRACT_TYPE_OPTIONS" 
+                    :key="option.value" 
+                    :label="option.label" 
+                    :value="option.value" 
+                  />
               <el-option label="公寓" value="公寓" />
               <el-option label="酒店" value="酒店" />
               <el-option label="车位" value="车位" />
@@ -79,7 +83,11 @@
         <!-- 基本信息 -->
         <el-table-column prop="contractNo" label="合同编号" width="150" fixed="left" />
         <el-table-column prop="contractName" label="合同名称" min-width="180" />
-        <el-table-column prop="contractType" label="合同类型" width="100" />
+        <el-table-column prop="contractType" label="合同类型" width="100">
+          <template #default="{ row }">
+            {{ getContractTypeName(row.contractType) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="projectName" label="所属项目" width="150" />
         <el-table-column prop="signatory" label="签订人" width="120" />
         <el-table-column prop="signatoryPhone" label="签订人手机号" width="130" />
@@ -404,8 +412,12 @@
             <el-col :span="12">
               <el-form-item label="合同类型" prop="contractType">
                 <el-select v-model="uploadFormData.contractType" placeholder="请选择合同类型" style="width: 100%">
-                  <el-option label="商铺" value="商铺" />
-                  <el-option label="办公" value="办公" />
+                  <el-option 
+                    v-for="option in CONTRACT_TYPE_OPTIONS" 
+                    :key="option.value" 
+                    :label="option.label" 
+                    :value="option.value" 
+                  />
                   <el-option label="公寓" value="公寓" />
                   <el-option label="酒店" value="酒店" />
                   <el-option label="车位" value="车位" />
@@ -511,7 +523,7 @@
               <el-descriptions :column="2" border>
                 <el-descriptions-item label="合同编号">{{ formData.contractNo }}</el-descriptions-item>
                 <el-descriptions-item label="合同名称">{{ formData.contractName }}</el-descriptions-item>
-                <el-descriptions-item label="合同类型">{{ formData.contractType }}</el-descriptions-item>
+                <el-descriptions-item label="合同类型">{{ getContractTypeName(formData.contractType) }}</el-descriptions-item>
                 <el-descriptions-item label="租户名称">{{ formData.tenantName }}</el-descriptions-item>
                 <el-descriptions-item label="签订日期">{{ formData.signDate }}</el-descriptions-item>
                 <el-descriptions-item label="开始时间">{{ formData.startDate }}</el-descriptions-item>
@@ -607,8 +619,12 @@
           <el-col :span="8">
             <el-form-item label="合同类型" prop="contractType">
               <el-select v-model="formData.contractType" placeholder="请选择合同类型" style="width: 100%">
-                <el-option label="商铺" value="商铺" />
-                <el-option label="办公" value="办公" />
+                <el-option 
+                  v-for="option in CONTRACT_TYPE_OPTIONS" 
+                  :key="option.value" 
+                  :label="option.label" 
+                  :value="option.value" 
+                />
                 <el-option label="公寓" value="公寓" />
                 <el-option label="酒店" value="酒店" />
                 <el-option label="车位" value="车位" />
@@ -1081,6 +1097,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadInstance, type UploadFile } from 'element-plus'
 import { Plus, Search, Refresh, Upload, UploadFilled, Document, Download, DocumentAdd, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { contractApi, type Contract } from '@/api/contract'
+import { CONTRACT_TYPE_OPTIONS, getContractTypeName } from '@/constants/contractType'
 import { projectApi } from '@/api/project'
 import { buildingApi, floorApi, unitApi } from '@/api/unit'
 
@@ -1924,7 +1941,7 @@ const handleDownloadPDF = async (row: Contract) => {
     const contractContent = `合同编号：${row.contractNo}
 合同名称：${row.contractName}
 租户名称：${row.tenantName}
-合同类型：${row.contractType}
+合同类型：${getContractTypeName(row.contractType)}
 签订日期：${row.signDate}
 开始时间：${row.startDate}
 结束时间：${row.endDate}
