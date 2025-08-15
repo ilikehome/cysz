@@ -194,8 +194,9 @@
         <el-table-column prop="contractStatus" label="合同状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getContractStatusTagColor(row.contractStatus)">
-              {{ getContractStatusLabel(row.contractStatus) }}
-            </el-tag>
+                {{ getContractStatusLabel(row.contractStatus) }}
+                <!-- 调试信息: {{ row.contractStatus }} -->
+              </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
@@ -1546,7 +1547,7 @@ const handleSave = async () => {
       signerPhone: formData.signerPhone,
       businessBrand: formData.businessBrand,
       storeName: formData.storeName,
-      businessType: formData.businessType,
+      businessFormat: formData.businessFormat,
       signDate: formData.signDate,
       startDate: formData.startDate,
       endDate: formData.endDate,

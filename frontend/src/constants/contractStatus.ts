@@ -39,7 +39,14 @@ export const CONTRACT_STATUS_TAG_COLORS = {
  * 根据合同状态代码获取中文显示名
  */
 export function getContractStatusLabel(code: string): string {
-  return CONTRACT_STATUS_LABELS[code as keyof typeof CONTRACT_STATUS_LABELS] || code
+  // 处理旧的DRAFT状态，映射为未盖章生效
+  if (code === 'DRAFT') {
+    return '未盖章生效'
+  }
+  
+  // 处理大小写不匹配的情况，将大写状态值转换为小写后再查找
+  const normalizedCode = code.toLowerCase()
+  return CONTRACT_STATUS_LABELS[normalizedCode as keyof typeof CONTRACT_STATUS_LABELS] || code
 }
 
 /**

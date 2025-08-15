@@ -344,7 +344,7 @@ public class ContractController {
                 dto.getFirstPaymentLatestDate(),                               // first_payment_latest_date
                 dto.getFirstPeriodRent(),                                      // first_period_rent
                 dto.getPeriodRent(),                                           // period_rent
-                "DRAFT",                                                       // contract_status
+                "unsigned_effective",                                           // contract_status
                 1                                                              // status
             );
             
