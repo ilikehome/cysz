@@ -2,6 +2,8 @@ package com.cysz.minimal.service.impl;
 
 import com.cysz.minimal.common.PageResult;
 import com.cysz.minimal.entity.Tenant;
+import com.cysz.minimal.enums.BrandQualification;
+import com.cysz.minimal.enums.TenantNature;
 import com.cysz.minimal.exception.BusinessException;
 import com.cysz.minimal.service.TenantService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,52 +35,28 @@ public class TenantServiceImpl implements TenantService {
      * 将前端中文租户性质转换为数据库英文值
      */
     private String convertTenantNatureToDb(String tenantNature) {
-        if (tenantNature == null) return null;
-        switch (tenantNature) {
-            case "个人": return "individual";
-            case "公司": return "company";
-            case "政府机构": return "government";
-            default: return tenantNature; // 如果已经是英文值，直接返回
-        }
+        return TenantNature.convertToDbCode(tenantNature);
     }
     
     /**
      * 将数据库英文租户性质转换为前端中文值
      */
     private String convertTenantNatureFromDb(String tenantNature) {
-        if (tenantNature == null) return null;
-        switch (tenantNature) {
-            case "individual": return "个人";
-            case "company": return "公司";
-            case "government": return "政府机构";
-            default: return tenantNature;
-        }
+        return TenantNature.convertToDisplayName(tenantNature);
     }
     
     /**
      * 将前端中文品牌资质转换为数据库英文值
      */
     private String convertBrandQualificationToDb(String brandQualification) {
-        if (brandQualification == null) return null;
-        switch (brandQualification) {
-            case "直营": return "direct";
-            case "加盟": return "franchise";
-            case "联营": return "joint";
-            default: return brandQualification;
-        }
+        return BrandQualification.convertToDbCode(brandQualification);
     }
     
     /**
      * 将数据库英文品牌资质转换为前端中文值
      */
     private String convertBrandQualificationFromDb(String brandQualification) {
-        if (brandQualification == null) return null;
-        switch (brandQualification) {
-            case "direct": return "直营";
-            case "franchise": return "加盟";
-            case "joint": return "联营";
-            default: return brandQualification;
-        }
+        return BrandQualification.convertToDisplayName(brandQualification);
     }
     
     /**

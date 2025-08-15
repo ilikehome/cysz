@@ -151,7 +151,7 @@
         <el-table-column prop="brand" label="品牌" width="120" />
         <el-table-column prop="brandQualification" label="品牌资质" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.brandQualification" type="info" size="small">
+            <el-tag v-if="row.brandQualification" :type="getBrandQualificationTag(row.brandQualification)" size="small">
               {{ row.brandQualification }}
             </el-tag>
           </template>
@@ -208,7 +208,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="品牌">{{ viewData.brand || '-' }}</el-descriptions-item>
           <el-descriptions-item label="品牌资质">
-            <el-tag v-if="viewData.brandQualification" type="info" size="small">
+            <el-tag v-if="viewData.brandQualification" :type="getBrandQualificationTag(viewData.brandQualification)" size="small">
               {{ viewData.brandQualification }}
             </el-tag>
             <span v-else>-</span>
@@ -285,9 +285,12 @@
           <el-col :span="12">
             <el-form-item label="租户性质" prop="tenantNature">
               <el-select v-model="formData.tenantNature" placeholder="请选择租户性质" style="width: 100%">
-                <el-option label="个人" value="个人" />
-                <el-option label="公司" value="公司" />
-                <el-option label="政府机构" value="政府机构" />
+                <el-option 
+                  v-for="option in TENANT_NATURE_OPTIONS" 
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -302,9 +305,12 @@
           <el-col :span="8">
             <el-form-item label="品牌资质">
               <el-select v-model="formData.brandQualification" placeholder="请选择品牌资质" style="width: 100%">
-                <el-option label="直营" value="直营" />
-                <el-option label="加盟" value="加盟" />
-                <el-option label="联营" value="联营" />
+                <el-option 
+                  v-for="option in BRAND_QUALIFICATION_OPTIONS" 
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -535,6 +541,8 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { tenantApi, type Tenant } from '@/api/tenant'
+import { TENANT_NATURE_OPTIONS, getTenantNatureTagColor } from '@/constants/tenantNature'
+import { BRAND_QUALIFICATION_OPTIONS, getBrandQualificationTagColor } from '@/constants/brandQualification'
 
 // 响应式数据
 const loading = ref(false)
@@ -601,15 +609,11 @@ const formRules: FormRules = {
 // 对话框标题
 const dialogTitle = ref('新建租户')
 
-// 获取租户性质标签颜色
-const getTenantNatureTag = (nature: string) => {
-  const tagMap: Record<string, string> = {
-    '个人': 'success',
-    '公司': 'primary',
-    '政府机构': 'warning'
-  }
-  return tagMap[nature] || 'info'
-}
+// 获取租户性质标签颜色（使用常量文件中的函数）
+const getTenantNatureTag = getTenantNatureTagColor
+
+// 获取品牌资质标签颜色（使用常量文件中的函数）
+const getBrandQualificationTag = getBrandQualificationTagColor
 
 // 搜索
 const handleSearch = () => {
