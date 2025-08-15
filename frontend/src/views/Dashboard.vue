@@ -463,7 +463,7 @@ const initOccupancyStatsChart = () => {
 const handleQuickAction = (action: string) => {
   const actionMap: Record<string, string> = {
     tenant: '/tenant/info',
-    contract: '/contract',
+    contract: '/contract/info',
     payment: '/receivable'
   }
   

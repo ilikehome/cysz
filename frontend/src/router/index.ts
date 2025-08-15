@@ -101,7 +101,7 @@ const router = createRouter({
             {
               path: '/tenant/info',
               name: 'TenantInfo',
-              component: () => import('@/views/tenant/Info.vue'),
+              component: () => import('@/views/tenant/TenantManagement.vue'),
               meta: {
                 title: '租户信息',
                 icon: 'User'
@@ -140,7 +140,7 @@ const router = createRouter({
             {
               path: '/contract/info',
               name: 'ContractInfo',
-              component: () => import('@/views/contract/Info.vue'),
+              component: () => import('@/views/contract/ContractManagement.vue'),
               meta: {
                 title: '合同档案',
                 icon: 'Document'
