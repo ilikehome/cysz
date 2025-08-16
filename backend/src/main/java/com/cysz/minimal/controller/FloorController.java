@@ -1,12 +1,17 @@
 package com.cysz.minimal.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cysz.minimal.entity.Floor;
+import com.cysz.minimal.entity.Building;
+import com.cysz.minimal.entity.Unit;
+import com.cysz.minimal.mapper.FloorMapper;
+import com.cysz.minimal.mapper.BuildingMapper;
+import com.cysz.minimal.mapper.UnitMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -19,7 +24,13 @@ import java.util.*;
 public class FloorController {
     
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private FloorMapper floorMapper;
+    
+    @Autowired
+    private BuildingMapper buildingMapper;
+    
+    @Autowired
+    private UnitMapper unitMapper;
     
     /**
      * 楼层分页查询
@@ -36,48 +47,53 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            StringBuilder sql = new StringBuilder("SELECT f.*, b.building_name FROM floor f LEFT JOIN building b ON f.building_id = b.id WHERE 1=1");
-            List<Object> params = new ArrayList<>();
+            // 构建查询条件
+            QueryWrapper<Floor> queryWrapper = new QueryWrapper<>();
             
             if (keyword != null && !keyword.trim().isEmpty()) {
-                sql.append(" AND (f.floor_name LIKE ? OR f.floor_code LIKE ?)");
-                params.add("%" + keyword + "%");
-                params.add("%" + keyword + "%");
+                queryWrapper.and(wrapper -> wrapper
+                    .like("floor_name", keyword)
+                    .or()
+                    .like("floor_code", keyword)
+                );
             }
             
             if (buildingId != null) {
-                sql.append(" AND f.building_id = ?");
-                params.add(buildingId);
+                queryWrapper.eq("building_id", buildingId);
             }
             
-            // 获取总数
-            String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") t";
-            int total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+            queryWrapper.orderByDesc("id");
             
             // 分页查询
-            sql.append(" ORDER BY f.id DESC LIMIT ? OFFSET ?");
-            params.add(size);
-            params.add((current - 1) * size);
+            Page<Floor> page = new Page<>(current, size);
+            Page<Floor> floorPage = floorMapper.selectPage(page, queryWrapper);
             
-            List<Map<String, Object>> records = jdbcTemplate.query(sql.toString(), params.toArray(), new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> floor = new HashMap<>();
-                    floor.put("id", rs.getInt("id"));
-                    floor.put("floorName", rs.getString("floor_name"));
-                    floor.put("floorCode", rs.getString("floor_code"));
-                    floor.put("buildingId", rs.getInt("building_id"));
-                    floor.put("buildingName", rs.getString("building_name"));
-                    floor.put("remark", rs.getString("remark"));
-                    floor.put("createTime", rs.getTimestamp("create_time"));
-                    floor.put("updateTime", rs.getTimestamp("update_time"));
-                    return floor;
+            // 转换为Map格式并添加buildingName
+            List<Map<String, Object>> records = new ArrayList<>();
+            for (Floor floor : floorPage.getRecords()) {
+                Map<String, Object> floorMap = new HashMap<>();
+                floorMap.put("id", floor.getId());
+                floorMap.put("floorName", floor.getFloorName());
+                floorMap.put("floorCode", floor.getFloorCode());
+                floorMap.put("buildingId", floor.getBuildingId());
+                floorMap.put("remark", floor.getRemark());
+                floorMap.put("createTime", floor.getCreateTime());
+                floorMap.put("updateTime", floor.getUpdateTime());
+                
+                // 获取楼栋名称
+                if (floor.getBuildingId() != null) {
+                    Building building = buildingMapper.selectById(floor.getBuildingId());
+                    floorMap.put("buildingName", building != null ? building.getBuildingName() : null);
+                } else {
+                    floorMap.put("buildingName", null);
                 }
-            });
+                
+                records.add(floorMap);
+            }
             
             Map<String, Object> pageResult = new HashMap<>();
             pageResult.put("records", records);
-            pageResult.put("total", total);
+            pageResult.put("total", floorPage.getTotal());
             pageResult.put("current", current);
             pageResult.put("size", size);
             
@@ -105,17 +121,21 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "SELECT id, floor_name, floor_code FROM floor WHERE building_id = ? ORDER BY floor_name";
-            List<Map<String, Object>> floors = jdbcTemplate.query(sql, new Object[]{buildingId}, new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> floor = new HashMap<>();
-                    floor.put("id", rs.getInt("id"));
-                    floor.put("floorName", rs.getString("floor_name"));
-                    floor.put("floorCode", rs.getString("floor_code"));
-                    return floor;
-                }
-            });
+            QueryWrapper<Floor> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("building_id", buildingId)
+                       .orderByAsc("floor_name");
+            
+            List<Floor> floorList = floorMapper.selectList(queryWrapper);
+            
+            // 转换为Map格式
+            List<Map<String, Object>> floors = new ArrayList<>();
+            for (Floor floor : floorList) {
+                Map<String, Object> floorMap = new HashMap<>();
+                floorMap.put("id", floor.getId());
+                floorMap.put("floorName", floor.getFloorName());
+                floorMap.put("floorCode", floor.getFloorCode());
+                floors.add(floorMap);
+            }
             
             response.put("code", 200);
             response.put("message", "查询成功");
@@ -141,16 +161,14 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "INSERT INTO floor (floor_name, floor_code, building_id, remark, create_time) " +
-                        "VALUES (?, ?, ?, ?, ?)";
+            Floor floor = new Floor();
+            floor.setFloorName((String) floorData.get("floorName"));
+            floor.setFloorCode((String) floorData.get("floorCode"));
+            floor.setBuildingId((Integer) floorData.get("buildingId"));
+            floor.setRemark((String) floorData.get("remark"));
+            floor.setCreateTime(LocalDateTime.now());
             
-            jdbcTemplate.update(sql,
-                floorData.get("floorName"),
-                floorData.get("floorCode"),
-                floorData.get("buildingId"),
-                floorData.get("remark"),
-                LocalDateTime.now()
-            );
+            floorMapper.insert(floor);
             
             response.put("code", 200);
             response.put("message", "创建成功");
@@ -176,17 +194,15 @@ public class FloorController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "UPDATE floor SET floor_name = ?, floor_code = ?, building_id = ?, " +
-                        "remark = ?, update_time = ? WHERE id = ?";
+            UpdateWrapper<Floor> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", id)
+                        .set("floor_name", floorData.get("floorName"))
+                        .set("floor_code", floorData.get("floorCode"))
+                        .set("building_id", floorData.get("buildingId"))
+                        .set("remark", floorData.get("remark"))
+                        .set("update_time", LocalDateTime.now());
             
-            jdbcTemplate.update(sql,
-                floorData.get("floorName"),
-                floorData.get("floorCode"),
-                floorData.get("buildingId"),
-                floorData.get("remark"),
-                LocalDateTime.now(),
-                id
-            );
+            floorMapper.update(null, updateWrapper);
             
             response.put("code", 200);
             response.put("message", "更新成功");
@@ -211,20 +227,24 @@ public class FloorController {
         
         try {
             // 检查楼层下是否有单元
-            String checkSql = "SELECT COUNT(*) FROM unit WHERE floor_id = ?";
-            Integer unitCount = jdbcTemplate.queryForObject(checkSql, new Object[]{id}, Integer.class);
+            QueryWrapper<Unit> unitQueryWrapper = new QueryWrapper<>();
+            unitQueryWrapper.eq("floor_id", id);
+            Long unitCount = unitMapper.selectCount(unitQueryWrapper);
             
             if (unitCount != null && unitCount > 0) {
                 response.put("code", 400);
                 response.put("message", "该楼层下存在单元，无法删除");
+                Map<String, Object> data = new HashMap<>();
+                data.put("unitCount", unitCount);
+                response.put("data", data);
                 return response;
             }
             
-            String sql = "DELETE FROM floor WHERE id = ?";
-            jdbcTemplate.update(sql, id);
+            floorMapper.deleteById(id);
             
             response.put("code", 200);
             response.put("message", "删除成功");
+            response.put("data", null);
             
         } catch (Exception e) {
             System.err.println("删除楼层失败: " + e.getMessage());

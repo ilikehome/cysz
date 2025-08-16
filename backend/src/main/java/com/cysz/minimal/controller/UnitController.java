@@ -1,14 +1,22 @@
 package com.cysz.minimal.controller;
 
-import com.cysz.minimal.enums.UnitStatus;
-import com.cysz.minimal.enums.UnitPurpose;
+// 移除不存在的枚举类导入
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.bind.annotation.*;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cysz.minimal.mapper.UnitMapper;
+import com.cysz.minimal.mapper.FloorMapper;
+import com.cysz.minimal.mapper.BuildingMapper;
+import com.cysz.minimal.mapper.ProjectMapper;
+import com.cysz.minimal.mapper.ContractMapper;
+import com.cysz.minimal.entity.Unit;
+import com.cysz.minimal.enums.UnitPurpose;
+import com.cysz.minimal.entity.Floor;
+import com.cysz.minimal.entity.Building;
+import com.cysz.minimal.entity.Project;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -21,14 +29,26 @@ import java.util.*;
 public class UnitController {
     
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private UnitMapper unitMapper;
+    
+    @Autowired
+    private FloorMapper floorMapper;
+    
+    @Autowired
+    private BuildingMapper buildingMapper;
+    
+    @Autowired
+    private ProjectMapper projectMapper;
+    
+    @Autowired
+    private ContractMapper contractMapper;
     
     /**
-     * 单元分页查询
+     * 分页查询单元
      */
     @GetMapping("/page")
     public Map<String, Object> getUnitPage(
-            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer projectId,
@@ -36,92 +56,104 @@ public class UnitController {
             @RequestParam(required = false) Integer floorId,
             @RequestParam(required = false) String unitStatus) {
         
-        System.out.println("单元分页查询 - current: " + current + ", size: " + size);
+        System.out.println("分页查询单元 - 页码: " + page + ", 大小: " + size + ", 关键词: " + keyword + 
+                          ", 项目ID: " + projectId + ", 楼栋ID: " + buildingId + ", 楼层ID: " + floorId + ", 单元状态: " + unitStatus);
         
         Map<String, Object> response = new HashMap<>();
         
         try {
-            StringBuilder sql = new StringBuilder("SELECT u.*, f.floor_name, b.building_name, p.project_name " +
-                "FROM unit u " +
-                "LEFT JOIN floor f ON u.floor_id = f.id " +
-                "LEFT JOIN building b ON f.building_id = b.id " +
-                "LEFT JOIN project p ON b.project_id = p.id WHERE 1=1");
-            List<Object> params = new ArrayList<>();
+            // 构建查询条件
+            QueryWrapper<Unit> queryWrapper = new QueryWrapper<>();
             
             if (keyword != null && !keyword.trim().isEmpty()) {
-                sql.append(" AND (u.unit_name LIKE ? OR u.unit_code LIKE ?)");
-                params.add("%" + keyword + "%");
-                params.add("%" + keyword + "%");
+                String keywordPattern = "%" + keyword.trim() + "%";
+                queryWrapper.and(wrapper -> wrapper.like("u.unit_name", keywordPattern)
+                                                  .or().like("u.unit_code", keywordPattern));
             }
             
             if (projectId != null) {
-                sql.append(" AND p.id = ?");
-                params.add(projectId);
+                queryWrapper.eq("p.id", projectId);
             }
             
             if (buildingId != null) {
-                sql.append(" AND b.id = ?");
-                params.add(buildingId);
+                queryWrapper.eq("b.id", buildingId);
             }
             
             if (floorId != null) {
-                sql.append(" AND u.floor_id = ?");
-                params.add(floorId);
+                queryWrapper.eq("f.id", floorId);
             }
             
             if (unitStatus != null && !unitStatus.trim().isEmpty()) {
-                sql.append(" AND u.unit_status = ?");
-                params.add(unitStatus);
+                queryWrapper.eq("u.unit_status", unitStatus.trim());
             }
             
-            // 获取总数
-            String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") t";
-            int total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+            queryWrapper.orderByDesc("create_time");
             
-            // 分页查询
-            sql.append(" ORDER BY u.id DESC LIMIT ? OFFSET ?");
-            params.add(size);
-            params.add((current - 1) * size);
+            // 创建分页对象
+            Page<Unit> unitPage = new Page<>(page, size);
+            Page<Unit> resultPage = unitMapper.selectPage(unitPage, queryWrapper);
             
-            List<Map<String, Object>> records = jdbcTemplate.query(sql.toString(), params.toArray(), new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> unit = new HashMap<>();
-                    unit.put("id", rs.getInt("id"));
-                    unit.put("unitName", rs.getString("unit_name"));
-                    unit.put("unitCode", rs.getString("unit_code"));
-                    unit.put("floorId", rs.getInt("floor_id"));
-                    unit.put("floorName", rs.getString("floor_name"));
-                    unit.put("buildingName", rs.getString("building_name"));
-                    unit.put("projectName", rs.getString("project_name"));
-                    unit.put("unitStatus", rs.getString("unit_status"));
-                    unit.put("unitPurpose", rs.getString("unit_purpose"));
-                    unit.put("buildingArea", rs.getBigDecimal("building_area"));
-                    unit.put("rentArea", rs.getBigDecimal("rent_area"));
-                    unit.put("isMultiTenant", rs.getBoolean("is_multi_tenant"));
-                    unit.put("remark", rs.getString("remark"));
-                    unit.put("status", rs.getInt("status"));
-                    unit.put("createTime", rs.getTimestamp("create_time"));
-                    unit.put("updateTime", rs.getTimestamp("update_time"));
-                    return unit;
+            // 转换为Map格式
+            List<Map<String, Object>> units = new ArrayList<>();
+            for (Unit unit : resultPage.getRecords()) {
+                Map<String, Object> unitMap = new HashMap<>();
+                unitMap.put("id", unit.getId());
+                unitMap.put("unitName", unit.getUnitName());
+                unitMap.put("unitCode", unit.getUnitCode());
+                unitMap.put("unitStatus", unit.getUnitStatus());
+                unitMap.put("unitPurpose", unit.getUnitPurpose());
+                unitMap.put("buildingArea", unit.getBuildingArea());
+                unitMap.put("rentArea", unit.getRentArea());
+                unitMap.put("isMultiTenant", unit.getIsMultiTenant());
+                unitMap.put("remark", unit.getRemark());
+                // 移除status字段，因为Unit实体中已删除该字段
+                unitMap.put("createTime", unit.getCreateTime());
+                unitMap.put("updateTime", unit.getUpdateTime());
+                
+                // 获取关联信息
+                if (unit.getFloorId() != null) {
+                    Floor floor = floorMapper.selectById(unit.getFloorId());
+                    if (floor != null) {
+                        unitMap.put("floorName", floor.getFloorName());
+                        if (floor.getBuildingId() != null) {
+                            Building building = buildingMapper.selectById(floor.getBuildingId());
+                            if (building != null) {
+                                unitMap.put("buildingName", building.getBuildingName());
+                                if (building.getProjectId() != null) {
+                                    Project project = projectMapper.selectById(building.getProjectId());
+                                    if (project != null) {
+                                        unitMap.put("projectName", project.getProjectName());
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            });
-            
-            Map<String, Object> pageResult = new HashMap<>();
-            pageResult.put("records", records);
-            pageResult.put("total", total);
-            pageResult.put("current", current);
-            pageResult.put("size", size);
+                
+                units.add(unitMap);
+            }
             
             response.put("code", 200);
             response.put("message", "查询成功");
-            response.put("data", pageResult);
+            response.put("data", Map.of(
+                "records", units,
+                "total", resultPage.getTotal(),
+                "size", resultPage.getSize(),
+                "current", resultPage.getCurrent(),
+                "pages", resultPage.getPages()
+            ));
             
         } catch (Exception e) {
-            System.err.println("查询单元失败: " + e.getMessage());
+            System.err.println("分页查询单元失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "查询失败: " + e.getMessage());
-            response.put("data", null);
+            response.put("data", Map.of(
+                "records", new ArrayList<>(),
+                "total", 0,
+                "size", size,
+                "current", page,
+                "pages", 0
+            ));
         }
         
         return response;
@@ -137,59 +169,111 @@ public class UnitController {
             @RequestParam(required = false) Integer floorId,
             @RequestParam(required = false) String unitStatus) {
         
+        System.out.println("获取单元列表 - 项目ID: " + projectId + ", 楼栋ID: " + buildingId + ", 楼层ID: " + floorId + ", 单元状态: " + unitStatus);
+        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            StringBuilder sql = new StringBuilder("SELECT u.*, f.floor_name, b.building_name, p.project_name " +
-                "FROM unit u " +
-                "LEFT JOIN floor f ON u.floor_id = f.id " +
-                "LEFT JOIN building b ON f.building_id = b.id " +
-                "LEFT JOIN project p ON b.project_id = p.id WHERE u.status = 1");
-            List<Object> params = new ArrayList<>();
+            // 构建查询条件
+            QueryWrapper<Unit> queryWrapper = new QueryWrapper<>();
             
             if (projectId != null) {
-                sql.append(" AND p.id = ?");
-                params.add(projectId);
+                // 需要通过floor和building关联查询
+                List<Building> buildings = buildingMapper.selectList(new QueryWrapper<Building>().eq("project_id", projectId));
+                if (!buildings.isEmpty()) {
+                    List<Long> buildingIds = buildings.stream().map(Building::getId).toList();
+                    List<Floor> floors = floorMapper.selectList(new QueryWrapper<Floor>().in("building_id", buildingIds));
+                    if (!floors.isEmpty()) {
+                        List<Long> floorIds = floors.stream().map(Floor::getId).toList();
+                        queryWrapper.in("floor_id", floorIds);
+                    } else {
+                        // 没有楼层，返回空结果
+                        response.put("code", 200);
+                        response.put("message", "查询成功");
+                        response.put("data", new ArrayList<>());
+                        return response;
+                    }
+                } else {
+                    // 没有楼栋，返回空结果
+                    response.put("code", 200);
+                    response.put("message", "查询成功");
+                    response.put("data", new ArrayList<>());
+                    return response;
+                }
             }
             
             if (buildingId != null) {
-                sql.append(" AND b.id = ?");
-                params.add(buildingId);
+                // 需要通过floor关联查询
+                List<Floor> floors = floorMapper.selectList(new QueryWrapper<Floor>().eq("building_id", buildingId));
+                if (!floors.isEmpty()) {
+                    List<Long> floorIds = floors.stream().map(Floor::getId).toList();
+                    queryWrapper.in("floor_id", floorIds);
+                } else {
+                    // 没有楼层，返回空结果
+                    response.put("code", 200);
+                    response.put("message", "查询成功");
+                    response.put("data", new ArrayList<>());
+                    return response;
+                }
             }
             
             if (floorId != null) {
-                sql.append(" AND u.floor_id = ?");
-                params.add(floorId);
+                queryWrapper.eq("floor_id", floorId);
             }
             
             if (unitStatus != null && !unitStatus.trim().isEmpty()) {
                 // 验证单元状态是否有效
-                if (UnitStatus.isValidCode(unitStatus)) {
-                    sql.append(" AND u.unit_status = ?");
-                    params.add(unitStatus);
+                if (Arrays.asList("RENTABLE", "RENTED", "DISABLED").contains(unitStatus)) {
+                    queryWrapper.eq("unit_status", unitStatus.trim());
                 } else {
                     System.err.println("无效的单元状态代码: " + unitStatus);
                 }
             }
             
-            sql.append(" ORDER BY u.unit_name");
+            queryWrapper.orderByDesc("create_time");
             
-            List<Map<String, Object>> units = jdbcTemplate.query(sql.toString(), params.toArray(), new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> unit = new HashMap<>();
-                    unit.put("id", rs.getInt("id"));
-                    unit.put("unitName", rs.getString("unit_name"));
-                    unit.put("unitCode", rs.getString("unit_code"));
-                    unit.put("floorName", rs.getString("floor_name"));
-                    unit.put("buildingName", rs.getString("building_name"));
-                    unit.put("projectName", rs.getString("project_name"));
-                    unit.put("unitStatus", rs.getString("unit_status"));
-                    unit.put("buildingArea", rs.getBigDecimal("building_area"));
-                    unit.put("rentArea", rs.getBigDecimal("rent_area"));
-                    return unit;
+            List<Unit> unitList = unitMapper.selectList(queryWrapper);
+            
+            // 转换为Map格式并添加关联信息
+            List<Map<String, Object>> units = new ArrayList<>();
+            for (Unit unit : unitList) {
+                Map<String, Object> unitMap = new HashMap<>();
+                unitMap.put("id", unit.getId());
+                unitMap.put("unitName", unit.getUnitName());
+                unitMap.put("unitCode", unit.getUnitCode());
+                unitMap.put("floorId", unit.getFloorId());
+                unitMap.put("unitStatus", unit.getUnitStatus());
+                unitMap.put("unitPurpose", unit.getUnitPurpose());
+                unitMap.put("buildingArea", unit.getBuildingArea());
+                unitMap.put("rentArea", unit.getRentArea());
+                unitMap.put("isMultiTenant", unit.getIsMultiTenant());
+                unitMap.put("remark", unit.getRemark());
+                // 移除status字段，因为Unit实体中已删除该字段
+                unitMap.put("createTime", unit.getCreateTime());
+                unitMap.put("updateTime", unit.getUpdateTime());
+                
+                // 获取关联信息
+                if (unit.getFloorId() != null) {
+                    Floor floor = floorMapper.selectById(unit.getFloorId());
+                    if (floor != null) {
+                        unitMap.put("floorName", floor.getFloorName());
+                        if (floor.getBuildingId() != null) {
+                            Building building = buildingMapper.selectById(floor.getBuildingId());
+                            if (building != null) {
+                                unitMap.put("buildingName", building.getBuildingName());
+                                if (building.getProjectId() != null) {
+                                    Project project = projectMapper.selectById(building.getProjectId());
+                                    if (project != null) {
+                                        unitMap.put("projectName", project.getProjectName());
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            });
+                
+                units.add(unitMap);
+            }
             
             response.put("code", 200);
             response.put("message", "查询成功");
@@ -210,34 +294,43 @@ public class UnitController {
      */
     @GetMapping("/by-floor/{floorId}")
     public Map<String, Object> getUnitsByFloor(@PathVariable Integer floorId) {
-        System.out.println("根据楼层ID获取单元列表: " + floorId);
+        System.out.println("根据楼层ID获取单元列表 - 楼层ID: " + floorId);
         
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "SELECT id, unit_name, unit_code, building_area, rent_area, unit_purpose " +
-                        "FROM unit WHERE floor_id = ? AND status = 1 ORDER BY unit_name";
+            QueryWrapper<Unit> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("floor_id", floorId)
+                       .eq("status", 1)
+                       .orderByAsc("unit_name");
             
-            List<Map<String, Object>> units = jdbcTemplate.query(sql, new Object[]{floorId}, new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> unit = new HashMap<>();
-                    unit.put("id", rs.getInt("id"));
-                    unit.put("unitName", rs.getString("unit_name"));
-                    unit.put("unitCode", rs.getString("unit_code"));
-                    unit.put("buildingArea", rs.getBigDecimal("building_area"));
-                    unit.put("rentArea", rs.getBigDecimal("rent_area"));
-                    unit.put("unitPurpose", rs.getString("unit_purpose"));
-                    return unit;
-                }
-            });
+            List<Unit> unitList = unitMapper.selectList(queryWrapper);
+            
+            // 转换为Map格式
+            List<Map<String, Object>> units = new ArrayList<>();
+            for (Unit unit : unitList) {
+                Map<String, Object> unitMap = new HashMap<>();
+                unitMap.put("id", unit.getId());
+                unitMap.put("unitName", unit.getUnitName());
+                unitMap.put("unitCode", unit.getUnitCode());
+                unitMap.put("floorId", unit.getFloorId());
+                unitMap.put("unitStatus", unit.getUnitStatus());
+                unitMap.put("unitPurpose", unit.getUnitPurpose());
+                unitMap.put("buildingArea", unit.getBuildingArea());
+                unitMap.put("rentArea", unit.getRentArea());
+                unitMap.put("isMultiTenant", unit.getIsMultiTenant());
+                unitMap.put("remark", unit.getRemark());
+                unitMap.put("createTime", unit.getCreateTime());
+                unitMap.put("updateTime", unit.getUpdateTime());
+                units.add(unitMap);
+            }
             
             response.put("code", 200);
             response.put("message", "查询成功");
             response.put("data", units);
             
         } catch (Exception e) {
-            System.err.println("获取单元列表失败: " + e.getMessage());
+            System.err.println("根据楼层ID获取单元列表失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "查询失败: " + e.getMessage());
             response.put("data", new ArrayList<>());
@@ -251,31 +344,92 @@ public class UnitController {
      */
     @GetMapping("/available/{projectId}")
     public Map<String, Object> getAvailableUnits(@PathVariable Integer projectId) {
-        System.out.println("根据项目ID获取可用单元列表: " + projectId);
+        System.out.println("根据项目ID获取可用单元列表 - 项目ID: " + projectId);
         
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "SELECT u.id, u.unit_name, u.unit_code, u.building_area, u.rent_area, " +
-                        "f.floor_name, b.building_name FROM unit u " +
-                        "LEFT JOIN floor f ON u.floor_id = f.id " +
-                        "LEFT JOIN building b ON f.building_id = b.id " +
-                        "WHERE b.project_id = ? AND u.unit_status = ? AND u.status = 1 " +
-                        "ORDER BY b.building_name, f.floor_name, u.unit_name";
+            // 先获取项目下的所有楼栋
+            List<Building> buildings = buildingMapper.selectList(new QueryWrapper<Building>().eq("project_id", projectId));
+            if (buildings.isEmpty()) {
+                response.put("code", 200);
+                response.put("message", "查询成功");
+                response.put("data", new ArrayList<>());
+                return response;
+            }
             
-            List<Map<String, Object>> units = jdbcTemplate.query(sql, new Object[]{projectId, UnitStatus.RENTABLE.getCode()}, new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> unit = new HashMap<>();
-                    unit.put("id", rs.getInt("id"));
-                    unit.put("unitName", rs.getString("unit_name"));
-                    unit.put("unitCode", rs.getString("unit_code"));
-                    unit.put("buildingArea", rs.getBigDecimal("building_area"));
-                    unit.put("rentArea", rs.getBigDecimal("rent_area"));
-                    unit.put("floorName", rs.getString("floor_name"));
-                    unit.put("buildingName", rs.getString("building_name"));
-                    return unit;
+            // 获取楼栋下的所有楼层
+            List<Long> buildingIds = buildings.stream().map(Building::getId).toList();
+            List<Floor> floors = floorMapper.selectList(new QueryWrapper<Floor>().in("building_id", buildingIds));
+            if (floors.isEmpty()) {
+                response.put("code", 200);
+                response.put("message", "查询成功");
+                response.put("data", new ArrayList<>());
+                return response;
+            }
+            
+            // 获取楼层下的可用单元
+            List<Long> floorIds = floors.stream().map(Floor::getId).toList();
+            QueryWrapper<Unit> queryWrapper = new QueryWrapper<>();
+            queryWrapper.in("floor_id", floorIds)
+                       .eq("unit_status", "RENTABLE");
+                       // 移除status字段查询，因为Unit实体中已删除该字段
+            
+            List<Unit> unitList = unitMapper.selectList(queryWrapper);
+            
+            // 转换为Map格式并添加关联信息
+            List<Map<String, Object>> units = new ArrayList<>();
+            for (Unit unit : unitList) {
+                Map<String, Object> unitMap = new HashMap<>();
+                unitMap.put("id", unit.getId());
+                unitMap.put("unitName", unit.getUnitName());
+                unitMap.put("unitCode", unit.getUnitCode());
+                unitMap.put("floorId", unit.getFloorId());
+                unitMap.put("unitStatus", unit.getUnitStatus());
+                unitMap.put("unitPurpose", unit.getUnitPurpose());
+                unitMap.put("buildingArea", unit.getBuildingArea());
+                unitMap.put("rentArea", unit.getRentArea());
+                unitMap.put("isMultiTenant", unit.getIsMultiTenant());
+                unitMap.put("remark", unit.getRemark());
+                
+                // 获取关联信息
+                if (unit.getFloorId() != null) {
+                    Floor floor = floors.stream().filter(f -> f.getId().equals(unit.getFloorId())).findFirst().orElse(null);
+                    if (floor != null) {
+                        unitMap.put("floorName", floor.getFloorName());
+                        if (floor.getBuildingId() != null) {
+                            Building building = buildings.stream().filter(b -> b.getId().equals(floor.getBuildingId())).findFirst().orElse(null);
+                            if (building != null) {
+                                unitMap.put("buildingName", building.getBuildingName());
+                            }
+                        }
+                    }
                 }
+                
+                units.add(unitMap);
+            }
+            
+            // 按楼栋名称、楼层名称、单元名称排序
+            units.sort((u1, u2) -> {
+                String building1 = (String) u1.get("buildingName");
+                String building2 = (String) u2.get("buildingName");
+                if (building1 != null && building2 != null && !building1.equals(building2)) {
+                    return building1.compareTo(building2);
+                }
+                
+                String floor1 = (String) u1.get("floorName");
+                String floor2 = (String) u2.get("floorName");
+                if (floor1 != null && floor2 != null && !floor1.equals(floor2)) {
+                    return floor1.compareTo(floor2);
+                }
+                
+                String unit1 = (String) u1.get("unitName");
+                String unit2 = (String) u2.get("unitName");
+                if (unit1 != null && unit2 != null) {
+                    return unit1.compareTo(unit2);
+                }
+                
+                return 0;
             });
             
             response.put("code", 200);
@@ -283,7 +437,7 @@ public class UnitController {
             response.put("data", units);
             
         } catch (Exception e) {
-            System.err.println("获取可用单元列表失败: " + e.getMessage());
+            System.err.println("根据项目ID获取可用单元列表失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "查询失败: " + e.getMessage());
             response.put("data", new ArrayList<>());
@@ -302,44 +456,67 @@ public class UnitController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 验证单元状态
-            String unitStatus = (String) unitData.getOrDefault("unitStatus", UnitStatus.RENTABLE.getCode());
-            if (!UnitStatus.isValidCode(unitStatus)) {
+            // 验证必填字段
+            if (unitData.get("unitName") == null || unitData.get("unitName").toString().trim().isEmpty()) {
                 response.put("code", 400);
-                response.put("message", "无效的单元状态: " + unitStatus);
+                response.put("message", "单元名称不能为空");
+                return response;
+            }
+            
+            if (unitData.get("floorId") == null) {
+                response.put("code", 400);
+                response.put("message", "楼层ID不能为空");
+                return response;
+            }
+            
+            // 验证单元状态
+            String unitStatus = (String) unitData.get("unitStatus");
+            if (unitStatus != null && !Arrays.asList("RENTABLE", "RENTED", "DISABLED").contains(unitStatus)) {
+                response.put("code", 400);
+                response.put("message", "无效的单元状态代码: " + unitStatus);
                 return response;
             }
             
             // 验证单元用途
             String unitPurpose = (String) unitData.get("unitPurpose");
-            if (unitPurpose != null && !unitPurpose.trim().isEmpty() && !UnitPurpose.isValidCode(unitPurpose)) {
+            if (unitPurpose != null && !UnitPurpose.isValidCode(unitPurpose)) {
                 response.put("code", 400);
-                response.put("message", "无效的单元用途: " + unitPurpose);
+                response.put("message", "无效的单元用途代码: " + unitPurpose);
                 return response;
             }
             
-            String sql = "INSERT INTO unit (unit_name, unit_code, floor_id, unit_status, unit_purpose, " +
-                        "building_area, rent_area, is_multi_tenant, remark, status, create_time) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // 创建Unit实体
+            Unit unit = new Unit();
+            unit.setUnitName(unitData.get("unitName").toString().trim());
+            unit.setUnitCode((String) unitData.get("unitCode"));
+            unit.setFloorId(Long.valueOf(unitData.get("floorId").toString()));
+            unit.setUnitStatus(unitStatus != null ? unitStatus : "RENTABLE");
+            unit.setUnitPurpose(unitPurpose != null ? unitPurpose : "OFFICE");
             
-            jdbcTemplate.update(sql,
-                unitData.get("unitName"),
-                unitData.get("unitCode"),
-                unitData.get("floorId"),
-                unitStatus,
-                unitData.get("unitPurpose"),
-                unitData.get("buildingArea"),
-                unitData.get("rentArea"),
-                unitData.getOrDefault("isMultiTenant", false),
-                unitData.get("remark"),
-                unitData.getOrDefault("status", 1),
-                LocalDateTime.now()
-            );
+            // 处理面积字段
+            if (unitData.get("buildingArea") != null) {
+                unit.setBuildingArea(new java.math.BigDecimal(unitData.get("buildingArea").toString()));
+            }
+            if (unitData.get("rentArea") != null) {
+                unit.setRentArea(new java.math.BigDecimal(unitData.get("rentArea").toString()));
+            }
             
-            response.put("code", 200);
-            response.put("message", "创建成功");
+            unit.setIsMultiTenant(unitData.get("isMultiTenant") != null ? 
+                Boolean.valueOf(unitData.get("isMultiTenant").toString()) : false);
+            unit.setRemark((String) unitData.get("remark"));
+            unit.setCreateTime(LocalDateTime.now());
+            unit.setUpdateTime(LocalDateTime.now());
             
-            System.out.println("单元创建成功");
+            int result = unitMapper.insert(unit);
+            
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "单元创建成功");
+                response.put("data", Map.of("id", unit.getId()));
+            } else {
+                response.put("code", 500);
+                response.put("message", "单元创建失败");
+            }
             
         } catch (Exception e) {
             System.err.println("创建单元失败: " + e.getMessage());
@@ -355,14 +532,14 @@ public class UnitController {
      */
     @PutMapping("/{id}")
     public Map<String, Object> updateUnit(@PathVariable Integer id, @RequestBody Map<String, Object> unitData) {
-        System.out.println("更新单元 ID: " + id + ", 数据: " + unitData);
+        System.out.println("更新单元 - ID: " + id + ", 数据: " + unitData);
         
         Map<String, Object> response = new HashMap<>();
         
         try {
             // 验证单元状态
             String unitStatus = (String) unitData.get("unitStatus");
-            if (unitStatus != null && !UnitStatus.isValidCode(unitStatus)) {
+            if (unitStatus != null && !unitStatus.trim().isEmpty() && !Arrays.asList("RENTABLE", "RENTED", "DISABLED").contains(unitStatus)) {
                 response.put("code", 400);
                 response.put("message", "无效的单元状态: " + unitStatus);
                 return response;
@@ -376,27 +553,47 @@ public class UnitController {
                 return response;
             }
             
-            String sql = "UPDATE unit SET unit_name = ?, unit_code = ?, floor_id = ?, unit_status = ?, " +
-                        "unit_purpose = ?, building_area = ?, rent_area = ?, is_multi_tenant = ?, " +
-                        "remark = ?, status = ?, update_time = ? WHERE id = ?";
+            UpdateWrapper<Unit> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", id);
+            updateWrapper.set("update_time", LocalDateTime.now());
             
-            jdbcTemplate.update(sql,
-                unitData.get("unitName"),
-                unitData.get("unitCode"),
-                unitData.get("floorId"),
-                unitStatus,
-                unitData.get("unitPurpose"),
-                unitData.get("buildingArea"),
-                unitData.get("rentArea"),
-                unitData.get("isMultiTenant"),
-                unitData.get("remark"),
-                unitData.get("status"),
-                LocalDateTime.now(),
-                id
-            );
+            if (unitData.containsKey("unitName")) {
+                updateWrapper.set("unit_name", unitData.get("unitName"));
+            }
+            if (unitData.containsKey("unitCode")) {
+                updateWrapper.set("unit_code", unitData.get("unitCode"));
+            }
+            if (unitData.containsKey("floorId")) {
+                updateWrapper.set("floor_id", unitData.get("floorId"));
+            }
+            if (unitData.containsKey("unitStatus")) {
+                updateWrapper.set("unit_status", unitData.get("unitStatus"));
+            }
+            if (unitData.containsKey("unitPurpose")) {
+                updateWrapper.set("unit_purpose", unitData.get("unitPurpose"));
+            }
+            if (unitData.containsKey("buildingArea")) {
+                updateWrapper.set("building_area", unitData.get("buildingArea"));
+            }
+            if (unitData.containsKey("rentArea")) {
+                updateWrapper.set("rent_area", unitData.get("rentArea"));
+            }
+            if (unitData.containsKey("isMultiTenant")) {
+                updateWrapper.set("is_multi_tenant", unitData.get("isMultiTenant"));
+            }
+            if (unitData.containsKey("remark")) {
+                updateWrapper.set("remark", unitData.get("remark"));
+            }
             
-            response.put("code", 200);
-            response.put("message", "更新成功");
+            int result = unitMapper.update(null, updateWrapper);
+            
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "更新成功");
+            } else {
+                response.put("code", 404);
+                response.put("message", "单元不存在");
+            }
             
         } catch (Exception e) {
             System.err.println("更新单元失败: " + e.getMessage());
@@ -412,14 +609,15 @@ public class UnitController {
      */
     @DeleteMapping("/{id}")
     public Map<String, Object> deleteUnit(@PathVariable Integer id) {
-        System.out.println("删除单元 ID: " + id);
+        System.out.println("删除单元 - ID: " + id);
         
         Map<String, Object> response = new HashMap<>();
         
         try {
             // 检查单元是否有关联的合同
-            String checkSql = "SELECT COUNT(*) FROM contract WHERE unit_id = ?";
-            Integer contractCount = jdbcTemplate.queryForObject(checkSql, new Object[]{id}, Integer.class);
+            QueryWrapper<com.cysz.minimal.entity.Contract> contractQuery = new QueryWrapper<>();
+            contractQuery.eq("unit_id", id);
+            Long contractCount = contractMapper.selectCount(contractQuery);
             
             if (contractCount != null && contractCount > 0) {
                 response.put("code", 400);
@@ -427,11 +625,15 @@ public class UnitController {
                 return response;
             }
             
-            String sql = "DELETE FROM unit WHERE id = ?";
-            jdbcTemplate.update(sql, id);
+            int result = unitMapper.deleteById(id);
             
-            response.put("code", 200);
-            response.put("message", "删除成功");
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "删除成功");
+            } else {
+                response.put("code", 404);
+                response.put("message", "单元不存在");
+            }
             
         } catch (Exception e) {
             System.err.println("删除单元失败: " + e.getMessage());

@@ -1,5 +1,6 @@
 package com.cysz.minimal;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -7,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 最小化应用启动类
  */
 @SpringBootApplication
+@MapperScan("com.cysz.minimal.mapper")
 public class MinimalApplication {
     
     public static void main(String[] args) {

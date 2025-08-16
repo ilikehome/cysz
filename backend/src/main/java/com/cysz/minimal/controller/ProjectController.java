@@ -1,13 +1,17 @@
 package com.cysz.minimal.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cysz.minimal.entity.Building;
+import com.cysz.minimal.entity.Project;
 import com.cysz.minimal.enums.ProjectType;
+import com.cysz.minimal.mapper.ProjectMapper;
+import com.cysz.minimal.mapper.BuildingMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -20,7 +24,10 @@ import java.util.*;
 public class ProjectController {
     
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private ProjectMapper projectMapper;
+    
+    @Autowired
+    private BuildingMapper buildingMapper;
     
     /**
      * 项目分页查询
@@ -37,66 +44,64 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            StringBuilder sql = new StringBuilder("SELECT * FROM project WHERE 1=1");
-            List<Object> params = new ArrayList<>();
+            // 验证项目类型是否有效
+            if (projectType != null && !projectType.trim().isEmpty() && !ProjectType.isValidCode(projectType)) {
+                response.put("code", 400);
+                response.put("message", "无效的项目类型: " + projectType);
+                response.put("data", null);
+                return response;
+            }
+            
+            // 构建查询条件
+            QueryWrapper<Project> queryWrapper = new QueryWrapper<>();
             
             if (keyword != null && !keyword.trim().isEmpty()) {
-                sql.append(" AND (project_name LIKE ? OR address LIKE ?)");
-                params.add("%" + keyword + "%");
-                params.add("%" + keyword + "%");
+                queryWrapper.and(wrapper -> wrapper
+                    .like("project_name", keyword)
+                    .or()
+                    .like("address", keyword)
+                );
             }
             
             if (projectType != null && !projectType.trim().isEmpty()) {
-                // 验证项目类型是否有效
-                if (!ProjectType.isValidCode(projectType)) {
-                    response.put("code", 400);
-                    response.put("message", "无效的项目类型: " + projectType);
-                    response.put("data", null);
-                    return response;
-                }
-                sql.append(" AND project_type = ?");
-                params.add(projectType);
+                queryWrapper.eq("project_type", projectType);
             }
             
-            // 获取总数
-            String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") t";
-            int total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+            queryWrapper.orderByDesc("id");
             
             // 分页查询
-            sql.append(" ORDER BY id DESC LIMIT ? OFFSET ?");
-            params.add(size);
-            params.add((current - 1) * size);
+            Page<Project> page = new Page<>(current, size);
+            IPage<Project> pageResult = projectMapper.selectPage(page, queryWrapper);
             
-            List<Map<String, Object>> records = jdbcTemplate.query(sql.toString(), params.toArray(), new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> project = new HashMap<>();
-                    project.put("id", rs.getInt("id"));
-                    project.put("projectName", rs.getString("project_name"));
-                    project.put("projectType", rs.getString("project_type"));
-                    project.put("managementOrg", rs.getString("management_org"));
-                    project.put("rentBillCompany", rs.getString("rent_bill_company"));
-                    project.put("rentBillBankAccount", rs.getString("rent_bill_bank_account"));
-                    project.put("city", rs.getString("city"));
-                    project.put("address", rs.getString("address"));
-                    project.put("projectManager", rs.getString("project_manager"));
-                    project.put("contactPhone", rs.getString("contact_phone"));
-                    project.put("status", rs.getInt("status"));
-                    project.put("createTime", rs.getTimestamp("create_time"));
-                    project.put("updateTime", rs.getTimestamp("update_time"));
-                    return project;
-                }
-            });
+            // 转换为Map格式以保持原有返回格式
+            List<Map<String, Object>> records = new ArrayList<>();
+            for (Project project : pageResult.getRecords()) {
+                Map<String, Object> projectMap = new HashMap<>();
+                projectMap.put("id", project.getId());
+                projectMap.put("projectName", project.getProjectName());
+                projectMap.put("projectType", project.getProjectType());
+                projectMap.put("managementOrg", project.getManagementOrg());
+                projectMap.put("rentBillCompany", project.getRentBillCompany());
+                projectMap.put("rentBillBankAccount", project.getRentBillBankAccount());
+                projectMap.put("city", project.getCity());
+                projectMap.put("address", project.getAddress());
+                projectMap.put("projectManager", project.getProjectManager());
+                projectMap.put("contactPhone", project.getContactPhone());
+                projectMap.put("status", project.getStatus());
+                projectMap.put("createTime", project.getCreateTime());
+                projectMap.put("updateTime", project.getUpdateTime());
+                records.add(projectMap);
+            }
             
-            Map<String, Object> pageResult = new HashMap<>();
-            pageResult.put("records", records);
-            pageResult.put("total", total);
-            pageResult.put("current", current);
-            pageResult.put("size", size);
+            Map<String, Object> pageData = new HashMap<>();
+            pageData.put("records", records);
+            pageData.put("total", pageResult.getTotal());
+            pageData.put("current", pageResult.getCurrent());
+            pageData.put("size", pageResult.getSize());
             
             response.put("code", 200);
             response.put("message", "查询成功");
-            response.put("data", pageResult);
+            response.put("data", pageData);
             
         } catch (Exception e) {
             System.err.println("查询项目失败: " + e.getMessage());
@@ -116,16 +121,21 @@ public class ProjectController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "SELECT id, project_name FROM project WHERE status = 1 ORDER BY project_name";
-            List<Map<String, Object>> projects = jdbcTemplate.query(sql, new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> project = new HashMap<>();
-                    project.put("id", rs.getInt("id"));
-                    project.put("projectName", rs.getString("project_name"));
-                    return project;
-                }
-            });
+            QueryWrapper<Project> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("status", 1)
+                       .orderByAsc("project_name")
+                       .select("id", "project_name");
+            
+            List<Project> projectList = projectMapper.selectList(queryWrapper);
+            
+            // 转换为Map格式以保持原有返回格式
+            List<Map<String, Object>> projects = new ArrayList<>();
+            for (Project project : projectList) {
+                Map<String, Object> projectMap = new HashMap<>();
+                projectMap.put("id", project.getId());
+                projectMap.put("projectName", project.getProjectName());
+                projects.add(projectMap);
+            }
             
             response.put("code", 200);
             response.put("message", "查询成功");
@@ -146,46 +156,38 @@ public class ProjectController {
      */
     @PostMapping
     public Map<String, Object> createProject(@RequestBody Map<String, Object> projectData) {
-        System.out.println("创建项目: " + projectData);
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 验证项目类型
-            String projectType = (String) projectData.get("projectType");
-            if (projectType == null || !ProjectType.isValidCode(projectType)) {
-                response.put("code", 400);
-                response.put("message", "无效的项目类型: " + projectType);
-                return response;
+            Project project = new Project();
+            project.setProjectName((String) projectData.get("projectName"));
+            project.setProjectType((String) projectData.get("projectType"));
+            project.setManagementOrg((String) projectData.get("managementOrg"));
+            project.setRentBillCompany((String) projectData.get("rentBillCompany"));
+            project.setRentBillBankAccount((String) projectData.get("rentBillBankAccount"));
+            project.setCity((String) projectData.get("city"));
+            project.setAddress((String) projectData.get("address"));
+            project.setProjectManager((String) projectData.get("projectManager"));
+            project.setContactPhone((String) projectData.get("contactPhone"));
+            project.setStatus(1);
+            
+            int result = projectMapper.insert(project);
+            
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "项目创建成功");
+                response.put("data", null);
+            } else {
+                response.put("code", 500);
+                response.put("message", "项目创建失败");
+                response.put("data", null);
             }
-            
-            String sql = "INSERT INTO project (project_name, project_type, management_org, rent_bill_company, " +
-                        "rent_bill_bank_account, city, address, project_manager, contact_phone, status, create_time) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            jdbcTemplate.update(sql,
-                projectData.get("projectName"),
-                projectData.get("projectType"),
-                projectData.get("managementOrg"),
-                projectData.get("rentBillCompany"),
-                projectData.get("rentBillBankAccount"),
-                projectData.get("city"),
-                projectData.get("address"),
-                projectData.get("projectManager"),
-                projectData.get("contactPhone"),
-                projectData.getOrDefault("status", 1),
-                LocalDateTime.now()
-            );
-            
-            response.put("code", 200);
-            response.put("message", "创建成功");
-            
-            System.out.println("项目创建成功");
             
         } catch (Exception e) {
             System.err.println("创建项目失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "创建失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
@@ -196,45 +198,41 @@ public class ProjectController {
      */
     @PutMapping("/{id}")
     public Map<String, Object> updateProject(@PathVariable Integer id, @RequestBody Map<String, Object> projectData) {
-        System.out.println("更新项目 ID: " + id + ", 数据: " + projectData);
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 验证项目类型
-            String projectType = (String) projectData.get("projectType");
-            if (projectType == null || !ProjectType.isValidCode(projectType)) {
-                response.put("code", 400);
-                response.put("message", "无效的项目类型: " + projectType);
-                return response;
+            Project project = new Project();
+            project.setId(id);
+            project.setProjectName((String) projectData.get("projectName"));
+            project.setProjectType((String) projectData.get("projectType"));
+            project.setManagementOrg((String) projectData.get("managementOrg"));
+            project.setRentBillCompany((String) projectData.get("rentBillCompany"));
+            project.setRentBillBankAccount((String) projectData.get("rentBillBankAccount"));
+            project.setCity((String) projectData.get("city"));
+            project.setAddress((String) projectData.get("address"));
+            project.setProjectManager((String) projectData.get("projectManager"));
+            project.setContactPhone((String) projectData.get("contactPhone"));
+            
+            UpdateWrapper<Project> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", id).eq("status", 1);
+            
+            int result = projectMapper.update(project, updateWrapper);
+            
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "项目更新成功");
+                response.put("data", null);
+            } else {
+                response.put("code", 404);
+                response.put("message", "项目不存在或已删除");
+                response.put("data", null);
             }
-            
-            String sql = "UPDATE project SET project_name = ?, project_type = ?, management_org = ?, " +
-                        "rent_bill_company = ?, rent_bill_bank_account = ?, city = ?, address = ?, " +
-                        "project_manager = ?, contact_phone = ?, status = ?, update_time = ? WHERE id = ?";
-            
-            jdbcTemplate.update(sql,
-                projectData.get("projectName"),
-                projectData.get("projectType"),
-                projectData.get("managementOrg"),
-                projectData.get("rentBillCompany"),
-                projectData.get("rentBillBankAccount"),
-                projectData.get("city"),
-                projectData.get("address"),
-                projectData.get("projectManager"),
-                projectData.get("contactPhone"),
-                projectData.get("status"),
-                LocalDateTime.now(),
-                id
-            );
-            
-            response.put("code", 200);
-            response.put("message", "更新成功");
             
         } catch (Exception e) {
             System.err.println("更新项目失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "更新失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
@@ -245,31 +243,38 @@ public class ProjectController {
      */
     @DeleteMapping("/{id}")
     public Map<String, Object> deleteProject(@PathVariable Integer id) {
-        System.out.println("删除项目 ID: " + id);
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
             // 检查项目下是否有楼栋
-            String checkSql = "SELECT COUNT(*) FROM building WHERE project_id = ?";
-            Integer buildingCount = jdbcTemplate.queryForObject(checkSql, new Object[]{id}, Integer.class);
+            QueryWrapper<Building> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("project_id", id);
+            Long buildingCount = buildingMapper.selectCount(queryWrapper);
             
             if (buildingCount != null && buildingCount > 0) {
                 response.put("code", 400);
                 response.put("message", "该项目下存在楼栋，无法删除");
+                response.put("data", null);
                 return response;
             }
             
-            String sql = "DELETE FROM project WHERE id = ?";
-            jdbcTemplate.update(sql, id);
+            int result = projectMapper.deleteById(id);
             
-            response.put("code", 200);
-            response.put("message", "删除成功");
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "删除成功");
+                response.put("data", null);
+            } else {
+                response.put("code", 404);
+                response.put("message", "项目不存在");
+                response.put("data", null);
+            }
             
         } catch (Exception e) {
             System.err.println("删除项目失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "删除失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;

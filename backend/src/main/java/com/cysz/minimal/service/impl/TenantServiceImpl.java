@@ -6,19 +6,13 @@ import com.cysz.minimal.enums.BrandQualification;
 import com.cysz.minimal.enums.TenantNature;
 import com.cysz.minimal.exception.BusinessException;
 import com.cysz.minimal.service.TenantService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cysz.minimal.mapper.TenantMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -29,7 +23,7 @@ import java.util.*;
 public class TenantServiceImpl implements TenantService {
     
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private TenantMapper tenantMapper;
     
     /**
      * 将前端中文租户性质转换为数据库英文值
@@ -60,93 +54,89 @@ public class TenantServiceImpl implements TenantService {
     }
     
     /**
-     * 自定义RowMapper，处理数据库到前端的转换
+     * 处理从数据库查询出的租户对象，转换枚举值
      */
-    private static class TenantRowMapper implements RowMapper<Tenant> {
-        private final TenantServiceImpl service;
-        
-        public TenantRowMapper(TenantServiceImpl service) {
-            this.service = service;
+    private Tenant convertTenantFromDb(Tenant tenant) {
+        if (tenant != null) {
+            tenant.setTenantNature(convertTenantNatureFromDb(tenant.getTenantNature()));
+            tenant.setBrandQualification(convertBrandQualificationFromDb(tenant.getBrandQualification()));
         }
-        
-        @Override
-        public Tenant mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Tenant tenant = new Tenant();
-            tenant.setId(rs.getLong("id"));
-            tenant.setTenantName(rs.getString("tenant_name"));
-            tenant.setTenantNature(service.convertTenantNatureFromDb(rs.getString("tenant_nature")));
-            tenant.setEnterpriseNature(rs.getString("enterprise_nature"));
-            tenant.setSocialCreditCode(rs.getString("social_credit_code"));
-            tenant.setTaxpayerId(rs.getString("taxpayer_id"));
-            tenant.setBusinessRegistrationNumber(rs.getString("business_registration_number"));
-            tenant.setIndividualLicenseNumber(rs.getString("individual_license_number"));
-            tenant.setBrand(rs.getString("brand"));
-            tenant.setBrandQualification(service.convertBrandQualificationFromDb(rs.getString("brand_qualification")));
-            tenant.setBusinessFormat(rs.getString("business_format"));
-            tenant.setBusinessScope(rs.getString("business_scope"));
-            tenant.setLegalPersonName(rs.getString("legal_person_name"));
-            tenant.setLegalPersonPhone(rs.getString("legal_person_phone"));
-            tenant.setLegalPersonIdCard(rs.getString("legal_person_id_card"));
-            tenant.setFinanceContact(rs.getString("finance_contact"));
-            tenant.setFinancePhone(rs.getString("finance_phone"));
-            tenant.setPayerName(rs.getString("payer_name"));
-            tenant.setPaymentAccount(rs.getString("payment_account"));
-            tenant.setRemark(rs.getString("remark"));
-            tenant.setStatus(rs.getInt("status"));
-            
-            // 处理时间字段
-            if (rs.getTimestamp("create_time") != null) {
-                tenant.setCreateTime(rs.getTimestamp("create_time").toLocalDateTime());
-            }
-            if (rs.getTimestamp("update_time") != null) {
-                tenant.setUpdateTime(rs.getTimestamp("update_time").toLocalDateTime());
-            }
-            
-            return tenant;
+        return tenant;
+    }
+    
+    /**
+     * 处理要保存到数据库的租户对象，转换枚举值
+     */
+    private Tenant convertTenantToDb(Tenant tenant) {
+        if (tenant != null) {
+            Tenant dbTenant = new Tenant();
+            // 复制所有属性
+            dbTenant.setId(tenant.getId());
+            dbTenant.setTenantName(tenant.getTenantName());
+            dbTenant.setTenantNature(convertTenantNatureToDb(tenant.getTenantNature()));
+            dbTenant.setEnterpriseNature(tenant.getEnterpriseNature());
+            dbTenant.setSocialCreditCode(tenant.getSocialCreditCode());
+            dbTenant.setTaxpayerId(tenant.getTaxpayerId());
+            dbTenant.setBusinessRegistrationNumber(tenant.getBusinessRegistrationNumber());
+            dbTenant.setIndividualLicenseNumber(tenant.getIndividualLicenseNumber());
+            dbTenant.setBrand(tenant.getBrand());
+            dbTenant.setBrandQualification(convertBrandQualificationToDb(tenant.getBrandQualification()));
+            dbTenant.setBusinessFormat(tenant.getBusinessFormat());
+            dbTenant.setBusinessScope(tenant.getBusinessScope());
+            dbTenant.setLegalPersonName(tenant.getLegalPersonName());
+            dbTenant.setLegalPersonPhone(tenant.getLegalPersonPhone());
+            dbTenant.setLegalPersonIdCard(tenant.getLegalPersonIdCard());
+            dbTenant.setFinanceContact(tenant.getFinanceContact());
+            dbTenant.setFinancePhone(tenant.getFinancePhone());
+            dbTenant.setPayerName(tenant.getPayerName());
+            dbTenant.setPaymentAccount(tenant.getPaymentAccount());
+            dbTenant.setRemark(tenant.getRemark());
+            dbTenant.setCreateTime(tenant.getCreateTime());
+            dbTenant.setUpdateTime(tenant.getUpdateTime());
+            return dbTenant;
         }
+        return null;
     }
     
     @Override
     public PageResult<Tenant> getTenantPage(int current, int size, String keyword, String tenantNature, String businessFormat) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM tenant WHERE 1=1");
-        List<Object> params = new ArrayList<>();
+        QueryWrapper<Tenant> queryWrapper = new QueryWrapper<>();
         
         // 添加搜索条件
         if (StringUtils.hasText(keyword)) {
-            sql.append(" AND tenant_name LIKE ?");
-            params.add("%" + keyword + "%");
+            queryWrapper.like("tenant_name", keyword);
         }
         
         if (StringUtils.hasText(tenantNature)) {
-            sql.append(" AND tenant_nature = ?");
-            params.add(convertTenantNatureToDb(tenantNature)); // 转换为数据库值
+            queryWrapper.eq("tenant_nature", convertTenantNatureToDb(tenantNature)); // 转换为数据库值
         }
         
         if (StringUtils.hasText(businessFormat)) {
-            sql.append(" AND business_format = ?");
-            params.add(businessFormat);
+            queryWrapper.eq("business_format", businessFormat);
         }
         
-        // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") t";
-        Integer total = jdbcTemplate.queryForObject(countSql, Integer.class, params.toArray());
+        // 按创建时间倒序排列
+        queryWrapper.orderByDesc("create_time");
         
-        // 添加分页
-        sql.append(" ORDER BY create_time DESC LIMIT ? OFFSET ?");
-        params.add(size);
-        params.add((current - 1) * size);
+        // 创建分页对象
+        Page<Tenant> page = new Page<>(current, size);
         
-        // 查询数据，使用自定义RowMapper
-        List<Tenant> records = jdbcTemplate.query(sql.toString(), params.toArray(), new TenantRowMapper(this));
+        // 执行分页查询
+        IPage<Tenant> pageResult = tenantMapper.selectPage(page, queryWrapper);
         
-        return new PageResult<>(records, total != null ? total : 0, current, size);
+        // 转换查询结果中的枚举值
+        List<Tenant> records = pageResult.getRecords();
+        for (Tenant tenant : records) {
+            convertTenantFromDb(tenant);
+        }
+        
+        return new PageResult<>(records, (int) pageResult.getTotal(), current, size);
     }
     
     @Override
     public Tenant getTenantById(Long id) {
-        String sql = "SELECT * FROM tenant WHERE id = ?";
-        List<Tenant> tenants = jdbcTemplate.query(sql, new TenantRowMapper(this), id);
-        return tenants.isEmpty() ? null : tenants.get(0);
+        Tenant tenant = tenantMapper.selectById(id);
+        return convertTenantFromDb(tenant);
     }
     
     @Override
@@ -159,49 +149,20 @@ public class TenantServiceImpl implements TenantService {
             throw new BusinessException("租户性质不能为空");
         }
         
-        String sql = "INSERT INTO tenant (tenant_name, tenant_nature, enterprise_nature, social_credit_code, " +
-                    "taxpayer_id, business_registration_number, individual_license_number, brand, " +
-                    "brand_qualification, business_format, business_scope, legal_person_name, " +
-                    "legal_person_phone, legal_person_id_card, finance_contact, finance_phone, " +
-                    "payer_name, payment_account, remark, status, create_time, update_time) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        KeyHolder keyHolder = new GeneratedKeyHolder();
         LocalDateTime now = LocalDateTime.now();
         
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, tenant.getTenantName());
-            ps.setString(2, convertTenantNatureToDb(tenant.getTenantNature()));
-            ps.setString(3, tenant.getEnterpriseNature());
-            ps.setString(4, tenant.getSocialCreditCode());
-            ps.setString(5, tenant.getTaxpayerId());
-            ps.setString(6, tenant.getBusinessRegistrationNumber());
-            ps.setString(7, tenant.getIndividualLicenseNumber());
-            ps.setString(8, tenant.getBrand());
-            ps.setString(9, convertBrandQualificationToDb(tenant.getBrandQualification()));
-            ps.setString(10, tenant.getBusinessFormat());
-            ps.setString(11, tenant.getBusinessScope());
-            ps.setString(12, tenant.getLegalPersonName());
-            ps.setString(13, tenant.getLegalPersonPhone());
-            ps.setString(14, tenant.getLegalPersonIdCard());
-            ps.setString(15, tenant.getFinanceContact());
-            ps.setString(16, tenant.getFinancePhone());
-            ps.setString(17, tenant.getPayerName());
-            ps.setString(18, tenant.getPaymentAccount());
-            ps.setString(19, tenant.getRemark());
-            ps.setInt(20, tenant.getStatus() != null ? tenant.getStatus() : 1);
-            ps.setObject(21, now);
-            ps.setObject(22, now);
-            return ps;
-        }, keyHolder);
+        // 转换为数据库对象
+        Tenant dbTenant = convertTenantToDb(tenant);
+        dbTenant.setCreateTime(now);
+        dbTenant.setUpdateTime(now);
         
-        Number key = keyHolder.getKey();
-        if (key != null) {
-            tenant.setId(key.longValue());
-            tenant.setCreateTime(now);
-            tenant.setUpdateTime(now);
-        }
+        // 插入数据
+        tenantMapper.insert(dbTenant);
+        
+        // 设置返回值
+        tenant.setId(dbTenant.getId());
+        tenant.setCreateTime(now);
+        tenant.setUpdateTime(now);
         
         return tenant;
     }
@@ -214,39 +175,17 @@ public class TenantServiceImpl implements TenantService {
             throw new BusinessException("租户不存在");
         }
         
-        String sql = "UPDATE tenant SET tenant_name=?, tenant_nature=?, enterprise_nature=?, " +
-                    "social_credit_code=?, taxpayer_id=?, business_registration_number=?, " +
-                    "individual_license_number=?, brand=?, brand_qualification=?, business_format=?, " +
-                    "business_scope=?, legal_person_name=?, legal_person_phone=?, legal_person_id_card=?, " +
-                    "finance_contact=?, finance_phone=?, payer_name=?, payment_account=?, " +
-                    "remark=?, status=?, update_time=? WHERE id=?";
-        
         LocalDateTime now = LocalDateTime.now();
         
-        jdbcTemplate.update(sql,
-                tenant.getTenantName(),
-                convertTenantNatureToDb(tenant.getTenantNature()),
-                tenant.getEnterpriseNature(),
-                tenant.getSocialCreditCode(),
-                tenant.getTaxpayerId(),
-                tenant.getBusinessRegistrationNumber(),
-                tenant.getIndividualLicenseNumber(),
-                tenant.getBrand(),
-                convertBrandQualificationToDb(tenant.getBrandQualification()),
-                tenant.getBusinessFormat(),
-                tenant.getBusinessScope(),
-                tenant.getLegalPersonName(),
-                tenant.getLegalPersonPhone(),
-                tenant.getLegalPersonIdCard(),
-                tenant.getFinanceContact(),
-                tenant.getFinancePhone(),
-                tenant.getPayerName(),
-                tenant.getPaymentAccount(),
-                tenant.getRemark(),
-                tenant.getStatus(),
-                now,
-                id);
+        // 转换为数据库对象
+        Tenant dbTenant = convertTenantToDb(tenant);
+        dbTenant.setId(id);
+        dbTenant.setUpdateTime(now);
         
+        // 更新数据
+        tenantMapper.updateById(dbTenant);
+        
+        // 设置返回值
         tenant.setId(id);
         tenant.setUpdateTime(now);
         return tenant;
@@ -254,14 +193,7 @@ public class TenantServiceImpl implements TenantService {
     
     @Override
     public void deleteTenant(Long id) {
-        // 检查租户是否存在
-        Tenant existingTenant = getTenantById(id);
-        if (existingTenant == null) {
-            throw new BusinessException("租户不存在");
-        }
-        
-        String sql = "DELETE FROM tenant WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        tenantMapper.deleteById(id);
     }
     
     @Override
@@ -269,17 +201,18 @@ public class TenantServiceImpl implements TenantService {
         Map<String, Object> stats = new HashMap<>();
         
         // 总租户数
-        Integer totalTenants = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tenant", Integer.class);
-        stats.put("totalTenants", totalTenants != null ? totalTenants : 0);
+        Long totalTenants = tenantMapper.selectCount(null);
+        int total = totalTenants != null ? totalTenants.intValue() : 0;
+        stats.put("totalTenants", total);
         
         // 高风险租户数（模拟数据）
-        stats.put("highRiskTenants", (totalTenants != null ? totalTenants : 0) / 10);
+        stats.put("highRiskTenants", total / 10);
         
         // 中风险租户数（模拟数据）
-        stats.put("mediumRiskTenants", (totalTenants != null ? totalTenants : 0) / 5);
+        stats.put("mediumRiskTenants", total / 5);
         
         // 低风险租户数（模拟数据）
-        stats.put("lowRiskTenants", (totalTenants != null ? totalTenants : 0) - 
+        stats.put("lowRiskTenants", total - 
                                    (Integer) stats.get("highRiskTenants") - 
                                    (Integer) stats.get("mediumRiskTenants"));
         
@@ -289,28 +222,30 @@ public class TenantServiceImpl implements TenantService {
     @Override
     public PageResult<Map<String, Object>> getTenantRiskList(int current, int size) {
         // 模拟风险数据
-        String sql = "SELECT id, tenant_name, tenant_nature, business_format, create_time FROM tenant " +
-                    "ORDER BY create_time DESC LIMIT ? OFFSET ?";
+        QueryWrapper<Tenant> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id", "tenant_name", "tenant_nature", "business_format", "create_time")
+                   .orderByDesc("create_time");
         
-        String countSql = "SELECT COUNT(*) FROM tenant";
-        Integer total = jdbcTemplate.queryForObject(countSql, Integer.class);
+        Page<Tenant> page = new Page<>(current, size);
+        Page<Tenant> tenantPage = tenantMapper.selectPage(page, queryWrapper);
         
-        List<Map<String, Object>> records = jdbcTemplate.queryForList(sql, size, (current - 1) * size);
-        
-        // 为每个租户添加模拟的风险评级和转换租户性质
+        List<Map<String, Object>> records = new ArrayList<>();
         Random random = new Random();
-        String[] riskLevels = {"低风险", "中风险", "高风险"};
         
-        for (Map<String, Object> record : records) {
-            record.put("riskLevel", riskLevels[random.nextInt(3)]);
+        for (Tenant tenant : tenantPage.getRecords()) {
+            Map<String, Object> record = new HashMap<>();
+            record.put("id", tenant.getId());
+            record.put("tenant_name", tenant.getTenantName());
+            record.put("tenant_nature", convertTenantNatureFromDb(tenant.getTenantNature()));
+            record.put("business_format", tenant.getBusinessFormat());
+            record.put("create_time", tenant.getCreateTime());
+            // 移除riskLevel字段，因为数据库中不存在risk_level字段
             record.put("creditScore", 60 + random.nextInt(40)); // 60-100分
             record.put("lastAssessTime", LocalDateTime.now().minusDays(random.nextInt(30)));
-            // 转换租户性质显示
-            String tenantNature = (String) record.get("tenant_nature");
-            record.put("tenant_nature", convertTenantNatureFromDb(tenantNature));
+            records.add(record);
         }
         
-        return new PageResult<>(records, total != null ? total : 0, current, size);
+        return new PageResult<>(records, (int) tenantPage.getTotal(), current, size);
     }
     
     @Override
@@ -329,31 +264,36 @@ public class TenantServiceImpl implements TenantService {
     
     @Override
     public PageResult<Map<String, Object>> getTenantProfileList(int current, int size) {
-        String sql = "SELECT id, tenant_name, tenant_nature, business_format, brand, create_time FROM tenant " +
-                    "ORDER BY create_time DESC LIMIT ? OFFSET ?";
+        QueryWrapper<Tenant> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id", "tenant_name", "tenant_nature", "business_format", "brand", "create_time")
+                   .orderByDesc("create_time");
         
-        String countSql = "SELECT COUNT(*) FROM tenant";
-        Integer total = jdbcTemplate.queryForObject(countSql, Integer.class);
+        Page<Tenant> page = new Page<>(current, size);
+        Page<Tenant> tenantPage = tenantMapper.selectPage(page, queryWrapper);
         
-        List<Map<String, Object>> records = jdbcTemplate.queryForList(sql, size, (current - 1) * size);
-        
-        // 为每个租户添加画像标签和转换租户性质
+        List<Map<String, Object>> records = new ArrayList<>();
         Random random = new Random();
         String[] tags = {"优质客户", "成长型", "稳定型", "潜力型", "关注型"};
         
-        for (Map<String, Object> record : records) {
+        for (Tenant tenant : tenantPage.getRecords()) {
+            Map<String, Object> record = new HashMap<>();
+            record.put("id", tenant.getId());
+            record.put("tenant_name", tenant.getTenantName());
+            record.put("tenant_nature", convertTenantNatureFromDb(tenant.getTenantNature()));
+            record.put("business_format", tenant.getBusinessFormat());
+            record.put("brand", tenant.getBrand());
+            record.put("create_time", tenant.getCreateTime());
+            
             List<String> profileTags = new ArrayList<>();
             for (int i = 0; i < 2 + random.nextInt(3); i++) {
                 profileTags.add(tags[random.nextInt(tags.length)]);
             }
             record.put("profileTags", profileTags);
             record.put("profileScore", 60 + random.nextInt(40));
-            // 转换租户性质显示
-            String tenantNature = (String) record.get("tenant_nature");
-            record.put("tenant_nature", convertTenantNatureFromDb(tenantNature));
+            records.add(record);
         }
         
-        return new PageResult<>(records, total != null ? total : 0, current, size);
+        return new PageResult<>(records, (int) tenantPage.getTotal(), current, size);
     }
     
     @Override
@@ -392,33 +332,47 @@ public class TenantServiceImpl implements TenantService {
         Map<String, Object> overview = new HashMap<>();
         
         // 按业态统计租户数量
-        String sql = "SELECT business_format, COUNT(*) as count FROM tenant " +
-                    "WHERE business_format IS NOT NULL GROUP BY business_format";
+        QueryWrapper<Tenant> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("business_format", "COUNT(*) as count")
+                   .isNotNull("business_format")
+                   .groupBy("business_format");
         
-        List<Map<String, Object>> businessStats = jdbcTemplate.queryForList(sql);
+        List<Map<String, Object>> businessStats = tenantMapper.selectMaps(queryWrapper);
         overview.put("businessStats", businessStats);
         
         // 总体统计
-        Integer totalTenants = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tenant", Integer.class);
-        overview.put("totalTenants", totalTenants != null ? totalTenants : 0);
+        Long totalTenants = tenantMapper.selectCount(null);
+        overview.put("totalTenants", totalTenants != null ? totalTenants.intValue() : 0);
         
         return overview;
     }
     
     @Override
     public List<Map<String, Object>> getBusinessDetails(String businessType) {
-        String sql;
-        Object[] params;
+        QueryWrapper<Tenant> queryWrapper = new QueryWrapper<>();
         
         if (StringUtils.hasText(businessType)) {
-            sql = "SELECT * FROM tenant WHERE business_format = ? ORDER BY create_time DESC";
-            params = new Object[]{businessType};
-        } else {
-            sql = "SELECT * FROM tenant ORDER BY create_time DESC";
-            params = new Object[]{};
+            queryWrapper.eq("business_format", businessType);
+        }
+        queryWrapper.orderByDesc("create_time");
+        
+        List<Tenant> tenants = tenantMapper.selectList(queryWrapper);
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        for (Tenant tenant : tenants) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", tenant.getId());
+            map.put("tenant_name", tenant.getTenantName());
+            map.put("tenant_nature", convertTenantNatureFromDb(tenant.getTenantNature()));
+            map.put("business_format", tenant.getBusinessFormat());
+            map.put("brand", tenant.getBrand());
+            map.put("brand_qualification", convertBrandQualificationFromDb(tenant.getBrandQualification()));
+            map.put("create_time", tenant.getCreateTime());
+            map.put("update_time", tenant.getUpdateTime());
+            result.add(map);
         }
         
-        return jdbcTemplate.queryForList(sql, params);
+        return result;
     }
     
     @Override
@@ -464,8 +418,9 @@ public class TenantServiceImpl implements TenantService {
     @Override
     public byte[] exportBusinessReport() {
         // 这里应该生成实际的报告文件，暂时返回模拟数据
+        Long totalTenants = tenantMapper.selectCount(null);
         String report = "业态分析报告\n\n" +
-                       "总租户数: " + jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tenant", Integer.class) + "\n" +
+                       "总租户数: " + (totalTenants != null ? totalTenants : 0) + "\n" +
                        "生成时间: " + LocalDateTime.now();
         
         return report.getBytes();

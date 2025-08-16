@@ -1,14 +1,21 @@
 package com.cysz.minimal.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cysz.minimal.entity.Building;
+import com.cysz.minimal.entity.Floor;
+import com.cysz.minimal.entity.Project;
+import com.cysz.minimal.mapper.BuildingMapper;
+import com.cysz.minimal.mapper.FloorMapper;
+import com.cysz.minimal.mapper.ProjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 楼栋管理控制器
@@ -19,7 +26,13 @@ import java.util.*;
 public class BuildingController {
     
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private BuildingMapper buildingMapper;
+    
+    @Autowired
+    private ProjectMapper projectMapper;
+    
+    @Autowired
+    private FloorMapper floorMapper;
     
     /**
      * 楼栋分页查询
@@ -31,64 +44,65 @@ public class BuildingController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer projectId) {
         
-        System.out.println("楼栋分页查询 - current: " + current + ", size: " + size);
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            StringBuilder sql = new StringBuilder("SELECT b.*, p.project_name FROM building b LEFT JOIN project p ON b.project_id = p.id WHERE 1=1");
-            List<Object> params = new ArrayList<>();
+            Page<Building> page = new Page<>(current, size);
+            QueryWrapper<Building> queryWrapper = new QueryWrapper<>();
             
             if (keyword != null && !keyword.trim().isEmpty()) {
-                sql.append(" AND (b.building_name LIKE ? OR b.building_code LIKE ?)");
-                params.add("%" + keyword + "%");
-                params.add("%" + keyword + "%");
+                queryWrapper.and(wrapper -> wrapper
+                    .like("building_name", keyword)
+                    .or()
+                    .like("building_code", keyword)
+                );
             }
             
             if (projectId != null) {
-                sql.append(" AND b.project_id = ?");
-                params.add(projectId);
+                queryWrapper.eq("project_id", projectId);
             }
             
-            // 获取总数
-            String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") t";
-            int total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+            queryWrapper.orderByDesc("id");
             
-            // 分页查询
-            sql.append(" ORDER BY b.id DESC LIMIT ? OFFSET ?");
-            params.add(size);
-            params.add((current - 1) * size);
+            Page<Building> pageResult = buildingMapper.selectPage(page, queryWrapper);
             
-            List<Map<String, Object>> records = jdbcTemplate.query(sql.toString(), params.toArray(), new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> building = new HashMap<>();
-                    building.put("id", rs.getInt("id"));
-                    building.put("buildingName", rs.getString("building_name"));
-                    building.put("buildingCode", rs.getString("building_code"));
-                    building.put("projectId", rs.getInt("project_id"));
-                    building.put("projectName", rs.getString("project_name"));
-                    building.put("buildingArea", rs.getBigDecimal("building_area"));
-                    building.put("rentArea", rs.getBigDecimal("rent_area"));
-                    building.put("propertyArea", rs.getBigDecimal("property_area"));
-                    building.put("usableArea", rs.getBigDecimal("usable_area"));
-                    building.put("remark", rs.getString("remark"));
-                    building.put("status", rs.getInt("status"));
-                    building.put("createTime", rs.getTimestamp("create_time"));
-                    building.put("updateTime", rs.getTimestamp("update_time"));
-                    return building;
+            // 转换为Map格式并添加项目名称
+            List<Map<String, Object>> records = new ArrayList<>();
+            for (Building building : pageResult.getRecords()) {
+                Map<String, Object> buildingMap = new HashMap<>();
+                buildingMap.put("id", building.getId());
+                buildingMap.put("buildingName", building.getBuildingName());
+                buildingMap.put("buildingCode", building.getBuildingCode());
+                buildingMap.put("projectId", building.getProjectId());
+                
+                // 获取项目名称
+                if (building.getProjectId() != null) {
+                    Project project = projectMapper.selectById(building.getProjectId());
+                    buildingMap.put("projectName", project != null ? project.getProjectName() : null);
+                } else {
+                    buildingMap.put("projectName", null);
                 }
-            });
+                
+                buildingMap.put("buildingArea", building.getBuildingArea());
+                buildingMap.put("rentArea", building.getRentArea());
+                buildingMap.put("propertyArea", building.getPropertyArea());
+                buildingMap.put("usableArea", building.getUsableArea());
+                buildingMap.put("remark", building.getRemark());
+                buildingMap.put("status", building.getStatus());
+                buildingMap.put("createTime", building.getCreateTime());
+                buildingMap.put("updateTime", building.getUpdateTime());
+                records.add(buildingMap);
+            }
             
-            Map<String, Object> pageResult = new HashMap<>();
-            pageResult.put("records", records);
-            pageResult.put("total", total);
-            pageResult.put("current", current);
-            pageResult.put("size", size);
+            Map<String, Object> pageData = new HashMap<>();
+            pageData.put("records", records);
+            pageData.put("total", pageResult.getTotal());
+            pageData.put("current", pageResult.getCurrent());
+            pageData.put("size", pageResult.getSize());
             
             response.put("code", 200);
             response.put("message", "查询成功");
-            response.put("data", pageResult);
+            response.put("data", pageData);
             
         } catch (Exception e) {
             System.err.println("查询楼栋失败: " + e.getMessage());
@@ -101,36 +115,47 @@ public class BuildingController {
     }
     
     /**
-     * 根据项目ID获取楼栋列表
+     * 根据项目ID查询楼栋
      */
     @GetMapping("/project/{projectId}")
-    public Map<String, Object> getBuildingsByProject(@PathVariable Integer projectId) {
-        System.out.println("根据项目ID获取楼栋列表: " + projectId);
-        
+    public Map<String, Object> getBuildingsByProjectId(@PathVariable Integer projectId) {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "SELECT id, building_name, building_code FROM building WHERE project_id = ? AND status = 1 ORDER BY building_name";
-            List<Map<String, Object>> buildings = jdbcTemplate.query(sql, new Object[]{projectId}, new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> building = new HashMap<>();
-                    building.put("id", rs.getInt("id"));
-                    building.put("buildingName", rs.getString("building_name"));
-                    building.put("buildingCode", rs.getString("building_code"));
-                    return building;
-                }
-            });
+            QueryWrapper<Building> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("project_id", projectId)
+                       .orderByDesc("id");
+            
+            List<Building> buildingList = buildingMapper.selectList(queryWrapper);
+            
+            // 转换为Map格式
+            List<Map<String, Object>> buildings = new ArrayList<>();
+            for (Building building : buildingList) {
+                Map<String, Object> buildingMap = new HashMap<>();
+                buildingMap.put("id", building.getId());
+                buildingMap.put("buildingName", building.getBuildingName());
+                buildingMap.put("buildingCode", building.getBuildingCode());
+                buildingMap.put("projectId", building.getProjectId());
+                buildingMap.put("buildingArea", building.getBuildingArea());
+                buildingMap.put("rentArea", building.getRentArea());
+                buildingMap.put("propertyArea", building.getPropertyArea());
+                buildingMap.put("usableArea", building.getUsableArea());
+                buildingMap.put("remark", building.getRemark());
+                buildingMap.put("status", building.getStatus());
+                buildingMap.put("createTime", building.getCreateTime());
+                buildingMap.put("updateTime", building.getUpdateTime());
+                buildings.add(buildingMap);
+            }
             
             response.put("code", 200);
             response.put("message", "查询成功");
             response.put("data", buildings);
             
         } catch (Exception e) {
-            System.err.println("获取楼栋列表失败: " + e.getMessage());
+            System.err.println("查询楼栋失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "查询失败: " + e.getMessage());
-            response.put("data", new ArrayList<>());
+            response.put("data", null);
         }
         
         return response;
@@ -141,37 +166,49 @@ public class BuildingController {
      */
     @PostMapping
     public Map<String, Object> createBuilding(@RequestBody Map<String, Object> buildingData) {
-        System.out.println("创建楼栋: " + buildingData);
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "INSERT INTO building (building_name, building_code, project_id, building_area, " +
-                        "rent_area, property_area, usable_area, remark, status, create_time) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            Building building = new Building();
+            building.setBuildingName((String) buildingData.get("buildingName"));
+            building.setBuildingCode((String) buildingData.get("buildingCode"));
+            building.setProjectId((Integer) buildingData.get("projectId"));
             
-            jdbcTemplate.update(sql,
-                buildingData.get("buildingName"),
-                buildingData.get("buildingCode"),
-                buildingData.get("projectId"),
-                buildingData.get("buildingArea"),
-                buildingData.get("rentArea"),
-                buildingData.get("propertyArea"),
-                buildingData.get("usableArea"),
-                buildingData.get("remark"),
-                buildingData.getOrDefault("status", 1),
-                LocalDateTime.now()
-            );
+            if (buildingData.get("buildingArea") != null) {
+                building.setBuildingArea(new BigDecimal(buildingData.get("buildingArea").toString()));
+            }
+            if (buildingData.get("rentArea") != null) {
+                building.setRentArea(new BigDecimal(buildingData.get("rentArea").toString()));
+            }
+            if (buildingData.get("propertyArea") != null) {
+                building.setPropertyArea(new BigDecimal(buildingData.get("propertyArea").toString()));
+            }
+            if (buildingData.get("usableArea") != null) {
+                building.setUsableArea(new BigDecimal(buildingData.get("usableArea").toString()));
+            }
             
-            response.put("code", 200);
-            response.put("message", "创建成功");
+            building.setRemark((String) buildingData.get("remark"));
+            building.setStatus(1);
+            building.setCreateTime(LocalDateTime.now());
+            building.setUpdateTime(LocalDateTime.now());
             
-            System.out.println("楼栋创建成功");
+            int result = buildingMapper.insert(building);
+            
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "创建成功");
+                response.put("data", null);
+            } else {
+                response.put("code", 500);
+                response.put("message", "创建失败");
+                response.put("data", null);
+            }
             
         } catch (Exception e) {
             System.err.println("创建楼栋失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "创建失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
@@ -182,36 +219,59 @@ public class BuildingController {
      */
     @PutMapping("/{id}")
     public Map<String, Object> updateBuilding(@PathVariable Integer id, @RequestBody Map<String, Object> buildingData) {
-        System.out.println("更新楼栋 ID: " + id + ", 数据: " + buildingData);
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String sql = "UPDATE building SET building_name = ?, building_code = ?, project_id = ?, " +
-                        "building_area = ?, rent_area = ?, property_area = ?, usable_area = ?, " +
-                        "remark = ?, status = ?, update_time = ? WHERE id = ?";
+            UpdateWrapper<Building> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.eq("id", id);
             
-            jdbcTemplate.update(sql,
-                buildingData.get("buildingName"),
-                buildingData.get("buildingCode"),
-                buildingData.get("projectId"),
-                buildingData.get("buildingArea"),
-                buildingData.get("rentArea"),
-                buildingData.get("propertyArea"),
-                buildingData.get("usableArea"),
-                buildingData.get("remark"),
-                buildingData.get("status"),
-                LocalDateTime.now(),
-                id
-            );
+            if (buildingData.containsKey("buildingName")) {
+                updateWrapper.set("building_name", buildingData.get("buildingName"));
+            }
+            if (buildingData.containsKey("buildingCode")) {
+                updateWrapper.set("building_code", buildingData.get("buildingCode"));
+            }
+            if (buildingData.containsKey("projectId")) {
+                updateWrapper.set("project_id", buildingData.get("projectId"));
+            }
+            if (buildingData.containsKey("buildingArea")) {
+                updateWrapper.set("building_area", buildingData.get("buildingArea"));
+            }
+            if (buildingData.containsKey("rentArea")) {
+                updateWrapper.set("rent_area", buildingData.get("rentArea"));
+            }
+            if (buildingData.containsKey("propertyArea")) {
+                updateWrapper.set("property_area", buildingData.get("propertyArea"));
+            }
+            if (buildingData.containsKey("usableArea")) {
+                updateWrapper.set("usable_area", buildingData.get("usableArea"));
+            }
+            if (buildingData.containsKey("remark")) {
+                updateWrapper.set("remark", buildingData.get("remark"));
+            }
+            if (buildingData.containsKey("status")) {
+                updateWrapper.set("status", buildingData.get("status"));
+            }
             
-            response.put("code", 200);
-            response.put("message", "更新成功");
+            updateWrapper.set("update_time", LocalDateTime.now());
+            
+            int result = buildingMapper.update(null, updateWrapper);
+            
+            if (result > 0) {
+                response.put("code", 200);
+                response.put("message", "更新成功");
+                response.put("data", null);
+            } else {
+                response.put("code", 404);
+                response.put("message", "楼栋不存在");
+                response.put("data", null);
+            }
             
         } catch (Exception e) {
             System.err.println("更新楼栋失败: " + e.getMessage());
             response.put("code", 500);
             response.put("message", "更新失败: " + e.getMessage());
+            response.put("data", null);
         }
         
         return response;
@@ -228,8 +288,9 @@ public class BuildingController {
         
         try {
             // 检查楼栋下是否有楼层
-            String checkSql = "SELECT COUNT(*) FROM floor WHERE building_id = ?";
-            Integer floorCount = jdbcTemplate.queryForObject(checkSql, new Object[]{id}, Integer.class);
+            QueryWrapper<Floor> floorQuery = new QueryWrapper<>();
+            floorQuery.eq("building_id", id);
+            Long floorCount = floorMapper.selectCount(floorQuery);
             
             if (floorCount != null && floorCount > 0) {
                 response.put("code", 400);
@@ -237,8 +298,7 @@ public class BuildingController {
                 return response;
             }
             
-            String sql = "DELETE FROM building WHERE id = ?";
-            jdbcTemplate.update(sql, id);
+            int result = buildingMapper.deleteById(id);
             
             response.put("code", 200);
             response.put("message", "删除成功");

@@ -27,7 +27,6 @@ public class Tenant extends BaseEntity {
     private String payerName;               // 付款人名称
     private String paymentAccount;          // 付款账号
     private String remark;                  // 备注
-    private Integer status;                 // 状态：0-禁用，1-启用
     
     // 构造函数
     public Tenant() {}
@@ -185,13 +184,9 @@ public class Tenant extends BaseEntity {
         this.remark = remark;
     }
     
-    public Integer getStatus() {
-        return status;
-    }
+
     
-    public void setStatus(Integer status) {
-        this.status = status;
-    }
+
     
     @Override
     public String toString() {
@@ -216,7 +211,6 @@ public class Tenant extends BaseEntity {
                 ", payerName='" + payerName + '\'' +
                 ", paymentAccount='" + paymentAccount + '\'' +
                 ", remark='" + remark + '\'' +
-                ", status=" + status +
                 ", createTime=" + getCreateTime() +
                 ", updateTime=" + getUpdateTime() +
                 '}';
