@@ -9,9 +9,12 @@ import java.time.LocalDateTime;
  */
 public class ReceivedRecordVO {
     private Long id;
+    private String receivedId;
+    private String contractId;
     private String contractNo;
     private String contractName;
     private String tenantName;
+    private String unitName;
     private String unitDescription;
     private String feeType;
     private String billType;
@@ -29,6 +32,12 @@ public class ReceivedRecordVO {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
+    public String getReceivedId() { return receivedId; }
+    public void setReceivedId(String receivedId) { this.receivedId = receivedId; }
+    
+    public String getContractId() { return contractId; }
+    public void setContractId(String contractId) { this.contractId = contractId; }
+    
     public String getContractNo() { return contractNo; }
     public void setContractNo(String contractNo) { this.contractNo = contractNo; }
     
@@ -37,6 +46,9 @@ public class ReceivedRecordVO {
     
     public String getTenantName() { return tenantName; }
     public void setTenantName(String tenantName) { this.tenantName = tenantName; }
+    
+    public String getUnitName() { return unitName; }
+    public void setUnitName(String unitName) { this.unitName = unitName; }
     
     public String getUnitDescription() { return unitDescription; }
     public void setUnitDescription(String unitDescription) { this.unitDescription = unitDescription; }

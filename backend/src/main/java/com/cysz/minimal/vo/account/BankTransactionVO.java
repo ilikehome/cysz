@@ -9,14 +9,17 @@ import java.time.LocalDateTime;
  */
 public class BankTransactionVO {
     private Long id;
+    private String transactionId;
     private String transactionNo;
     private String accountNo;
     private String accountName;
     private BigDecimal amount;
     private String transactionType;
     private LocalDate transactionDate;
+    private LocalDateTime transactionTime;
     private String counterparty;
     private String purpose;
+    private String description;
     private String status;
     private String remark;
     private LocalDateTime createTime;
@@ -36,6 +39,9 @@ public class BankTransactionVO {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
+    public String getTransactionId() { return transactionId; }
+    public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
+    
     public String getTransactionNo() { return transactionNo; }
     public void setTransactionNo(String transactionNo) { this.transactionNo = transactionNo; }
     
@@ -54,11 +60,17 @@ public class BankTransactionVO {
     public LocalDate getTransactionDate() { return transactionDate; }
     public void setTransactionDate(LocalDate transactionDate) { this.transactionDate = transactionDate; }
     
+    public LocalDateTime getTransactionTime() { return transactionTime; }
+    public void setTransactionTime(LocalDateTime transactionTime) { this.transactionTime = transactionTime; }
+    
     public String getCounterparty() { return counterparty; }
     public void setCounterparty(String counterparty) { this.counterparty = counterparty; }
     
     public String getPurpose() { return purpose; }
     public void setPurpose(String purpose) { this.purpose = purpose; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
