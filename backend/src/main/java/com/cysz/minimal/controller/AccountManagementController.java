@@ -1,5 +1,9 @@
 package com.cysz.minimal.controller;
 
+import com.cysz.minimal.common.Result;
+import com.cysz.minimal.vo.account.ReceivableRecordVO;
+import com.cysz.minimal.vo.account.ReceivedRecordVO;
+import com.cysz.minimal.vo.account.BankTransactionVO;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.time.LocalDateTime;
@@ -13,15 +17,101 @@ import java.math.BigDecimal;
 public class AccountManagementController {
     
     // 模拟数据存储
-    private static final Map<Long, ReceivableRecord> receivableStorage = new HashMap<>();
-    private static final Map<Long, ReceivedRecord> receivedStorage = new HashMap<>();
-    private static final Map<Long, BankTransaction> bankTransactionStorage = new HashMap<>();
+    private static final Map<Long, ReceivableRecordVO> receivableStorage = new HashMap<>();
+    private static final Map<Long, ReceivedRecordVO> receivedStorage = new HashMap<>();
+    private static final Map<Long, BankTransactionVO> bankTransactionStorage = new HashMap<>();
     private static Long nextReceivableId = 1L;
     private static Long nextReceivedId = 1L;
     private static Long nextBankTransactionId = 1L;
     
     static {
         initTestData();
+    }
+    
+    // 获取应收记录列表
+    @GetMapping("/receivable")
+    public Result<List<ReceivableRecordVO>> getReceivableRecords() {
+        List<ReceivableRecordVO> records = new ArrayList<>();
+        
+        for (ReceivableRecordVO receivable : receivableStorage.values()) {
+            if (!"1".equals(receivable.getStatus())) continue;
+            
+            ReceivableRecordVO vo = new ReceivableRecordVO();
+            vo.setId(receivable.getId());
+            vo.setContractNo(receivable.getContractNo());
+            vo.setContractName(receivable.getContractName());
+            vo.setTenantName(receivable.getTenantName());
+            vo.setUnitDescription(receivable.getUnitDescription());
+            vo.setBillType(receivable.getBillType());
+            vo.setAmount(receivable.getAmount());
+            vo.setDueDate(receivable.getDueDate());
+            vo.setBillStatus(receivable.getBillStatus());
+            vo.setMatchedAmount(receivable.getMatchedAmount());
+            vo.setCreateTime(receivable.getCreateTime());
+            
+            records.add(vo);
+        }
+        
+        return Result.success(records);
+    }
+    
+    // 获取已收记录列表
+    @GetMapping("/received")
+    public Result<List<ReceivedRecordVO>> getReceivedRecords() {
+        List<ReceivedRecordVO> records = new ArrayList<>();
+        
+        for (ReceivedRecordVO received : receivedStorage.values()) {
+            if (!"1".equals(received.getStatus())) continue;
+            
+            ReceivedRecordVO vo = new ReceivedRecordVO();
+            vo.setId(received.getId());
+            vo.setContractNo(received.getContractNo());
+            vo.setContractName(received.getContractName());
+            vo.setTenantName(received.getTenantName());
+            vo.setUnitDescription(received.getUnitDescription());
+            vo.setBillType(received.getBillType());
+            vo.setAmount(received.getAmount());
+            vo.setReceivedDate(received.getReceivedDate());
+            vo.setBillStatus(received.getBillStatus());
+            vo.setBankTransactionNo(received.getBankTransactionNo());
+            vo.setPaymentMethod(received.getPaymentMethod());
+            vo.setCreateTime(received.getCreateTime());
+            
+            records.add(vo);
+        }
+        
+        return Result.success(records);
+    }
+    
+    // 获取银行流水列表
+    @GetMapping("/bank-transactions")
+    public Result<List<BankTransactionVO>> getBankTransactions() {
+        List<BankTransactionVO> transactions = new ArrayList<>();
+        
+        for (BankTransactionVO transaction : bankTransactionStorage.values()) {
+            if (!"1".equals(transaction.getStatus())) continue;
+            
+            BankTransactionVO vo = new BankTransactionVO();
+            vo.setId(transaction.getId());
+            vo.setTransactionNo(transaction.getTransactionNo());
+            vo.setAmount(transaction.getAmount());
+            vo.setTransactionDate(transaction.getTransactionDate());
+            vo.setPayerName(transaction.getPayerName());
+            vo.setPayerAccount(transaction.getPayerAccount());
+            vo.setReceiverAccount(transaction.getReceiverAccount());
+            vo.setTransactionType(transaction.getTransactionType());
+            vo.setClaimStatus(transaction.getClaimStatus());
+            vo.setClaimedContractNo(transaction.getClaimedContractNo());
+            vo.setClaimedTenantName(transaction.getClaimedTenantName());
+            vo.setClaimTime(transaction.getClaimTime());
+            vo.setClaimOperator(transaction.getClaimOperator());
+            vo.setRemark(transaction.getRemark());
+            vo.setCreateTime(transaction.getCreateTime());
+            
+            transactions.add(vo);
+        }
+        
+        return Result.success(transactions);
     }
     
     // 应收已收管理
@@ -37,8 +127,8 @@ public class AccountManagementController {
         List<Map<String, Object>> allRecords = new ArrayList<>();
         
         // 合并应收和已收数据
-        for (ReceivableRecord receivable : receivableStorage.values()) {
-            if (receivable.getStatus() != 1) continue;
+        for (ReceivableRecordVO receivable : receivableStorage.values()) {
+            if (!"1".equals(receivable.getStatus())) continue;
             
             Map<String, Object> record = new HashMap<>();
             record.put("id", "R" + receivable.getId());
@@ -58,8 +148,8 @@ public class AccountManagementController {
             allRecords.add(record);
         }
         
-        for (ReceivedRecord received : receivedStorage.values()) {
-            if (received.getStatus() != 1) continue;
+        for (ReceivedRecordVO received : receivedStorage.values()) {
+            if (!"1".equals(received.getStatus())) continue;
             
             Map<String, Object> record = new HashMap<>();
             record.put("id", "P" + received.getId());
@@ -120,23 +210,23 @@ public class AccountManagementController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String claimStatus) {
         
-        List<BankTransaction> allTransactions = new ArrayList<>(bankTransactionStorage.values());
+        List<BankTransactionVO> allTransactions = new ArrayList<>(bankTransactionStorage.values());
         
         // 过滤条件
-        List<BankTransaction> filteredTransactions = allTransactions.stream()
+        List<BankTransactionVO> filteredTransactions = allTransactions.stream()
                 .filter(transaction -> keyword == null || keyword.isEmpty() || 
                         transaction.getTransactionNo().contains(keyword) ||
                         (transaction.getPayerName() != null && transaction.getPayerName().contains(keyword)))
                 .filter(transaction -> claimStatus == null || claimStatus.isEmpty() || 
                         transaction.getClaimStatus().equals(claimStatus))
-                .filter(transaction -> transaction.getStatus() == 1)
+                .filter(transaction -> "1".equals(transaction.getStatus()))
                 .toList();
         
         // 分页
         int total = filteredTransactions.size();
         int start = (current - 1) * size;
         int end = Math.min(start + size, total);
-        List<BankTransaction> pageData = filteredTransactions.subList(start, end);
+        List<BankTransactionVO> pageData = filteredTransactions.subList(start, end);
         
         // 转换为响应格式
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -182,7 +272,7 @@ public class AccountManagementController {
             @PathVariable Long transactionId,
             @RequestBody Map<String, Object> claimData) {
         
-        BankTransaction transaction = bankTransactionStorage.get(transactionId);
+        BankTransactionVO transaction = bankTransactionStorage.get(transactionId);
         if (transaction == null) {
             Map<String, Object> response = new HashMap<>();
             response.put("code", 404);
@@ -206,7 +296,7 @@ public class AccountManagementController {
         transaction.setRemark((String) claimData.get("remark"));
         
         // 创建已收记录
-        ReceivedRecord received = new ReceivedRecord();
+        ReceivedRecordVO received = new ReceivedRecordVO();
         received.setId(nextReceivedId++);
         received.setContractNo(transaction.getClaimedContractNo());
         received.setContractName((String) claimData.get("contractName"));
@@ -218,7 +308,7 @@ public class AccountManagementController {
         received.setBillStatus("RECEIVED");
         received.setBankTransactionNo(transaction.getTransactionNo());
         received.setPaymentMethod("银行转账");
-        received.setStatus(1);
+        received.setStatus("1");
         received.setCreateTime(LocalDateTime.now());
         received.setUpdateTime(LocalDateTime.now());
         
@@ -258,7 +348,7 @@ public class AccountManagementController {
         String billType = (String) params.get("billType");
         
         // 模拟生成应收账款
-        ReceivableRecord receivable = new ReceivableRecord();
+        ReceivableRecordVO receivable = new ReceivableRecordVO();
         receivable.setId(nextReceivableId++);
         receivable.setContractNo(contractNo);
         receivable.setContractName("合同名称");
@@ -269,7 +359,7 @@ public class AccountManagementController {
         receivable.setDueDate(LocalDate.now().plusDays(30));
         receivable.setBillStatus("PENDING");
         receivable.setMatchedAmount(BigDecimal.ZERO);
-        receivable.setStatus(1);
+        receivable.setStatus("1");
         receivable.setCreateTime(LocalDateTime.now());
         receivable.setUpdateTime(LocalDateTime.now());
         
@@ -286,7 +376,7 @@ public class AccountManagementController {
     // 初始化测试数据
     private static void initTestData() {
         // 应收账款测试数据
-        ReceivableRecord receivable1 = new ReceivableRecord();
+        ReceivableRecordVO receivable1 = new ReceivableRecordVO();
         receivable1.setId(nextReceivableId++);
         receivable1.setContractNo("HT001");
         receivable1.setContractName("万达广场租赁合同");
@@ -297,13 +387,13 @@ public class AccountManagementController {
         receivable1.setDueDate(LocalDate.now().plusDays(15));
         receivable1.setBillStatus("PENDING");
         receivable1.setMatchedAmount(BigDecimal.ZERO);
-        receivable1.setStatus(1);
+        receivable1.setStatus("1");
         receivable1.setCreateTime(LocalDateTime.now().minusDays(5));
         receivable1.setUpdateTime(LocalDateTime.now().minusDays(5));
         receivableStorage.put(receivable1.getId(), receivable1);
         
         // 已收账款测试数据
-        ReceivedRecord received1 = new ReceivedRecord();
+        ReceivedRecordVO received1 = new ReceivedRecordVO();
         received1.setId(nextReceivedId++);
         received1.setContractNo("HT002");
         received1.setContractName("中关村写字楼租赁合同");
@@ -315,13 +405,13 @@ public class AccountManagementController {
         received1.setBillStatus("RECEIVED");
         received1.setBankTransactionNo("TXN20240809001");
         received1.setPaymentMethod("银行转账");
-        received1.setStatus(1);
+        received1.setStatus("1");
         received1.setCreateTime(LocalDateTime.now().minusDays(2));
         received1.setUpdateTime(LocalDateTime.now().minusDays(2));
         receivedStorage.put(received1.getId(), received1);
         
         // 银行流水测试数据
-        BankTransaction transaction1 = new BankTransaction();
+        BankTransactionVO transaction1 = new BankTransactionVO();
         transaction1.setId(nextBankTransactionId++);
         transaction1.setTransactionNo("TXN20240809002");
         transaction1.setAmount(new BigDecimal("50000.00"));
@@ -331,11 +421,11 @@ public class AccountManagementController {
         transaction1.setReceiverAccount("6222020987654321");
         transaction1.setTransactionType("转账");
         transaction1.setClaimStatus("UNCLAIMED");
-        transaction1.setStatus(1);
+        transaction1.setStatus("1");
         transaction1.setCreateTime(LocalDateTime.now());
         bankTransactionStorage.put(transaction1.getId(), transaction1);
         
-        BankTransaction transaction2 = new BankTransaction();
+        BankTransactionVO transaction2 = new BankTransactionVO();
         transaction2.setId(nextBankTransactionId++);
         transaction2.setTransactionNo("TXN20240809003");
         transaction2.setAmount(new BigDecimal("25000.00"));
@@ -345,155 +435,10 @@ public class AccountManagementController {
         transaction2.setReceiverAccount("6222020987654321");
         transaction2.setTransactionType("转账");
         transaction2.setClaimStatus("UNCLAIMED");
-        transaction2.setStatus(1);
+        transaction2.setStatus("1");
         transaction2.setCreateTime(LocalDateTime.now().minusDays(1));
         bankTransactionStorage.put(transaction2.getId(), transaction2);
     }
     
-    // 应收记录实体类
-    public static class ReceivableRecord {
-        private Long id;
-        private String contractNo;
-        private String contractName;
-        private String tenantName;
-        private String unitDescription;
-        private String billType; // 租金、物业费、水电费等
-        private BigDecimal amount;
-        private LocalDate dueDate;
-        private String billStatus; // PENDING, OVERDUE, PARTIAL, COMPLETED
-        private BigDecimal matchedAmount; // 已匹配金额
-        private Integer status;
-        private LocalDateTime createTime;
-        private LocalDateTime updateTime;
-        
-        // Getters and Setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getContractNo() { return contractNo; }
-        public void setContractNo(String contractNo) { this.contractNo = contractNo; }
-        public String getContractName() { return contractName; }
-        public void setContractName(String contractName) { this.contractName = contractName; }
-        public String getTenantName() { return tenantName; }
-        public void setTenantName(String tenantName) { this.tenantName = tenantName; }
-        public String getUnitDescription() { return unitDescription; }
-        public void setUnitDescription(String unitDescription) { this.unitDescription = unitDescription; }
-        public String getBillType() { return billType; }
-        public void setBillType(String billType) { this.billType = billType; }
-        public BigDecimal getAmount() { return amount; }
-        public void setAmount(BigDecimal amount) { this.amount = amount; }
-        public LocalDate getDueDate() { return dueDate; }
-        public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
-        public String getBillStatus() { return billStatus; }
-        public void setBillStatus(String billStatus) { this.billStatus = billStatus; }
-        public BigDecimal getMatchedAmount() { return matchedAmount; }
-        public void setMatchedAmount(BigDecimal matchedAmount) { this.matchedAmount = matchedAmount; }
-        public Integer getStatus() { return status; }
-        public void setStatus(Integer status) { this.status = status; }
-        public LocalDateTime getCreateTime() { return createTime; }
-        public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
-        public LocalDateTime getUpdateTime() { return updateTime; }
-        public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
-    }
-    
-    // 已收记录实体类
-    public static class ReceivedRecord {
-        private Long id;
-        private String contractNo;
-        private String contractName;
-        private String tenantName;
-        private String unitDescription;
-        private String billType;
-        private BigDecimal amount;
-        private LocalDate receivedDate;
-        private String billStatus;
-        private String bankTransactionNo;
-        private String paymentMethod;
-        private Integer status;
-        private LocalDateTime createTime;
-        private LocalDateTime updateTime;
-        
-        // Getters and Setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getContractNo() { return contractNo; }
-        public void setContractNo(String contractNo) { this.contractNo = contractNo; }
-        public String getContractName() { return contractName; }
-        public void setContractName(String contractName) { this.contractName = contractName; }
-        public String getTenantName() { return tenantName; }
-        public void setTenantName(String tenantName) { this.tenantName = tenantName; }
-        public String getUnitDescription() { return unitDescription; }
-        public void setUnitDescription(String unitDescription) { this.unitDescription = unitDescription; }
-        public String getBillType() { return billType; }
-        public void setBillType(String billType) { this.billType = billType; }
-        public BigDecimal getAmount() { return amount; }
-        public void setAmount(BigDecimal amount) { this.amount = amount; }
-        public LocalDate getReceivedDate() { return receivedDate; }
-        public void setReceivedDate(LocalDate receivedDate) { this.receivedDate = receivedDate; }
-        public String getBillStatus() { return billStatus; }
-        public void setBillStatus(String billStatus) { this.billStatus = billStatus; }
-        public String getBankTransactionNo() { return bankTransactionNo; }
-        public void setBankTransactionNo(String bankTransactionNo) { this.bankTransactionNo = bankTransactionNo; }
-        public String getPaymentMethod() { return paymentMethod; }
-        public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
-        public Integer getStatus() { return status; }
-        public void setStatus(Integer status) { this.status = status; }
-        public LocalDateTime getCreateTime() { return createTime; }
-        public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
-        public LocalDateTime getUpdateTime() { return updateTime; }
-        public void setUpdateTime(LocalDateTime updateTime) { this.updateTime = updateTime; }
-    }
-    
-    // 银行流水实体类
-    public static class BankTransaction {
-        private Long id;
-        private String transactionNo;
-        private BigDecimal amount;
-        private LocalDate transactionDate;
-        private String payerName;
-        private String payerAccount;
-        private String receiverAccount;
-        private String transactionType;
-        private String claimStatus; // UNCLAIMED, CLAIMED, REJECTED
-        private String claimedContractNo;
-        private String claimedTenantName;
-        private LocalDateTime claimTime;
-        private String claimOperator;
-        private String remark;
-        private Integer status;
-        private LocalDateTime createTime;
-        
-        // Getters and Setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        public String getTransactionNo() { return transactionNo; }
-        public void setTransactionNo(String transactionNo) { this.transactionNo = transactionNo; }
-        public BigDecimal getAmount() { return amount; }
-        public void setAmount(BigDecimal amount) { this.amount = amount; }
-        public LocalDate getTransactionDate() { return transactionDate; }
-        public void setTransactionDate(LocalDate transactionDate) { this.transactionDate = transactionDate; }
-        public String getPayerName() { return payerName; }
-        public void setPayerName(String payerName) { this.payerName = payerName; }
-        public String getPayerAccount() { return payerAccount; }
-        public void setPayerAccount(String payerAccount) { this.payerAccount = payerAccount; }
-        public String getReceiverAccount() { return receiverAccount; }
-        public void setReceiverAccount(String receiverAccount) { this.receiverAccount = receiverAccount; }
-        public String getTransactionType() { return transactionType; }
-        public void setTransactionType(String transactionType) { this.transactionType = transactionType; }
-        public String getClaimStatus() { return claimStatus; }
-        public void setClaimStatus(String claimStatus) { this.claimStatus = claimStatus; }
-        public String getClaimedContractNo() { return claimedContractNo; }
-        public void setClaimedContractNo(String claimedContractNo) { this.claimedContractNo = claimedContractNo; }
-        public String getClaimedTenantName() { return claimedTenantName; }
-        public void setClaimedTenantName(String claimedTenantName) { this.claimedTenantName = claimedTenantName; }
-        public LocalDateTime getClaimTime() { return claimTime; }
-        public void setClaimTime(LocalDateTime claimTime) { this.claimTime = claimTime; }
-        public String getClaimOperator() { return claimOperator; }
-        public void setClaimOperator(String claimOperator) { this.claimOperator = claimOperator; }
-        public String getRemark() { return remark; }
-        public void setRemark(String remark) { this.remark = remark; }
-        public Integer getStatus() { return status; }
-        public void setStatus(Integer status) { this.status = status; }
-        public LocalDateTime getCreateTime() { return createTime; }
-        public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
-    }
+
 }

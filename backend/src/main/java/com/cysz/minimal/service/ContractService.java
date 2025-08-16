@@ -3,9 +3,9 @@ package com.cysz.minimal.service;
 import com.cysz.minimal.common.PageResult;
 import com.cysz.minimal.entity.Contract;
 import com.cysz.minimal.entity.ContractCommissionRules;
-import com.cysz.minimal.controller.ContractController.ContractCreateDTO;
-import com.cysz.minimal.controller.ContractController.ContractUpdateDTO;
-import com.cysz.minimal.controller.ContractController.ContractVO;
+import com.cysz.minimal.dto.contract.ContractCreateDTO;
+import com.cysz.minimal.dto.contract.ContractUpdateDTO;
+import com.cysz.minimal.vo.contract.ContractVO;
 
 import java.util.List;
 
